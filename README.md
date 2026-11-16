@@ -57,7 +57,7 @@ The [`deploy/embervault_sync_and_deploy.sh`](deploy/embervault_sync_and_deploy.s
 
 #### Launching the Script
 ```bash
-curl -fsSL https://short.firenetwork.it/embervault-deploy-script | sudo bash
+curl -fsSL https://raw.githubusercontent.com/firef0z/EmberVault/refs/heads/master/deploy/embervault_sync_and_deploy.sh | sudo bash
 ```
 *Or locally:* `bash deploy/embervault_sync_and_deploy.sh`
 
