@@ -1,0 +1,6 @@
+# Docker Compose overlay to expose Orchestrator port 8081 for external Public Portal
+services:
+  orchestrator:
+    ports:
+      - "${ORCHESTRATOR_PORT:-8081}:8081"
+

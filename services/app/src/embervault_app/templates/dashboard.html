@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('dashboard_page_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('dashboard_page_title') }}{% endblock %}
+
+{% block content %}
+<!-- Stat Cards Grid -->
+<div class="stats-grid">
+  <!-- Proxies Online (X/Y) -->
+  <a href="/proxies" class="stat-card" style="text-decoration: none;">
+    <div class="stat-info">
+      <span class="stat-label">{{ _('proxies_online') }}</span>
+      <span class="stat-value"><span id="stat-proxies-online">{{ online_proxies }}</span>/<span id="stat-proxies-total">{{ total_proxies }}</span></span>
+    </div>
+    <div class="stat-icon-wrapper online">
+      <svg viewBox="0 0 24 24">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+        <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+        <line x1="12" x2="12.01" y1="20" y2="20" />
+      </svg>
+    </div>
+  </a>
+
+  <!-- Active Runs -->
+  <a href="/runs" class="stat-card" style="text-decoration: none;">
+    <div class="stat-info">
+      <span class="stat-label">{{ _('active_runs') }}</span>
+      <span class="stat-value" id="stat-active-runs">{{ active_runs }}</span>
+    </div>
+    <div class="stat-icon-wrapper info">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    </div>
+  </a>
+
+  <!-- Recent Errors (24h) -->
+  <a href="/errors" class="stat-card" style="text-decoration: none;">
+    <div class="stat-info">
+      <span class="stat-label">{{ _('recent_errors') }}</span>
+      <span class="stat-value" id="stat-recent-errors">{{ recent_errors }}</span>
+    </div>
+    <div class="stat-icon-wrapper {% if recent_errors > 0 %}offline{% else %}online{% endif %}">
+      <svg viewBox="0 0 24 24">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+        <line x1="12" x2="12" y1="9" y2="13" />
+        <line x1="12" x2="12.01" y1="17" y2="17" />
+      </svg>
+    </div>
+  </a>
+</div>
+
+<!-- Realtime Dashboard Charts -->
+<div class="dashboard-charts-grid">
+  <!-- Chart 1: Realtime Throughput -->
+  <div class="content-card chart-card chart-card-throughput">
+    <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+      <h2 class="card-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m13 2-2 10h8L7 22l2-10H1L13 2z" />
+        </svg>
+        <span>{{ _('chart_throughput_title') }}</span>
+      </h2>
+      <div class="chart-header-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Range Buttons -->
+        <div class="btn-group-toggle" id="throughput-range-group" role="group"
+          aria-label="{{ _('chart_throughput_title') }}">
+          <button type="button" class="btn-range active" data-range="24h" id="btn-range-24h"
+            title="{{ _('range_24h') }}">24h</button>
+          <button type="button" class="btn-range" data-range="6h" id="btn-range-6h"
+            title="{{ _('range_6h') }}">6h</button>
+          <button type="button" class="btn-range" data-range="1h" id="btn-range-1h"
+            title="{{ _('range_1h') }}">1h</button>
+          <button type="button" class="btn-range" data-range="5m" id="btn-range-5m"
+            title="{{ _('range_5m') }}">5m</button>
+          <button type="button" class="btn-range" data-range="custom" id="btn-range-custom"
+            title="{{ _('range_custom') }}">Custom</button>
+        </div>
+
+        <span class="badge-pulse badge-ember" id="chart-throughput-speed-badge">
+          <span class="pulse-dot"></span>
+          <span id="chart-throughput-speed">0 B/s</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Custom Range Bar -->
+    <div id="throughput-custom-range-bar"
+      style="display: none; padding: 10px 18px; background: rgba(0,0,0,0.12); border-bottom: 1px solid var(--border-color); align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.85rem;">
+      <span style="color: var(--color-text-secondary); font-weight: 500;">{{ _('custom_range_label') }}</span>
+      <div style="display: inline-flex; align-items: center; gap: 6px;">
+        <label for="throughput-custom-start" style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">{{
+          _('from_label') }}</label>
+        <input type="datetime-local" id="throughput-custom-start" class="form-input"
+          style="padding: 4px 8px; font-size: 0.8rem; border-radius: var(--radius-sm); width: auto;">
+      </div>
+      <div style="display: inline-flex; align-items: center; gap: 6px;">
+        <label for="throughput-custom-end" style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">{{
+          _('to_label') }}</label>
+        <input type="datetime-local" id="throughput-custom-end" class="form-input"
+          style="padding: 4px 8px; font-size: 0.8rem; border-radius: var(--radius-sm); width: auto;">
+      </div>
+      <button type="button" class="btn btn-sm btn-primary" id="btn-apply-custom-range"
+        style="padding: 4px 12px; font-size: 0.8rem;">
+        {{ _('btn_apply') }}
+      </button>
+      <span id="custom-range-error" style="color: var(--color-danger); font-size: 0.8rem; display: none;"></span>
+    </div>
+
+    <div class="chart-viewport-wrapper">
+      <svg class="throughput-svg-chart" id="chart-throughput-svg" viewBox="0 0 600 180">
+        <defs>
+          <linearGradient id="acrovaultThroughputGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0072ce" stop-opacity="0.35" />
+            <stop offset="60%" stop-color="#0072ce" stop-opacity="0.08" />
+            <stop offset="100%" stop-color="#0072ce" stop-opacity="0.0" />
+          </linearGradient>
+          <linearGradient id="theeameThroughputGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00b336" stop-opacity="0.30" />
+            <stop offset="60%" stop-color="#00b336" stop-opacity="0.08" />
+            <stop offset="100%" stop-color="#00b336" stop-opacity="0.0" />
+          </linearGradient>
+          <linearGradient id="emberThroughputGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff5400" stop-opacity="0.45" />
+            <stop offset="60%" stop-color="#ff7a00" stop-opacity="0.15" />
+            <stop offset="100%" stop-color="#ffb703" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+        <!-- Horizontal grid lines -->
+        <line x1="85" y1="20" x2="585" y2="20" class="throughput-grid-line" />
+        <line x1="85" y1="70" x2="585" y2="70" class="throughput-grid-line" />
+        <line x1="85" y1="120" x2="585" y2="120" class="throughput-grid-line" />
+        <line x1="85" y1="160" x2="585" y2="160" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+        <!-- Y-axis labels -->
+        <text x="76" y="24" text-anchor="end" class="throughput-axis-label" id="chart-y-max">100M</text>
+        <text x="76" y="74" text-anchor="end" class="throughput-axis-label" id="chart-y-mid">50M</text>
+        <text x="76" y="124" text-anchor="end" class="throughput-axis-label" id="chart-y-low">10M</text>
+        <text x="76" y="164" text-anchor="end" class="throughput-axis-label">0</text>
+
+        <!-- Area and line paths -->
+        <path class="throughput-area-path" id="chart-throughput-area" d="M 85 160 L 585 160 Z" />
+        <path class="throughput-line-path" id="chart-throughput-line" d="M 85 160 L 585 160" />
+
+        <!-- X-axis labels (time range) -->
+        <text x="85" y="175" text-anchor="start" class="throughput-axis-label" id="chart-x-start">-24h</text>
+        <text x="335" y="175" text-anchor="middle" class="throughput-axis-label" id="chart-x-mid">-12h</text>
+        <text x="585" y="175" text-anchor="end" class="throughput-axis-label" id="chart-x-end">{{ _('now') }}</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Chart 2: Run Outcomes Donut -->
+  <div class="content-card chart-card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a10 10 0 0 1 10 10" />
+        </svg>
+        <span>{{ _('chart_outcomes_title') }}</span>
+      </h2>
+    </div>
+    <div class="donut-chart-container">
+      <div class="donut-svg-wrapper">
+        <svg class="donut-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="38" stroke="rgba(255, 255, 255, 0.06)" stroke-width="18" fill="none" />
+          <circle class="donut-slice" id="donut-slice-queued" cx="50" cy="50" r="38" stroke="#3b82f6"
+            stroke-dasharray="0 238.7" stroke-dashoffset="0" />
+          <circle class="donut-slice" id="donut-slice-active" cx="50" cy="50" r="38" stroke="#ff5400"
+            stroke-dasharray="0 238.7" stroke-dashoffset="0" />
+          <circle class="donut-slice" id="donut-slice-failed" cx="50" cy="50" r="38" stroke="#ef4444"
+            stroke-dasharray="0 238.7" stroke-dashoffset="0" />
+          <circle class="donut-slice" id="donut-slice-completed" cx="50" cy="50" r="38" stroke="#10b981"
+            stroke-dasharray="0 238.7" stroke-dashoffset="0" />
+        </svg>
+        <div class="donut-center-info">
+          <span class="donut-center-pct" id="donut-center-rate">100%</span>
+          <span class="donut-center-label">{{ _('success') }}</span>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <div class="donut-legend-item">
+          <div class="donut-legend-left">
+            <span class="donut-legend-dot" style="background-color: #10b981;"></span>
+            <span>{{ _('outcomes_completed') }}</span>
+          </div>
+          <span class="donut-legend-val" id="donut-val-completed">0</span>
+        </div>
+        <div class="donut-legend-item">
+          <div class="donut-legend-left">
+            <span class="donut-legend-dot" style="background-color: #ef4444;"></span>
+            <span>{{ _('outcomes_failed') }}</span>
+          </div>
+          <span class="donut-legend-val" id="donut-val-failed">0</span>
+        </div>
+        <div class="donut-legend-item">
+          <div class="donut-legend-left">
+            <span class="donut-legend-dot" style="background-color: #ff5400;"></span>
+            <span>{{ _('outcomes_running') }}</span>
+          </div>
+          <span class="donut-legend-val" id="donut-val-active">0</span>
+        </div>
+        <div class="donut-legend-item">
+          <div class="donut-legend-left">
+            <span class="donut-legend-dot" style="background-color: #3b82f6;"></span>
+            <span>{{ _('outcomes_queued') }}</span>
+          </div>
+          <span class="donut-legend-val" id="donut-val-queued">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 3: Proxy Fleet Utilization -->
+  <div class="content-card chart-card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="20" height="8" x="2" y="2" rx="2" ry="2" />
+          <rect width="20" height="8" x="2" y="14" rx="2" ry="2" />
+          <line x1="6" x2="6.01" y1="6" y2="6" />
+          <line x1="6" x2="6.01" y1="18" y2="18" />
+        </svg>
+        <span>{{ _('chart_fleet_title') }}</span>
+      </h2>
+      <span class="badge badge-info" id="chart-fleet-slots-badge">0/0 {{ _('dashboard_slots_unit') }} (0%)</span>
+    </div>
+    <div class="fleet-gauge-header">
+      <span style="font-size: 0.78rem; color: var(--text-secondary);">{{ _('fleet_capacity_label') }}</span>
+      <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);"
+        id="chart-fleet-pct-label">0%</span>
+    </div>
+    <div class="fleet-gauge-bar-outer">
+      <div class="fleet-gauge-bar-fill" id="chart-fleet-gauge-fill" style="width: 0%;"></div>
+    </div>
+    <div class="fleet-proxies-list" id="dashboard-fleet-proxies-list">
+      <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 24px;">
+        {{ _('waiting_telemetry') }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Live Proxies Table Card -->
+<div class="content-card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <rect width="20" height="8" x="2" y="2" rx="2" ry="2" />
+        <rect width="20" height="8" x="2" y="14" rx="2" ry="2" />
+        <line x1="6" x2="6.01" y1="6" y2="6" />
+        <line x1="6" x2="6.01" y1="18" y2="18" />
+      </svg>
+      <span>{{ _('live_nodes') }}</span>
+    </h2>
+    <a href="/proxies" class="btn btn-secondary btn-sm" id="btn-view-all-proxies">{{ _('btn_view_all') }}</a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table" id="table-dashboard-proxies">
+      <thead>
+        <tr>
+          <th>{{ _('proxy_name') }}</th>
+          <th class="col-hide-sm">{{ _('proxy_host') }}</th>
+          <th>{{ _('proxy_status') }}</th>
+          <th class="col-hide-md">{{ _('proxy_concurrency') }}</th>
+          <th class="col-hide-lg">{{ _('proxy_latency') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if proxies %}
+        {% for p in proxies %}
+        <tr data-href="/proxies?edit={{ p.id }}" class="clickable-row"
+          title="{{ _('btn_edit_proxy_title') }} {{ p.name }}">
+          <td><a href="/proxies?edit={{ p.id }}" style="color: var(--ember-primary); font-weight: 600;">{{ p.name }}</a>
+          </td>
+          <td class="col-hide-sm">{{ p.host }}:{{ p.port }}</td>
+          <td>
+            {% set state = p.status.state if p.status else 'unknown' %}
+            <span class="badge badge-{{ state }}">
+              <span class="badge-dot"></span>
+              {{ _('status_' + state) }}
+            </span>
+          </td>
+          <td class="col-hide-md">
+            {{ p.status.running_tasks if p.status else 0 }} / {{ p.max_concurrent_tasks }}
+          </td>
+          <td class="col-hide-lg">
+            {{ p.status.latency_ms if p.status else 0 }} ms
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 32px;">
+            {{ _('no_proxies_registered') }}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Runs Table Card -->
+<div class="content-card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span>{{ _('recent_runs') }}</span>
+    </h2>
+    <a href="/runs" class="btn btn-secondary btn-sm" id="btn-view-all-runs">{{ _('btn_all_runs') }}</a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table" id="table-dashboard-recent-runs">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Job</th>
+          <th>{{ _('run_status') }}</th>
+          <th class="col-hide-md">{{ _('run_trigger') }}</th>
+          <th class="col-hide-sm">{{ _('run_tasks_completed') }}</th>
+          <th class="col-hide-lg">{{ _('run_started_at') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_runs %}
+        {% for r in recent_runs %}
+        <tr data-href="/runs/{{ r.id }}" class="clickable-row" title="{{ _('dashboard_view_run_detail_title') }}">
+          <td><a href="/runs/{{ r.id }}" style="color: var(--ember-primary); font-weight: 600;">{{
+              r.id|string|truncate(8, True, '') }}</a></td>
+          <td>{{ r.job.name if r.job else ((r.job_snapshot.get('name') if r.job_snapshot else None) or
+            r.job_id|string|truncate(8, True, '')) }}</td>
+          <td>
+            <span class="badge badge-{{ r.status }}">
+              <span class="badge-dot"></span>
+              {{ r.status }}
+            </span>
+          </td>
+          <td class="col-hide-md"><span style="font-size: 0.85rem; font-weight: 500; text-transform: uppercase;">{{
+              r.trigger }}</span></td>
+          <td class="col-hide-sm">{{ r.tasks_completed }} / {{ r.task_count_actual or 0 }}</td>
+          <td class="col-hide-lg">
+            <span class="user-datetime" data-utc="{{ r.created_at|utc_iso }}" data-format="full">
+              {{ r.created_at|user_dt('%d/%m/%Y %H:%M:%S') if r.created_at else 'N/A' }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 32px;">
+            {{ _('empty_runs_title') }}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

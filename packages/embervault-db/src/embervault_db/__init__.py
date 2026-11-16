@@ -1,0 +1,88 @@
+"""EmberVault database package."""
+
+from embervault_db.cli import run_downgrade, run_migrations, run_seed
+from embervault_db.models import (
+    NAMING_CONVENTION,
+    AuditLog,
+    Base,
+    ErrorEvent,
+    Job,
+    JobDiscovery,
+    JobRun,
+    JobSource,
+    Permission,
+    Proxy,
+    ProxyStateEvent,
+    ProxyStatus,
+    RcloneRemote,
+    Role,
+    RolePermission,
+    Setting,
+    Task,
+    TaskAssignment,
+    TaskLog,
+    User,
+    UserMfaFactor,
+    UserRecoveryCode,
+    UserSession,
+    metadata,
+)
+from embervault_db.rotation import rotate_all_credentials
+from embervault_db.seed import seed_demo_data, seed_initial_data
+from embervault_db.session import (
+    create_engine_from_settings,
+    create_engine_from_url,
+    create_session_factory,
+    get_session,
+)
+from embervault_db.settings_store import (
+    InvalidSettingValueError,
+    NonOverridableSettingError,
+    SettingsError,
+    SettingsStore,
+    UnknownSettingError,
+)
+
+__version__ = "1.0.0"
+
+__all__ = [
+    "NAMING_CONVENTION",
+    "AuditLog",
+    "Base",
+    "ErrorEvent",
+    "InvalidSettingValueError",
+    "Job",
+    "JobDiscovery",
+    "JobRun",
+    "JobSource",
+    "NonOverridableSettingError",
+    "Permission",
+    "Proxy",
+    "ProxyStateEvent",
+    "ProxyStatus",
+    "RcloneRemote",
+    "Role",
+    "RolePermission",
+    "Setting",
+    "SettingsError",
+    "SettingsStore",
+    "Task",
+    "TaskAssignment",
+    "TaskLog",
+    "UnknownSettingError",
+    "User",
+    "UserMfaFactor",
+    "UserRecoveryCode",
+    "UserSession",
+    "create_engine_from_settings",
+    "create_engine_from_url",
+    "create_session_factory",
+    "get_session",
+    "metadata",
+    "rotate_all_credentials",
+    "run_downgrade",
+    "run_migrations",
+    "run_seed",
+    "seed_demo_data",
+    "seed_initial_data",
+]

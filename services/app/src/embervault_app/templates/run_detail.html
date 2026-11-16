@@ -1,0 +1,1667 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('run_detail_page_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('run_detail_page_title') }}: {{ run.job.name if run and run.job else 'Run Detail' }}{% endblock %}
+
+{% block head_extra %}
+<style nonce="{{ csp_nonce }}">
+  /* Log Drawer & Terminal Styling */
+  .logs-drawer-row td {
+    padding: 12px 16px !important;
+    background: rgba(13, 17, 23, 0.94);
+    border-bottom: 2px solid var(--border-color);
+  }
+  .logs-drawer-card {
+    background: #090d13;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  }
+  .logs-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .log-terminal-viewport {
+    max-height: 420px;
+    min-height: 90px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 0;
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    background: #090d13;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) #090d13;
+  }
+  .log-terminal-viewport::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .log-terminal-viewport::-webkit-scrollbar-track {
+    background: #090d13;
+  }
+  .log-terminal-viewport::-webkit-scrollbar-thumb {
+    background: #21262d;
+    border-radius: 4px;
+  }
+  .log-terminal-viewport::-webkit-scrollbar-thumb:hover {
+    background: #30363d;
+  }
+  .log-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 4px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background-color 0.1s ease;
+  }
+  .log-row:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+  .log-row-seq {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    min-width: 32px;
+    text-align: right;
+    user-select: none;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .log-row-time {
+    color: #38bdf8;
+    font-size: 0.73rem;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+    padding-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .log-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    user-select: none;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  .log-badge-info {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+  }
+  .log-badge-warn, .log-badge-warning {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+  .log-badge-error, .log-badge-err {
+    background: rgba(239, 68, 68, 0.22);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+  }
+  .log-badge-debug {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+  }
+  .log-badge-stderr {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+    font-size: 0.62rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    margin-left: 2px;
+    flex-shrink: 0;
+  }
+  .log-row-message {
+    flex: 1;
+    color: #e2e8f0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .log-row.is-error .log-row-message {
+    color: #fca5a5;
+  }
+  .log-row.is-warn .log-row-message {
+    color: #fde047;
+  }
+  .btn-filter-pill {
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-filter-pill:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .btn-filter-pill.active {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .pulse-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse-ring 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+  .spinning {
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .collapsible-header {
+    transition: background-color 0.15s ease;
+  }
+  .collapsible-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .chevron-icon {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--color-text-muted);
+  }
+  .data-table th, .data-table td {
+    white-space: nowrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1600px; width: 96%; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <a href="/runs" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        {{ _('run_detail_back_to_runs') }}
+      </a>
+    </div>
+
+    {% if run and run.status in ('queued', 'planning', 'running') and has_permission('job.run') %}
+    <div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-run" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        {{ _('run_detail_cancel_run_btn') }}
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if run %}
+  {% set running_tasks = [] %}
+  {% set queued_tasks = [] %}
+  {% set finished_tasks = [] %}
+  {% for t in run.tasks %}
+    {% if t.status in ('running', 'assigned') %}
+      {% set _ = running_tasks.append(t) %}
+    {% elif t.status in ('succeeded', 'failed', 'cancelled', 'skipped') %}
+      {% set _ = finished_tasks.append(t) %}
+    {% else %}
+      {% set _ = queued_tasks.append(t) %}
+    {% endif %}
+  {% endfor %}
+  {% set succeeded_count = finished_tasks|selectattr('status', 'equalto', 'succeeded')|list|length %}
+  {% set failed_count = finished_tasks|selectattr('status', 'equalto', 'failed')|list|length %}
+  {% set cancelled_count = finished_tasks|selectattr('status', 'equalto', 'cancelled')|list|length %}
+  {% set skipped_count = finished_tasks|selectattr('status', 'equalto', 'skipped')|list|length %}
+
+  <!-- Status & Metrics Card -->
+  <div class="content-card" style="margin-bottom: 24px;">
+    <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-text-primary);">
+          {{ run.job.name if run.job else run.job_snapshot.get('name', 'Job') }}
+        </h2>
+        <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">
+          Run UUID: <code>{{ run.id }}</code> &bull; Trigger: <strong>{{ run.trigger }}</strong>
+        </div>
+      </div>
+      <div id="run-status-badge-container">
+        {% if run.status == 'running' %}
+        <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.9rem; padding: 6px 12px;">
+          <span class="badge-dot" style="background: #3b82f6;"></span> {{ _('run_status_running') }}
+        </span>
+        {% elif run.status == 'queued' %}
+        <span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_queued') }}</span>
+        {% elif run.status == 'planning' %}
+        <span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_planning') }}</span>
+        {% elif run.status == 'cancelled' or (finished_tasks|length == run.tasks|length and run.tasks|length > 0 and cancelled_count == run.tasks|length) %}
+        <span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_cancelled') }}</span>
+        {% elif run.status == 'failed' or (finished_tasks|length == run.tasks|length and run.tasks|length > 0 and failed_count == run.tasks|length) %}
+        <span class="badge" style="background: rgba(127, 29, 29, 0.45); color: #fca5a5; border: 1px solid rgba(220, 38, 38, 0.65); font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_failed') }}</span>
+        {% elif failed_count > 0 or run.tasks_failed > 0 %}
+        <span class="badge" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45); font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_partially_failed_errors') }}</span>
+        {% elif cancelled_count > 0 or run.status == 'partially_failed' or run.warning_code == 'FILES_EXCLUDED' %}
+        <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_partially_failed_warnings') }}</span>
+        {% elif run.status == 'succeeded' %}
+        <span class="badge badge-online" style="font-size: 0.9rem; padding: 6px 12px;">{{ _('run_status_succeeded') }}</span>
+        {% else %}
+        <span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">{{ run.status }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card-body" style="padding: 24px;">
+      <div id="run-error-banner" style="display: {{ 'block' if run.error_message else 'none' }}; margin-bottom: 16px; padding: 12px 16px; border-radius: var(--radius-md); background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5;">
+        <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px;">{{ _('run_policy_reason_label') }}</div>
+        <div id="run-error-message" style="font-size: 0.9rem; line-height: 1.45;">{{ run.error_message or '' }}</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 0.78rem; color: var(--color-text-muted); text-transform: uppercase;">Task Succeeded</div>
+          <div id="metric-tasks-succeeded" style="font-size: 1.4rem; font-weight: 700; color: var(--color-text-primary); margin-top: 4px;">
+            {{ run.tasks_succeeded }} / {{ run.planned_task_count }}
+          </div>
+          <div id="metric-tasks-failed" style="font-size: 0.75rem; color: #ef4444; margin-top: 2px; {% if run.tasks_failed == 0 %}display: none;{% endif %}">
+            {{ run.tasks_failed }} {{ _('run_detail_tasks_failed_suffix') }}
+          </div>
+        </div>
+
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 0.78rem; color: var(--color-text-muted); text-transform: uppercase;">{{ _('run_detail_data_transferred_label') }}</div>
+          <div id="metric-bytes-transferred" style="font-size: 1.4rem; font-weight: 700; color: var(--color-brand); margin-top: 4px;">
+            {% if run.bytes_transferred > 1073741824 %}
+              {{ (run.bytes_transferred / 1073741824)|round(2) }} GiB
+            {% elif run.bytes_transferred > 1048576 %}
+              {{ (run.bytes_transferred / 1048576)|round(2) }} MiB
+            {% elif run.bytes_transferred > 1024 %}
+              {{ (run.bytes_transferred / 1024)|round(2) }} KiB
+            {% else %}
+              {{ run.bytes_transferred }} B
+            {% endif %}
+          </div>
+          <div id="metric-files-transferred" style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">{{ run.files_transferred }} file</div>
+          <div id="metric-throughput" style="font-size: 0.78rem; color: #38bdf8; font-weight: 600; margin-top: 4px;">Throughput: <span id="metric-throughput-val">{{ total_throughput_str or '0 B/s' }}</span></div>
+        </div>
+
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 0.78rem; color: var(--color-text-muted); text-transform: uppercase;">{{ _('run_detail_start_and_duration_label') }}</div>
+          <div id="metric-started-at" style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-top: 4px;">
+            <span class="user-datetime" data-utc="{{ run.started_at|utc_iso }}" data-format="time-date">
+              {{ run.started_at|user_dt('%H:%M:%S (%d/%m/%y)') if run.started_at else _('run_status_queued') }}
+            </span>
+          </div>
+          {% if run.finished_at and run.started_at %}
+          <div id="metric-duration" style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">
+            {{ _('run_detail_duration_prefix') }} {{ ((run.finished_at - run.started_at).total_seconds())|round|int }}s
+          </div>
+          {% endif %}
+        </div>
+
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 0.78rem; color: var(--color-text-muted); text-transform: uppercase;">{{ _('run_detail_operation_and_mode_label') }}</div>
+          <div style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-top: 4px;">
+            {{ run.job_snapshot.get('operation', 'copy')|upper }}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">
+            Parallel: {{ run.job_snapshot.get('parallelization', 'none') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Proxy Status & Current Activity for this Job -->
+      <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--color-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            {{ _('run_detail_assigned_proxies_activity') }}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--color-text-muted);">
+            <span id="proxies-online-count">{{ proxies_activity|selectattr('raw_state', 'equalto', 'online')|list|length }}</span> {{ _('run_detail_of_proxies_online').format(total=proxies_activity|length) }}
+          </div>
+        </div>
+
+        <div id="job-proxies-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+          {% for p in proxies_activity %}
+          <div id="proxy-card-{{ p.id }}" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              <div style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary); display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-brand); flex-shrink: 0;">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                  <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                  <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                </svg>
+                <span>{{ p.name }}</span>
+              </div>
+              <div id="proxy-badge-{{ p.id }}">
+                {% if p.state == 'busy' %}
+                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.72rem; padding: 2px 8px;">
+                  <span class="badge-dot" style="background: #3b82f6;"></span> {{ _('run_status_running') }}
+                </span>
+                {% elif p.state == 'idle' %}
+                <span class="badge badge-online" style="font-size: 0.72rem; padding: 2px 8px;">
+                  <span class="badge-dot"></span> {{ _('proxy_state_idle') }}
+                </span>
+                {% elif p.state == 'offline' %}
+                <span class="badge badge-offline" style="font-size: 0.72rem; padding: 2px 8px;">
+                  <span class="badge-dot"></span> Offline
+                </span>
+                {% else %}
+                <span class="badge badge-unknown" style="font-size: 0.72rem; padding: 2px 8px;">
+                  {{ p.activity }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            <div id="proxy-activity-{{ p.id }}" style="font-size: 0.8rem; color: {% if p.state == 'busy' %}#60a5fa{% elif p.state == 'offline' %}#f87171{% else %}var(--color-text-muted){% endif %}; display: flex; align-items: center; gap: 6px;">
+              {% if p.state == 'busy' %}
+              <span class="pulse-dot"></span>
+              {% endif %}
+              <span>{{ p.activity }}</span>
+            </div>
+            <div id="proxy-throughput-{{ p.id }}" style="font-size: 0.76rem; color: var(--color-text-muted); display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
+              <span>Throughput:</span>
+              <span style="font-weight: 600; color: {% if p.state == 'busy' and p.speed_bytes_per_sec > 0 %}#38bdf8{% else %}var(--color-text-secondary){% endif %};" id="proxy-speed-val-{{ p.id }}">{{ p.throughput or '0 B/s' }}</span>
+            </div>
+          </div>
+          {% else %}
+          <div style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">
+            {{ _('run_detail_no_proxies_registered') }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% macro render_task_row(t, tasks_stats) %}
+  {% set stat = tasks_stats.get(t.id, {}) %}
+  <tr id="task-row-{{ t.id }}" data-task-id="{{ t.id }}" data-task-status="{{ t.status }}">
+    <td><code>#{{ t.seq }}</code></td>
+    <td>
+      <span style="font-weight: 600; font-size: 0.88rem;">{{ t.scope }}</span>
+      <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ t.kind }}</div>
+    </td>
+    <td>
+      {% set subpath = t.spec.get('source_subpath') or '/' %}
+      {% if subpath|length > 10 %}
+      <code style="font-size: 0.82rem;" title="{{ subpath }}">{{ subpath[:10] }}...</code>
+      {% else %}
+      <code style="font-size: 0.82rem;">{{ subpath }}</code>
+      {% endif %}
+      {% if t.spec.get('include_root_files_only') %}
+      <span class="badge badge-unknown" style="font-size: 0.7rem; margin-left: 4px;">Root files only</span>
+      {% endif %}
+    </td>
+    <td id="task-proxy-cell-{{ t.id }}">
+      {% set latest_assign = t.assignments[-1] if t.assignments else None %}
+      {% if latest_assign and latest_assign.proxy %}
+      <span class="badge" style="background: rgba(148, 163, 184, 0.12); color: var(--color-text-primary); border: 1px solid var(--color-border); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        {{ latest_assign.proxy.name }}
+      </span>
+      {% elif t.status in ('ready', 'pending') %}
+      <span style="color: var(--color-text-muted); font-size: 0.78rem; font-style: italic;">{{ _('proxy_state_idle') }}</span>
+      {% else %}
+      <span style="color: var(--color-text-muted); font-size: 0.78rem;">-</span>
+      {% endif %}
+    </td>
+    <td id="task-checks-cell-{{ t.id }}">
+      <code id="task-checks-{{ t.id }}" style="font-size: 0.82rem; font-weight: 600; color: var(--color-text-primary);">{{ stat.get('checks_display', '-') }}</code>
+    </td>
+    <td id="task-transferred-cell-{{ t.id }}">
+      <code id="task-transferred-{{ t.id }}" style="font-size: 0.82rem; font-weight: 600; color: var(--color-brand);">{{ stat.get('transferred_display', '-') }}</code>
+    </td>
+    <td id="task-eta-cell-{{ t.id }}">
+      <code id="task-eta-{{ t.id }}" style="font-size: 0.82rem; font-weight: 600; color: #a78bfa;">{{ stat.get('eta_display', '-') }}</code>
+    </td>
+    <td id="task-status-cell-{{ t.id }}">
+      {% if t.status == 'succeeded' and t.last_error_code == 'FILES_EXCLUDED' %}
+      <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);" title="{{ _('run_detail_task_warnings_title') }}">{{ _('run_status_partially_failed_warnings') }}</span>
+      {% elif t.status == 'succeeded' %}
+      <span class="badge badge-online">Succeeded</span>
+      {% elif t.status == 'running' %}
+      <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;"><span class="badge-dot" style="background: #3b82f6;"></span> Running</span>
+      {% elif t.status == 'assigned' %}
+      <span class="badge badge-cooldown">Assigned</span>
+      {% elif t.status == 'ready' %}
+      <span class="badge badge-unknown">Ready</span>
+      {% elif t.status == 'skipped' %}
+      <span class="badge" style="background: rgba(148, 163, 184, 0.18); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35);" title="{{ t.spec.get('skip_reason', _('run_detail_filter_applied')) }}">Skipped</span>
+      {% elif t.status == 'failed' %}
+      <span class="badge badge-offline">Failed</span>
+      {% elif t.status == 'cancelled' %}
+      <span class="badge badge-unknown">Cancelled</span>
+      {% else %}
+      <span class="badge badge-unknown">{{ t.status }}</span>
+      {% endif %}
+    </td>
+    <td id="task-attempts-cell-{{ t.id }}">{{ t.attempt_count }} / {{ t.max_attempts }}</td>
+    <td style="text-align: right; white-space: nowrap;">
+      <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+        <!-- Cancel Task button -->
+        {% if has_permission('job.run') %}
+        <button
+          type="button"
+          class="btn btn-sm btn-cancel-task"
+          id="btn-cancel-task-{{ t.id }}"
+          data-task-id="{{ t.id }}"
+          data-task-seq="{{ t.seq }}"
+          title="{{ _('run_detail_cancel_task_title') }}"
+          style="display: {% if t.status in ('ready', 'assigned', 'running', 'retry_wait') %}inline-flex{% else %}none{% endif %}; align-items: center; gap: 4px; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); font-size: 0.75rem; padding: 3px 8px; border-radius: 4px;"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <span>{{ _('btn_cancel') }}</span>
+        </button>
+        {% endif %}
+
+        <!-- Show/Hide Logs button -->
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm btn-show-logs"
+          id="btn-toggle-logs-{{ t.id }}"
+          data-task-id="{{ t.id }}"
+          data-task-seq="{{ t.seq }}"
+          style="display: inline-flex; align-items: center; gap: 4px;"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="12" x2="14" y2="12"></line>
+            <line x1="4" y1="18" x2="18" y2="18"></line>
+          </svg>
+          <span id="btn-show-logs-text-{{ t.id }}">{{ _('run_detail_view_logs_btn') }}</span>
+        </button>
+      </div>
+    </td>
+  </tr>
+  <!-- Log drawer row -->
+  <tr id="logs-row-{{ t.id }}" class="logs-drawer-row" style="display: none;">
+    <td colspan="10">
+      <div class="logs-drawer-card">
+        <!-- Toolbar -->
+        <div class="logs-drawer-header">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">
+              Task #{{ t.seq }} <span style="font-weight: 400; color: var(--text-muted);">({{ t.scope }})</span>
+            </span>
+            <span class="badge badge-unknown" id="logs-count-{{ t.id }}" style="font-size: 0.72rem;">0 {{ _('run_detail_lines_plural') }}</span>
+            <span id="logs-live-indicator-{{ t.id }}" class="badge badge-online" style="display: {% if t.status in ('running', 'assigned') %}inline-flex{% else %}none{% endif %}; font-size: 0.72rem; align-items: center; gap: 4px;">
+              <span class="pulse-dot"></span> Live
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Filter pills -->
+            <div class="btn-group" style="display: inline-flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; background: var(--bg-primary);">
+              <button type="button" class="btn-filter-pill active" data-task-id="{{ t.id }}" data-filter="all">{{ _('filter_all') }}</button>
+              <button type="button" class="btn-filter-pill" data-task-id="{{ t.id }}" data-filter="errors" style="border-left: 1px solid var(--border-color);">{{ _('run_status_partially_failed_errors') }}</button>
+              <button type="button" class="btn-filter-pill" data-task-id="{{ t.id }}" data-filter="info" style="border-left: 1px solid var(--border-color);">Info</button>
+            </div>
+
+            <!-- Order Toggle (default: Più recenti in cima) -->
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary btn-toggle-order"
+              data-task-id="{{ t.id }}"
+              title="{{ _('run_detail_toggle_order_title') }}"
+              style="font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span id="order-label-{{ t.id }}">{{ _('run_detail_order_newest_first') }}</span>
+            </button>
+
+            <!-- Copy button -->
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary btn-copy-logs"
+              data-task-id="{{ t.id }}"
+              title="{{ _('run_detail_copy_logs_title') }}"
+              style="font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+              <span id="btn-copy-text-{{ t.id }}">{{ _('btn_copy') }}</span>
+            </button>
+
+            <!-- Refresh button -->
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary btn-refresh-task-logs"
+              data-task-id="{{ t.id }}"
+              title="{{ _('run_detail_reload_logs_title') }}"
+              style="font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="refresh-icon">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+              </svg>
+              <span>{{ _('btn_reload') }}</span>
+            </button>
+
+            <!-- Minimize button -->
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary btn-minimize-task-logs"
+              data-task-id="{{ t.id }}"
+              title="{{ _('run_detail_minimize_logs_title') }}"
+              style="font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span>{{ _('btn_minimize') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Log Content Terminal Viewport -->
+        <div class="log-terminal-viewport" id="logs-viewport-{{ t.id }}">
+          <div id="logs-content-{{ t.id }}" class="log-lines-list">
+            <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+              {{ _('run_detail_waiting_logs_load') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+  {% endmacro %}
+
+  <!-- SECTION 1: Task in esecuzione (Open by default) -->
+  <div class="content-card task-section-card" id="card-tasks-running" style="margin-bottom: 20px;">
+    <div class="card-header collapsible-header" id="header-tasks-running" data-target="body-tasks-running" style="border-bottom: 1px solid var(--color-border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="chevron-icon" id="chevron-tasks-running" style="display: inline-flex;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>{{ _('run_detail_tasks_running_title') }}</span>
+          <span class="badge" id="badge-running-count" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.8rem; padding: 2px 8px;">
+            <span class="badge-dot" style="background: #3b82f6;"></span>
+            <span id="text-running-count">{{ running_tasks|length }} {{ _('run_detail_running_count_suffix') }}</span>
+          </span>
+        </h3>
+      </div>
+      <div style="font-size: 0.78rem; color: var(--color-text-muted);">
+        {{ _('run_detail_click_to_collapse_expand') }}
+      </div>
+    </div>
+    <div id="body-tasks-running" class="collapsible-body" style="display: block;">
+      <div class="table-responsive">
+        <table class="data-table" id="table-tasks-running">
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>{{ _('run_detail_col_scope_task') }}</th>
+              <th>{{ _('run_detail_col_subpath') }}</th>
+              <th>Proxy</th>
+              <th>{{ _('run_detail_col_checked') }}</th>
+              <th>{{ _('run_detail_col_transferred') }}</th>
+              <th>ETA</th>
+              <th>{{ _('col_status') }}</th>
+              <th>{{ _('run_detail_col_attempts') }}</th>
+              <th style="text-align: right;">{{ _('run_detail_col_logs_diagnostics') }}</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tasks-running">
+            {% for t in running_tasks %}
+              {{ render_task_row(t, tasks_stats) }}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div id="empty-tasks-running" class="empty-section-placeholder" style="padding: 24px; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; font-style: italic; {% if running_tasks|length > 0 %}display: none;{% endif %}">
+        {{ _('run_detail_empty_running_tasks') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Task in coda (Collapsed by default) -->
+  <div class="content-card task-section-card" id="card-tasks-queued" style="margin-bottom: 20px;">
+    <div class="card-header collapsible-header" id="header-tasks-queued" data-target="body-tasks-queued" style="border-bottom: 1px solid var(--color-border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="chevron-icon collapsed" id="chevron-tasks-queued" style="display: inline-flex; transform: rotate(-90deg);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>{{ _('run_detail_tasks_queued_title') }}</span>
+          <span class="badge" id="badge-queued-count" style="background: rgba(148, 163, 184, 0.12); color: var(--color-text-secondary); border: 1px solid var(--color-border); font-size: 0.8rem; padding: 2px 8px;">
+            <span id="text-queued-count">{{ queued_tasks|length }} {{ _('run_detail_queued_count_suffix') }}</span>
+          </span>
+        </h3>
+      </div>
+      <div style="font-size: 0.78rem; color: var(--color-text-muted);">
+        {{ _('run_detail_click_to_collapse_expand') }}
+      </div>
+    </div>
+    <div id="body-tasks-queued" class="collapsible-body" style="display: none;">
+      <div class="table-responsive">
+        <table class="data-table" id="table-tasks-queued">
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>{{ _('run_detail_col_scope_task') }}</th>
+              <th>{{ _('run_detail_col_subpath') }}</th>
+              <th>Proxy</th>
+              <th>{{ _('run_detail_col_checked') }}</th>
+              <th>{{ _('run_detail_col_transferred') }}</th>
+              <th>ETA</th>
+              <th>{{ _('col_status') }}</th>
+              <th>{{ _('run_detail_col_attempts') }}</th>
+              <th style="text-align: right;">{{ _('run_detail_col_logs_diagnostics') }}</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tasks-queued">
+            {% for t in queued_tasks %}
+              {{ render_task_row(t, tasks_stats) }}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div id="empty-tasks-queued" class="empty-section-placeholder" style="padding: 24px; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; font-style: italic; {% if queued_tasks|length > 0 %}display: none;{% endif %}">
+        {{ _('run_detail_empty_queued_tasks') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Task terminati (Collapsed by default, broken down by succeeded / failed / cancelled) -->
+  <div class="content-card task-section-card" id="card-tasks-finished" style="margin-bottom: 20px;">
+    <div class="card-header collapsible-header" id="header-tasks-finished" data-target="body-tasks-finished" style="border-bottom: 1px solid var(--color-border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span class="chevron-icon collapsed" id="chevron-tasks-finished" style="display: inline-flex; transform: rotate(-90deg);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>{{ _('run_detail_tasks_finished_title') }}</span>
+          <span class="badge" id="badge-finished-total" style="background: rgba(148, 163, 184, 0.12); color: var(--color-text-secondary); border: 1px solid var(--color-border); font-size: 0.8rem; padding: 2px 8px;">
+            <span id="text-finished-total">{{ finished_tasks|length }} {{ _('run_detail_total_count_suffix') }}</span>
+          </span>
+        </h3>
+        <div style="display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; flex-wrap: wrap;">
+          <span class="badge badge-online" id="badge-finished-succeeded" style="font-size: 0.75rem; padding: 2px 6px;">
+            <span id="text-finished-succeeded">{{ succeeded_count }}</span> {{ _('run_detail_completed_count_suffix') }}
+          </span>
+          <span class="badge badge-offline" id="badge-finished-failed" style="font-size: 0.75rem; padding: 2px 6px; {% if failed_count == 0 %}display: none;{% endif %}">
+            <span id="text-finished-failed">{{ failed_count }}</span> {{ _('run_detail_failed_count_suffix') }}
+          </span>
+          <span class="badge badge-unknown" id="badge-finished-cancelled" style="font-size: 0.75rem; padding: 2px 6px; {% if cancelled_count == 0 %}display: none;{% endif %}">
+            <span id="text-finished-cancelled">{{ cancelled_count }}</span> {{ _('run_detail_cancelled_count_suffix') }}
+          </span>
+        </div>
+      </div>
+      <div style="font-size: 0.78rem; color: var(--color-text-muted);">
+        {{ _('run_detail_click_to_collapse_expand') }}
+      </div>
+    </div>
+    <div id="body-tasks-finished" class="collapsible-body" style="display: none;">
+      <div class="table-responsive">
+        <table class="data-table" id="table-tasks-finished">
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>{{ _('run_detail_col_scope_task') }}</th>
+              <th>{{ _('run_detail_col_subpath') }}</th>
+              <th>Proxy</th>
+              <th>{{ _('run_detail_col_checked') }}</th>
+              <th>{{ _('run_detail_col_transferred') }}</th>
+              <th>ETA</th>
+              <th>{{ _('col_status') }}</th>
+              <th>{{ _('run_detail_col_attempts') }}</th>
+              <th style="text-align: right;">{{ _('run_detail_col_logs_diagnostics') }}</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tasks-finished">
+            {% for t in finished_tasks %}
+              {{ render_task_row(t, tasks_stats) }}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div id="empty-tasks-finished" class="empty-section-placeholder" style="padding: 24px; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; font-style: italic; {% if finished_tasks|length > 0 %}display: none;{% endif %}">
+        {{ _('run_detail_empty_finished_tasks') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Hook Bash Pre/Post Run -->
+  <div class="content-card task-section-card" id="card-hooks-section" style="margin-bottom: 20px;">
+    <div class="card-header collapsible-header" id="header-hooks-section" data-target="body-hooks-section" style="border-bottom: 1px solid var(--color-border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="chevron-icon" id="chevron-hooks-section" style="display: inline-flex;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>Hook Bash (Pre / Post Run)</span>
+          <span class="badge" id="badge-hooks-count" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); font-size: 0.8rem; padding: 2px 8px;">
+            <span id="text-hooks-count">{{ run.hooks|length if run and run.hooks else 0 }} {{ _('run_detail_hooks_recorded_suffix') }}</span>
+          </span>
+        </h3>
+      </div>
+      <div style="font-size: 0.78rem; color: var(--color-text-muted);">
+        {{ _('run_detail_click_to_collapse_expand') }}
+      </div>
+    </div>
+    <div id="body-hooks-section" class="collapsible-body" style="display: {% if run and run.hooks and run.hooks|length > 0 %}block{% else %}none{% endif %};">
+      {% if run and run.hooks and run.hooks|length > 0 %}
+        <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 16px;">
+          {% for h in run.hooks %}
+          <div style="background: #090d13; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-weight: 700; font-size: 0.82rem; text-transform: uppercase; color: {% if h.hook_type == 'pre_run' %}#38bdf8{% else %}#c084fc{% endif %};">
+                  {{ 'Pre-Run Hook' if h.hook_type == 'pre_run' else 'Post-Run Hook' }}
+                </span>
+                <span class="badge {% if h.status == 'succeeded' %}badge-online{% elif h.status == 'skipped' %}badge-neutral{% else %}badge-offline{% endif %}" style="font-size: 0.75rem;">
+                  {{ h.status }}
+                </span>
+                {% if h.exit_code is not none %}
+                  <span style="font-size: 0.75rem; color: var(--color-text-muted); font-family: monospace;">Exit: {{ h.exit_code }}</span>
+                {% endif %}
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); font-family: monospace;">{{ _('run_detail_duration_prefix') }} {{ h.duration_ms }} ms</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--color-text-muted); font-family: monospace;">
+                SHA-256: {{ h.script_hash[:16] }}... | <span class="user-datetime" data-utc="{{ h.executed_at|utc_iso }}" data-format="full">{{ h.executed_at|user_dt('%Y-%m-%d %H:%M:%S') if h.executed_at else '' }}</span>
+              </div>
+            </div>
+            <div style="padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow-y: auto;">
+              {{ h.output if h.output else _('run_detail_no_hook_output') }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="padding: 24px; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; font-style: italic;">
+          {{ _('run_detail_no_hooks_executed') }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="content-card">
+    <div class="card-body">
+      <div class="empty-state" style="padding: 48px; text-align: center;">
+        <h2 class="empty-state-title">{{ _('run_detail_not_found_title') }}</h2>
+        <p class="empty-state-desc">{{ _('run_detail_not_found_desc').format(run_id=run_id) }}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+  const runId = "{{ run.id if run else '' }}";
+  let isRunning = {{ 'true' if run and run.status in ('queued', 'planning', 'running') else 'false' }};
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+  // Task log state cache: { [taskId]: { lines: [], filter: 'all', order: 'desc' } }
+  const taskState = {};
+
+  // Session storage persistence for open drawer IDs
+  const STORAGE_KEY = `embervault_open_drawers_${runId}`;
+  function getStoredOpenDrawers() {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function persistOpenDrawers(setObj) {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(setObj)));
+    } catch (e) {}
+  }
+
+  const openDrawers = new Set(getStoredOpenDrawers());
+
+  // Helper formatting functions
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatBytes(bytes) {
+    if (bytes > 1073741824) return (bytes / 1073741824).toFixed(2) + ' GiB';
+    if (bytes > 1048576) return (bytes / 1048576).toFixed(2) + ' MiB';
+    if (bytes > 1024) return (bytes / 1024).toFixed(2) + ' KiB';
+    return (bytes || 0) + ' B';
+  }
+
+  function formatLogTime(isoStr) {
+    if (!isoStr) return '--:--:--';
+    if (window.formatUserDateTime) {
+      const formatted = window.formatUserDateTime(isoStr, 'time-ms');
+      if (formatted && formatted !== '—') return formatted;
+    }
+    try {
+      let s = String(isoStr).trim();
+      if (!s.endsWith('Z') && !/[+-]\d{2}(?::?\d{2})?$/.test(s)) {
+        s = s.replace(' ', 'T') + 'Z';
+      }
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        const pad = (n) => String(n).padStart(2, '0');
+        const h = pad(d.getHours());
+        const m = pad(d.getMinutes());
+        const s = pad(d.getSeconds());
+        const ms = String(d.getMilliseconds()).padStart(3, '0');
+        return `${h}:${m}:${s}.${ms}`;
+      }
+    } catch (e) {}
+    return isoStr;
+  }
+
+  function getRunStatusBadgeHtml(status, r = {}) {
+    const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+    const totalT = tasks.length || (r.planned_task_count || 0);
+    const failT = tasks.length > 0 ? tasks.filter(t => t.status === 'failed').length : (r.tasks_failed || 0);
+    const cancT = tasks.length > 0 ? tasks.filter(t => t.status === 'cancelled').length : 0;
+    const succT = tasks.length > 0 ? tasks.filter(t => t.status === 'succeeded').length : (r.tasks_succeeded || 0);
+
+    if (status === 'running') {
+      return '<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.9rem; padding: 6px 12px;"><span class="badge-dot" style="background: #3b82f6;"></span> ' + {{ _('run_status_running') | tojson }} + '</span>';
+    } else if (status === 'queued') {
+      return '<span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_queued') | tojson }} + '</span>';
+    } else if (status === 'planning') {
+      return '<span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_planning') | tojson }} + '</span>';
+    } else if (['succeeded', 'failed', 'partially_failed', 'cancelled'].includes(status)) {
+      if ((totalT > 0 && cancT === totalT) || (status === 'cancelled' && totalT === 0)) {
+        return '<span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_cancelled') | tojson }} + '</span>';
+      }
+      if ((totalT > 0 && failT === totalT) || (status === 'failed' && succT === 0)) {
+        return '<span class="badge" style="background: rgba(127, 29, 29, 0.45); color: #fca5a5; border: 1px solid rgba(220, 38, 38, 0.65); font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_failed') | tojson }} + '</span>';
+      }
+      if (failT > 0) {
+        return '<span class="badge" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45); font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_partially_failed_errors') | tojson }} + '</span>';
+      }
+      const hasWarn = cancT > 0 || r.warning_code === 'FILES_EXCLUDED' || (tasks.some(t => t.last_error_code === 'FILES_EXCLUDED'));
+      if (hasWarn || status === 'partially_failed') {
+        return '<span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_partially_failed_warnings') | tojson }} + '</span>';
+      }
+      return '<span class="badge badge-online" style="font-size: 0.9rem; padding: 6px 12px;">' + {{ _('run_status_succeeded') | tojson }} + '</span>';
+    }
+    return `<span class="badge badge-unknown" style="font-size: 0.9rem; padding: 6px 12px;">${escapeHtml(status)}</span>`;
+  }
+
+  function getTaskStatusBadgeHtml(status, lastErrorCode = null) {
+    if (status === 'succeeded' && lastErrorCode === 'FILES_EXCLUDED') {
+      return '<span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);" title="' + escapeHtml({{ _('run_detail_task_warnings_title') | tojson }}) + '">' + {{ _('run_status_partially_failed_warnings') | tojson }} + '</span>';
+    } else if (status === 'succeeded') {
+      return '<span class="badge badge-online">Succeeded</span>';
+    } else if (status === 'running') {
+      return '<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;"><span class="badge-dot" style="background: #3b82f6;"></span> Running</span>';
+    } else if (status === 'assigned') {
+      return '<span class="badge badge-cooldown">Assigned</span>';
+    } else if (status === 'ready') {
+      return '<span class="badge badge-unknown">Ready</span>';
+    } else if (status === 'skipped') {
+      return '<span class="badge" style="background: rgba(148, 163, 184, 0.18); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35);" title="' + escapeHtml({{ _('run_detail_filter_applied') | tojson }}) + '">Skipped</span>';
+    } else if (status === 'failed') {
+      return '<span class="badge badge-offline">Failed</span>';
+    } else if (status === 'cancelled') {
+      return '<span class="badge badge-unknown">Cancelled</span>';
+    }
+    return `<span class="badge badge-unknown">${escapeHtml(status)}</span>`;
+  }
+
+  // Render log lines into drawer DOM
+  function renderTaskLogs(taskId) {
+    const state = taskState[taskId] || { lines: [], filter: 'all', order: 'desc' };
+    const contentEl = document.getElementById(`logs-content-${taskId}`);
+    const countEl = document.getElementById(`logs-count-${taskId}`);
+    const orderLabelEl = document.getElementById(`order-label-${taskId}`);
+    if (!contentEl) return;
+
+    if (orderLabelEl) {
+      orderLabelEl.textContent = state.order === 'desc' ? {{ _('run_detail_order_newest_first') | tojson }} : {{ _('run_detail_order_chronological') | tojson }};
+    }
+
+    const totalLines = state.lines.length;
+    if (countEl) {
+      countEl.textContent = `${totalLines} ${totalLines === 1 ? {{ _('run_detail_line_singular') | tojson }} : {{ _('run_detail_lines_plural') | tojson }}}`;
+    }
+
+    if (totalLines === 0) {
+      contentEl.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">' + {{ _('run_detail_no_logs_for_task') | tojson }} + '</div>';
+      return;
+    }
+
+    // Filter
+    let filtered = state.lines;
+    if (state.filter === 'errors') {
+      filtered = filtered.filter(l => {
+        const lvl = (l.level || '').toLowerCase();
+        return lvl.includes('err') || lvl.includes('warn') || l.stream === 'stderr';
+      });
+    } else if (state.filter === 'info') {
+      filtered = filtered.filter(l => {
+        const lvl = (l.level || '').toLowerCase();
+        return lvl === 'info' || lvl === 'debug';
+      });
+    }
+
+    // Sort: default 'desc' puts newest first (highest seq/timestamp at top)
+    const sorted = filtered.slice().sort((a, b) => {
+      const seqA = a.seq ?? 0;
+      const seqB = b.seq ?? 0;
+      return state.order === 'desc' ? (seqB - seqA) : (seqA - seqB);
+    });
+
+    if (sorted.length === 0) {
+      contentEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">' + {{ _('run_detail_no_lines_match_filter') | tojson }} + '</div>';
+      return;
+    }
+
+    // Build DOM elements safely to prevent XSS
+    const fragment = document.createDocumentFragment();
+    sorted.forEach(l => {
+      const row = document.createElement('div');
+      const lvl = (l.level || 'info').toLowerCase();
+      const isErr = lvl.includes('err') || l.stream === 'stderr';
+      const isWarn = lvl.includes('warn') || lvl.includes('warning');
+      row.className = `log-row ${isErr ? 'is-error' : ''} ${isWarn ? 'is-warn' : ''}`;
+
+      // Seq #
+      const seqSpan = document.createElement('span');
+      seqSpan.className = 'log-row-seq';
+      seqSpan.textContent = l.seq ? `#${l.seq}` : '';
+      row.appendChild(seqSpan);
+
+      // Time [HH:mm:ss]
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'log-row-time';
+      timeSpan.textContent = formatLogTime(l.ts);
+      if (l.ts) timeSpan.title = l.ts;
+      row.appendChild(timeSpan);
+
+      // Severity Badge
+      const badgeSpan = document.createElement('span');
+      let badgeClass = 'log-badge-info';
+      let badgeText = 'INFO';
+      if (isErr) {
+        badgeClass = 'log-badge-error';
+        badgeText = 'ERROR';
+      } else if (isWarn) {
+        badgeClass = 'log-badge-warn';
+        badgeText = 'WARN';
+      } else if (lvl === 'debug') {
+        badgeClass = 'log-badge-debug';
+        badgeText = 'DEBUG';
+      }
+      badgeSpan.className = `log-badge ${badgeClass}`;
+      badgeSpan.textContent = badgeText;
+      row.appendChild(badgeSpan);
+
+      // Optional stderr tag
+      if (l.stream === 'stderr') {
+        const errTag = document.createElement('span');
+        errTag.className = 'log-badge-stderr';
+        errTag.textContent = 'STDERR';
+        row.appendChild(errTag);
+      }
+
+      // Message with wrapping
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'log-row-message';
+      msgSpan.textContent = l.message || '';
+      row.appendChild(msgSpan);
+
+      fragment.appendChild(row);
+    });
+
+    contentEl.innerHTML = '';
+    contentEl.appendChild(fragment);
+  }
+
+  // Fetch task logs from API
+  async function fetchTaskLogs(taskId, silent = false) {
+    if (!taskState[taskId]) {
+      taskState[taskId] = { lines: [], filter: 'all', order: 'desc', rendered: false };
+    }
+    const box = document.getElementById(`logs-content-${taskId}`);
+    if (!silent && (!taskState[taskId].lines || taskState[taskId].lines.length === 0)) {
+      if (box) {
+        box.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">' + {{ _('run_detail_loading_logs_ellipsis') | tojson }} + '</div>';
+      }
+    }
+
+    try {
+      const resp = await fetch(`/api/ui/tasks/${taskId}/logs`);
+      const data = await resp.json();
+      if (data && Array.isArray(data.lines)) {
+        const prevCount = taskState[taskId].lines ? taskState[taskId].lines.length : 0;
+        taskState[taskId].lines = data.lines;
+
+        // Parse latest checks, transferred counters and ETA from log lines
+        const checksRe = /Checks:\s*(\d+)/;
+        const filesRe = /Transferred:\s*(\d+)\s*\/\s*(\d+)(?:,\s*([\d.]+)%)?/;
+        const etaRe = /\bETA\s+([^\s,]+)/;
+        let latestChecks = null;
+        let latestFiles = null;
+        let latestEta = null;
+        data.lines.forEach(l => {
+          const msg = l.message || '';
+          const mc = checksRe.exec(msg);
+          if (mc) {
+            latestChecks = mc[1];
+          }
+          const mf = filesRe.exec(msg);
+          if (mf) {
+            const pct = mf[3] ? `${mf[3]}%` : (parseInt(mf[2], 10) > 0 ? `${Math.round((parseInt(mf[1], 10) / parseInt(mf[2], 10)) * 100)}%` : '0%');
+            latestFiles = `${mf[1]}/${mf[2]} - ${pct}`;
+          }
+          const me = etaRe.exec(msg);
+          if (me) {
+            latestEta = me[1];
+          }
+        });
+        if (latestChecks) {
+          const cElem = document.getElementById(`task-checks-${taskId}`);
+          if (cElem) cElem.textContent = latestChecks;
+        }
+        if (latestFiles) {
+          const fElem = document.getElementById(`task-transferred-${taskId}`);
+          if (fElem) fElem.textContent = latestFiles;
+        }
+        if (latestEta) {
+          const eElem = document.getElementById(`task-eta-${taskId}`);
+          if (eElem) eElem.textContent = latestEta;
+        }
+
+        const needsRender = !silent || !taskState[taskId].rendered || data.lines.length !== prevCount;
+        if (needsRender) {
+          taskState[taskId].rendered = true;
+          renderTaskLogs(taskId);
+        }
+      } else if (!silent) {
+        taskState[taskId].lines = [];
+        taskState[taskId].rendered = true;
+        renderTaskLogs(taskId);
+      }
+    } catch (err) {
+      if (!silent && box) {
+        box.innerHTML = `<div style="padding: 20px; color: var(--status-offline); font-size: 0.85rem;">${ {{ _('err_loading_logs_prefix') | tojson }} }${escapeHtml(err.message)}</div>`;
+      }
+    }
+  }
+
+  // Minimize drawer function
+  function minimizeTaskDrawer(taskId) {
+    const drawer = document.getElementById(`logs-row-${taskId}`);
+    const textSpan = document.getElementById(`btn-show-logs-text-${taskId}`);
+    if (drawer) {
+      drawer.style.display = 'none';
+    }
+    if (textSpan) {
+      textSpan.textContent = {{ _('run_detail_view_logs_btn') | tojson }};
+    }
+    if (openDrawers.has(taskId)) {
+      openDrawers.delete(taskId);
+      persistOpenDrawers(openDrawers);
+    }
+  }
+
+  // Toggle drawer open / closed
+  function toggleLogDrawer(taskId) {
+    const drawer = document.getElementById(`logs-row-${taskId}`);
+    const textSpan = document.getElementById(`btn-show-logs-text-${taskId}`);
+    if (!drawer) return;
+
+    const isClosed = drawer.style.display === 'none' || !drawer.style.display;
+    if (isClosed) {
+      drawer.style.display = 'table-row';
+      if (textSpan) textSpan.textContent = {{ _('run_detail_hide_logs_btn') | tojson }};
+      openDrawers.add(taskId);
+      persistOpenDrawers(openDrawers);
+      if (taskState[taskId]) {
+        taskState[taskId].rendered = false;
+      }
+      fetchTaskLogs(taskId, false);
+    } else {
+      minimizeTaskDrawer(taskId);
+    }
+  }
+
+  // Bind collapsible section headers
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.getAttribute('data-target');
+      const body = document.getElementById(targetId);
+      const chevron = header.querySelector('.chevron-icon');
+      if (!body) return;
+      const isClosed = body.style.display === 'none' || !body.style.display;
+      if (isClosed) {
+        body.style.display = 'block';
+        if (chevron) {
+          chevron.style.transform = 'rotate(0deg)';
+          chevron.classList.remove('collapsed');
+        }
+      } else {
+        body.style.display = 'none';
+        if (chevron) {
+          chevron.style.transform = 'rotate(-90deg)';
+          chevron.classList.add('collapsed');
+        }
+      }
+    });
+  });
+
+  // Bind show/hide log buttons
+  document.querySelectorAll('.btn-show-logs').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-id');
+      if (taskId) toggleLogDrawer(taskId);
+    });
+  });
+
+  // Bind minimize buttons inside drawer header
+  document.querySelectorAll('.btn-minimize-task-logs').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-id');
+      if (taskId) minimizeTaskDrawer(taskId);
+    });
+  });
+
+  // Bind cancel task buttons
+  document.querySelectorAll('.btn-cancel-task').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const taskId = btn.getAttribute('data-task-id');
+      const seq = btn.getAttribute('data-task-seq') || '';
+      if (!taskId) return;
+
+      window.confirmAction({
+        title: {{ _('run_detail_cancel_task_modal_title') | tojson }},
+        message: ({{ _('run_detail_cancel_task_confirm_msg') | tojson }}).replace('{seq}', seq),
+        subtext: {{ _('run_detail_cancel_task_confirm_subtext') | tojson }},
+        confirmText: {{ _('run_detail_cancel_task_modal_title') | tojson }},
+        confirmClass: "btn-danger",
+        onConfirm: async () => {
+          btn.disabled = true;
+          try {
+            const resp = await fetch(`/api/ui/tasks/${taskId}/cancel`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+              }
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              btn.style.display = 'none';
+              showToast(({{ _('run_detail_task_cancelled_toast') | tojson }}).replace('{seq}', seq), 'success');
+              pollRunUpdates();
+            } else {
+              showToast(data.message || {{ _('err_cancelling_task') | tojson }}, 'error');
+              btn.disabled = false;
+            }
+          } catch (err) {
+            showToast({{ _('err_connection_prefix') | tojson }} + err.message, 'error');
+            btn.disabled = false;
+          }
+        }
+      });
+    });
+  });
+
+  // Bind order toggle buttons (Più recenti in cima vs Cronologico)
+  document.querySelectorAll('.btn-toggle-order').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-id');
+      if (!taskId) return;
+      if (!taskState[taskId]) {
+        taskState[taskId] = { lines: [], filter: 'all', order: 'desc' };
+      }
+      taskState[taskId].order = taskState[taskId].order === 'desc' ? 'asc' : 'desc';
+      renderTaskLogs(taskId);
+    });
+  });
+
+  // Bind filter pills
+  document.querySelectorAll('.btn-filter-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-id');
+      const filter = btn.getAttribute('data-filter') || 'all';
+      if (!taskId) return;
+      if (!taskState[taskId]) {
+        taskState[taskId] = { lines: [], filter: 'all', order: 'desc' };
+      }
+      taskState[taskId].filter = filter;
+
+      // Update active pill state in same group
+      const parent = btn.parentElement;
+      if (parent) {
+        parent.querySelectorAll('.btn-filter-pill').forEach(b => b.classList.remove('active'));
+      }
+      btn.classList.add('active');
+
+      renderTaskLogs(taskId);
+    });
+  });
+
+  // Bind copy logs buttons
+  document.querySelectorAll('.btn-copy-logs').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const taskId = btn.getAttribute('data-task-id');
+      if (!taskId) return;
+      const state = taskState[taskId];
+      if (!state || !state.lines || state.lines.length === 0) {
+        showToast({{ _('err_no_logs_to_copy') | tojson }}, 'error');
+        return;
+      }
+
+      // Copy in chronological order for clean export
+      const textToCopy = state.lines
+        .map(l => `[${formatLogTime(l.ts)}] [${(l.level || 'INFO').toUpperCase()}] ${l.message || ''}`)
+        .join('\n');
+
+      const copyLabel = document.getElementById(`btn-copy-text-${taskId}`);
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        if (copyLabel) {
+          const orig = copyLabel.textContent;
+          copyLabel.textContent = {{ _('btn_copied') | tojson }};
+          setTimeout(() => { copyLabel.textContent = orig; }, 2000);
+        }
+      } catch (err) {
+        // Fallback prompt
+        window.prompt({{ _('run_detail_copy_log_prompt') | tojson }}, textToCopy);
+      }
+    });
+  });
+
+  // Bind refresh task logs buttons
+  document.querySelectorAll('.btn-refresh-task-logs').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-id');
+      if (!taskId) return;
+      const icon = btn.querySelector('.refresh-icon');
+      if (icon) icon.classList.add('spinning');
+      fetchTaskLogs(taskId, false).finally(() => {
+        if (icon) icon.classList.remove('spinning');
+      });
+    });
+  });
+
+  // Auto-restore any drawers that were open before refresh (skip already succeeded tasks)
+  openDrawers.forEach(openTaskId => {
+    const statusCell = document.getElementById(`task-status-cell-${openTaskId}`);
+    const isSucceeded = statusCell && statusCell.textContent.toLowerCase().includes('succeeded');
+    if (isSucceeded) {
+      minimizeTaskDrawer(openTaskId);
+      return;
+    }
+    const drawer = document.getElementById(`logs-row-${openTaskId}`);
+    const textSpan = document.getElementById(`btn-show-logs-text-${openTaskId}`);
+    if (drawer) {
+      drawer.style.display = 'table-row';
+      if (textSpan) textSpan.textContent = {{ _('run_detail_hide_logs_btn') | tojson }};
+      fetchTaskLogs(openTaskId, false);
+    }
+  });
+
+  // Cancel Run button
+  const btnCancel = document.getElementById('btn-cancel-run');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', () => {
+      window.confirmAction({
+        title: {{ _('run_detail_abort_run_title') | tojson }},
+        message: {{ _('run_detail_abort_run_confirm_msg') | tojson }},
+        subtext: {{ _('run_detail_abort_run_confirm_subtext') | tojson }},
+        confirmText: {{ _('run_detail_abort_now_btn') | tojson }},
+        confirmClass: "btn-danger",
+        onConfirm: async () => {
+          btnCancel.disabled = true;
+          try {
+            const resp = await fetch(`/api/ui/runs/${runId}/cancel`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+              }
+            });
+            if (resp.ok) {
+              showToast({{ _('run_detail_abort_request_sent_toast') | tojson }}, "success");
+              pollRunUpdates();
+            } else {
+              const data = await resp.json();
+              showToast(data.message || {{ _('err_cancelling_generic') | tojson }}, "error");
+              btnCancel.disabled = false;
+            }
+          } catch (err) {
+            showToast({{ _('err_connection_prefix') | tojson }} + err.message, "error");
+            btnCancel.disabled = false;
+          }
+        }
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderProxiesGrid(proxies) {
+    const grid = document.getElementById('job-proxies-grid');
+    if (!grid) return;
+    const onlineCountElem = document.getElementById('proxies-online-count');
+    if (onlineCountElem) {
+      const onlineCount = proxies.filter(p => p.raw_state === 'online').length;
+      onlineCountElem.textContent = onlineCount;
+    }
+
+    if (proxies.length === 0) {
+      grid.innerHTML = '<div style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">' + {{ _('run_detail_no_proxies_registered') | tojson }} + '</div>';
+      return;
+    }
+
+    let html = '';
+    proxies.forEach(p => {
+      let badgeHtml = '';
+      if (p.state === 'busy') {
+        badgeHtml = `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.72rem; padding: 2px 8px;"><span class="badge-dot" style="background: #3b82f6;"></span> ${ {{ _('run_status_running') | tojson }} }</span>`;
+      } else if (p.state === 'idle') {
+        badgeHtml = `<span class="badge badge-online" style="font-size: 0.72rem; padding: 2px 8px;"><span class="badge-dot"></span> ${ {{ _('proxy_state_idle') | tojson }} }</span>`;
+      } else if (p.state === 'offline') {
+        badgeHtml = `<span class="badge badge-offline" style="font-size: 0.72rem; padding: 2px 8px;"><span class="badge-dot"></span> Offline</span>`;
+      } else {
+        badgeHtml = `<span class="badge badge-unknown" style="font-size: 0.72rem; padding: 2px 8px;">${escapeHtml(p.activity)}</span>`;
+      }
+
+      const activityColor = p.state === 'busy' ? '#60a5fa' : (p.state === 'offline' ? '#f87171' : 'var(--color-text-muted)');
+      const pulseHtml = p.state === 'busy' ? '<span class="pulse-dot"></span>' : '';
+
+      html += `
+        <div id="proxy-card-${p.id}" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary); display: flex; align-items: center; gap: 6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-brand); flex-shrink: 0;">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+              <span>${escapeHtml(p.name)}</span>
+            </div>
+            <div>${badgeHtml}</div>
+          </div>
+          <div style="font-size: 0.8rem; color: ${activityColor}; display: flex; align-items: center; gap: 6px;">
+            ${pulseHtml}
+            <span>${escapeHtml(p.activity)}</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--color-text-muted); display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
+            <span>Throughput:</span>
+            <span style="font-weight: 600; color: ${p.state === 'busy' && (p.speed_bytes_per_sec > 0) ? '#38bdf8' : 'var(--color-text-secondary)'};" id="proxy-speed-val-${p.id}">${escapeHtml(p.throughput || '0 B/s')}</span>
+          </div>
+        </div>
+      `;
+    });
+    grid.innerHTML = html;
+  }
+
+  // Polling loop: updates run metrics and open drawers without full-page reloads!
+  let pollTimeoutId = null;
+  async function pollRunUpdates() {
+    if (!runId) return;
+    try {
+      const resp = await fetch(`/api/ui/runs/${runId}`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (!data || !data.run) return;
+      const r = data.run;
+
+      // Update status badge
+      const statusContainer = document.getElementById('run-status-badge-container');
+      if (statusContainer) {
+        statusContainer.innerHTML = getRunStatusBadgeHtml(r.status, r);
+      }
+
+      // Update error / policy reason banner
+      const errorBanner = document.getElementById('run-error-banner');
+      const errorMsgEl = document.getElementById('run-error-message');
+      if (errorBanner && errorMsgEl) {
+        if (r.error_message) {
+          errorMsgEl.textContent = r.error_message;
+          errorBanner.style.display = 'block';
+        } else {
+          errorMsgEl.textContent = '';
+          errorBanner.style.display = 'none';
+        }
+      }
+
+      // Update metrics
+      const metricTasksSucceeded = document.getElementById('metric-tasks-succeeded');
+      if (metricTasksSucceeded) {
+        metricTasksSucceeded.textContent = `${r.tasks_succeeded} / ${r.planned_task_count}`;
+      }
+      const metricTasksFailed = document.getElementById('metric-tasks-failed');
+      if (metricTasksFailed) {
+        metricTasksFailed.textContent = r.tasks_failed > 0 ? `${r.tasks_failed} ${ {{ _('run_detail_tasks_failed_suffix') | tojson }} }` : '';
+        metricTasksFailed.style.display = r.tasks_failed > 0 ? 'block' : 'none';
+      }
+      const metricBytes = document.getElementById('metric-bytes-transferred');
+      if (metricBytes) {
+        metricBytes.textContent = formatBytes(r.bytes_transferred || 0);
+      }
+      const metricFiles = document.getElementById('metric-files-transferred');
+      if (metricFiles) {
+        metricFiles.textContent = `${r.files_transferred || 0} file`;
+      }
+      const metricThroughputVal = document.getElementById('metric-throughput-val');
+      if (metricThroughputVal) {
+        metricThroughputVal.textContent = r.total_throughput_str || '0 B/s';
+      }
+
+      // Update proxies grid
+      if (r.proxies && Array.isArray(r.proxies)) {
+        renderProxiesGrid(r.proxies);
+      }
+
+      // Hide cancel button if terminal
+      const isTerminal = ['succeeded', 'failed', 'partially_failed', 'cancelled'].includes(r.status);
+      if (btnCancel && isTerminal) {
+        btnCancel.style.display = 'none';
+      }
+
+      // Update task rows
+      if (r.tasks && Array.isArray(r.tasks)) {
+        const tbodyRunning = document.getElementById('tbody-tasks-running');
+        const tbodyQueued = document.getElementById('tbody-tasks-queued');
+        const tbodyFinished = document.getElementById('tbody-tasks-finished');
+
+        r.tasks.forEach(t => {
+          const taskRow = document.getElementById(`task-row-${t.id}`);
+          const logsRow = document.getElementById(`logs-row-${t.id}`);
+
+          if (taskRow) {
+            taskRow.setAttribute('data-task-status', t.status);
+
+            // Re-route task to appropriate section if category changed
+            let targetTbody = tbodyQueued;
+            if (t.status === 'running' || t.status === 'assigned') {
+              targetTbody = tbodyRunning;
+            } else if (['succeeded', 'failed', 'cancelled', 'skipped'].includes(t.status)) {
+              targetTbody = tbodyFinished;
+            }
+
+            if (targetTbody && taskRow.parentElement !== targetTbody) {
+              targetTbody.appendChild(taskRow);
+              if (logsRow) targetTbody.appendChild(logsRow);
+            }
+          }
+
+          const statusCell = document.getElementById(`task-status-cell-${t.id}`);
+          if (statusCell) {
+            statusCell.innerHTML = getTaskStatusBadgeHtml(t.status, t.last_error_code);
+          }
+
+          // Update checks, transferred and ETA metrics in task header row
+          const checksElem = document.getElementById(`task-checks-${t.id}`);
+          if (checksElem && t.checks_display) {
+            checksElem.textContent = t.checks_display;
+          }
+          const transfElem = document.getElementById(`task-transferred-${t.id}`);
+          if (transfElem && t.transferred_display) {
+            transfElem.textContent = t.transferred_display;
+          }
+          const etaElem = document.getElementById(`task-eta-${t.id}`);
+          if (etaElem && t.eta_display) {
+            etaElem.textContent = t.eta_display;
+          }
+
+          const proxyCell = document.getElementById(`task-proxy-cell-${t.id}`);
+          if (proxyCell) {
+            if (t.proxy_name) {
+              proxyCell.innerHTML = `
+                <span class="badge" style="background: rgba(148, 163, 184, 0.12); color: var(--color-text-primary); border: 1px solid var(--color-border); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                  </svg>
+                  ${escapeHtml(t.proxy_name)}
+                </span>
+              `;
+            } else if (t.status === 'ready' || t.status === 'pending') {
+              proxyCell.innerHTML = `<span style="color: var(--color-text-muted); font-size: 0.78rem; font-style: italic;">${ {{ _('proxy_state_idle') | tojson }} }</span>`;
+            } else {
+              proxyCell.innerHTML = `<span style="color: var(--color-text-muted); font-size: 0.78rem;">-</span>`;
+            }
+          }
+          const attemptsCell = document.getElementById(`task-attempts-cell-${t.id}`);
+          if (attemptsCell) {
+            attemptsCell.textContent = `${t.attempt_count} / ${t.max_attempts}`;
+          }
+          const liveIndicator = document.getElementById(`logs-live-indicator-${t.id}`);
+          if (liveIndicator) {
+            liveIndicator.style.display = (t.status === 'running' || t.status === 'assigned') ? 'inline-flex' : 'none';
+          }
+          const cancelBtn = document.getElementById(`btn-cancel-task-${t.id}`);
+          if (cancelBtn) {
+            const canCancel = ['ready', 'assigned', 'running', 'retry_wait'].includes(t.status);
+            cancelBtn.style.display = canCancel ? 'inline-flex' : 'none';
+          }
+
+          // Minimizza automaticamente i task completati con successo
+          if (t.status === 'succeeded' && openDrawers.has(t.id)) {
+            minimizeTaskDrawer(t.id);
+          }
+        });
+
+        // Recalculate section header counters
+        const runningRows = tbodyRunning ? tbodyRunning.querySelectorAll('tr[data-task-status]').length : 0;
+        const queuedRows = tbodyQueued ? tbodyQueued.querySelectorAll('tr[data-task-status]').length : 0;
+        const finishedRows = tbodyFinished ? tbodyFinished.querySelectorAll('tr[data-task-status]').length : 0;
+
+        const succeededCount = tbodyFinished ? tbodyFinished.querySelectorAll('tr[data-task-status="succeeded"]').length : 0;
+        const failedCount = tbodyFinished ? tbodyFinished.querySelectorAll('tr[data-task-status="failed"]').length : 0;
+        const cancelledCount = tbodyFinished ? tbodyFinished.querySelectorAll('tr[data-task-status="cancelled"]').length : 0;
+
+        const textRunning = document.getElementById('text-running-count');
+        if (textRunning) textRunning.textContent = `${runningRows} ${ {{ _('run_detail_running_count_suffix') | tojson }} }`;
+        const emptyRunning = document.getElementById('empty-tasks-running');
+        if (emptyRunning) emptyRunning.style.display = runningRows === 0 ? 'block' : 'none';
+
+        const textQueued = document.getElementById('text-queued-count');
+        if (textQueued) textQueued.textContent = `${queuedRows} ${ {{ _('run_detail_queued_count_suffix') | tojson }} }`;
+        const emptyQueued = document.getElementById('empty-tasks-queued');
+        if (emptyQueued) emptyQueued.style.display = queuedRows === 0 ? 'block' : 'none';
+
+        const textFinishedTotal = document.getElementById('text-finished-total');
+        if (textFinishedTotal) textFinishedTotal.textContent = `${finishedRows} ${ {{ _('run_detail_total_count_suffix') | tojson }} }`;
+        const textSucc = document.getElementById('text-finished-succeeded');
+        if (textSucc) textSucc.textContent = succeededCount;
+        const textFail = document.getElementById('text-finished-failed');
+        if (textFail) textFail.textContent = failedCount;
+        const badgeFail = document.getElementById('badge-finished-failed');
+        if (badgeFail) badgeFail.style.display = failedCount > 0 ? 'inline-block' : 'none';
+        const textCanc = document.getElementById('text-finished-cancelled');
+        if (textCanc) textCanc.textContent = cancelledCount;
+        const badgeCanc = document.getElementById('badge-finished-cancelled');
+        if (badgeCanc) badgeCanc.style.display = cancelledCount > 0 ? 'inline-block' : 'none';
+        const emptyFinished = document.getElementById('empty-tasks-finished');
+        if (emptyFinished) emptyFinished.style.display = finishedRows === 0 ? 'block' : 'none';
+      }
+
+      // Silently refresh logs for all currently OPEN drawers
+      for (const openTaskId of openDrawers) {
+        fetchTaskLogs(openTaskId, true);
+      }
+
+      // If run is completed and no tasks are active, stop frequent polling
+      const hasRunningTasks = r.tasks && r.tasks.some(t => t.status === 'running' || t.status === 'assigned');
+      if (isTerminal && !hasRunningTasks) {
+        isRunning = false;
+        return;
+      }
+    } catch (err) {
+      console.debug('Run polling error:', err);
+    } finally {
+      if (isRunning) {
+        pollTimeoutId = setTimeout(pollRunUpdates, 3500);
+      }
+    }
+  }
+
+  // Start polling if run is active
+  if (isRunning) {
+    pollTimeoutId = setTimeout(pollRunUpdates, 3500);
+  }
+});
+</script>
+{% endblock %}

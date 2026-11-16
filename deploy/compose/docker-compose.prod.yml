@@ -1,0 +1,186 @@
+# EmberVault Production Docker Compose
+# Usage: docker compose -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.prod.yml up -d
+name: embervault
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  migrate:
+    environment:
+      EMBERVAULT_ENV: prod
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  app:
+    environment:
+      EMBERVAULT_ENV: prod
+      EMBERVAULT_LOG_FORMAT: json
+      EMBERVAULT_DEV_NOAUTH: "false"
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      EMBERVAULT_MASTER_KEY_FILE: /run/secrets/master_key
+      EMBERVAULT_SECRET_KEY_FILE: /run/secrets/secret_key
+      EMBERVAULT_INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
+    secrets:
+      - postgres_password
+      - master_key
+      - secret_key
+      - internal_api_token
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  orchestrator:
+    environment:
+      EMBERVAULT_ENV: prod
+      EMBERVAULT_LOG_FORMAT: json
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      EMBERVAULT_MASTER_KEY_FILE: /run/secrets/master_key
+      EMBERVAULT_INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
+    secrets:
+      - postgres_password
+      - master_key
+      - internal_api_token
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  hook-runner:
+    environment:
+      EMBERVAULT_ENV: prod
+      EMBERVAULT_LOG_FORMAT: json
+      EMBERVAULT_INTERNAL_API_TOKEN_FILE: /run/secrets/internal_api_token
+    secrets:
+      - internal_api_token
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  proxy-1:
+    environment:
+      EMBERVAULT_ENV: prod
+      EMBERVAULT_LOG_FORMAT: json
+      TOKEN_FILE: /run/secrets/proxy_1_token
+    secrets:
+      - proxy_1_token
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  proxy-2:
+    environment:
+      EMBERVAULT_ENV: prod
+      EMBERVAULT_LOG_FORMAT: json
+      TOKEN_FILE: /run/secrets/proxy_2_token
+    secrets:
+      - proxy_2_token
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  postgres_password:
+    file: ../../deploy/secrets/postgres_password.txt
+  master_key:
+    file: ../../deploy/secrets/master_key.txt
+  secret_key:
+    file: ../../deploy/secrets/secret_key.txt
+  internal_api_token:
+    file: ../../deploy/secrets/internal_api_token.txt
+  proxy_1_token:
+    file: ../../deploy/secrets/proxy_1_token.txt
+  proxy_2_token:
+    file: ../../deploy/secrets/proxy_2_token.txt

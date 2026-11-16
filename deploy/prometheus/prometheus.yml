@@ -1,0 +1,43 @@
+# Prometheus Scrape Configuration for EmberVault (§5.2, §8.4)
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # 1. EmberVault Web App Service
+  - job_name: "embervault-app"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["app:8080"]
+        labels:
+          service: "app"
+          component: "web-ui"
+
+  # 2. EmberVault Orchestrator Service
+  - job_name: "embervault-orchestrator"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["orchestrator:8081"]
+        labels:
+          service: "orchestrator"
+          component: "scheduler"
+
+  # 3. EmberVault Proxies (TLS + Bearer token auth as required by §5.2)
+  - job_name: "embervault-proxies"
+    scheme: "https"
+    metrics_path: "/metrics"
+    tls_config:
+      insecure_skip_verify: true
+    authorization:
+      type: Bearer
+      credentials: "dev-proxy-token-secret"
+    static_configs:
+      - targets: ["proxy-1:8443"]
+        labels:
+          service: "proxy"
+          proxy_id: "proxy-1"
+      - targets: ["proxy-2:8443"]
+        labels:
+          service: "proxy"
+          proxy_id: "proxy-2"

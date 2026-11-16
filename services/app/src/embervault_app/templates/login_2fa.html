@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}" dir="{% if current_locale == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ _('two_factor_title') }} — EmberVault</title>
+  
+  <link rel="icon" href="{{ app_logo_url }}">
+  <link rel="stylesheet" href="/static/css/app.css">
+  
+  <script nonce="{{ csp_nonce }}">
+    (function() {
+      try {
+        const savedColorTheme = localStorage.getItem('embervault-user-theme');
+        if (savedColorTheme) {
+          document.documentElement.setAttribute('data-color-theme', savedColorTheme);
+        }
+        const savedMode = localStorage.getItem('embervault-theme') || localStorage.getItem('theme');
+        if (savedMode === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else if (savedMode === 'dark') {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  
+  <style nonce="{{ csp_nonce }}">
+    body.login-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      /* Gradiente di default basato sulla palette EmberVault */
+      background: 
+        radial-gradient(ellipse 90% 65% at 50% -15%, rgba(255, 84, 0, 0.35) 0%, rgba(255, 122, 0, 0.18) 35%, rgba(13, 17, 23, 0) 75%),
+        radial-gradient(ellipse 65% 55% at 85% 85%, rgba(255, 69, 0, 0.22) 0%, rgba(22, 27, 34, 0) 65%),
+        radial-gradient(ellipse 55% 50% at 15% 80%, rgba(255, 183, 3, 0.14) 0%, rgba(13, 17, 23, 0) 60%),
+        linear-gradient(160deg, #0d1117 0%, #161b22 40%, #1f110c 70%, #0d1117 100%);
+      background-color: var(--bg-primary);
+      position: relative;
+    }
+    /* Sfondo e Stile Login Theeame (Light: [data-theme="light"]) */
+    html[data-color-theme="theeame"][data-theme="light"] body.login-page:not(.has-custom-bg) {
+      background: #f5f6f8;
+      background-image:
+        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0, 179, 54, 0.10) 0%, rgba(245, 246, 248, 0) 70%),
+        linear-gradient(180deg, #ffffff 0%, #f5f6f8 100%);
+      background-color: #f5f6f8;
+      color: #101828;
+    }
+    html[data-color-theme="theeame"][data-theme="light"] .login-brand h1 {
+      color: #101828 !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="theeame"][data-theme="light"] .login-card {
+      background: #ffffff !important;
+      border: 1px solid #d5dbdf !important;
+      border-top: 3px solid #00b336 !important;
+      color: #101828 !important;
+    }
+    html[data-color-theme="theeame"][data-theme="light"] .login-card .form-label {
+      color: #344054 !important;
+    }
+    html[data-color-theme="theeame"][data-theme="light"] .login-card .form-input {
+      background: #ffffff !important;
+      border: 1px solid #d5dbdf !important;
+      color: #101828 !important;
+    }
+    html[data-color-theme="theeame"][data-theme="light"] .login-footer {
+      color: #667085 !important;
+      text-shadow: none !important;
+    }
+
+    /* Sfondo e Stile Login Theeame (Dark: :not([data-theme="light"])) */
+    html[data-color-theme="theeame"]:not([data-theme="light"]) body.login-page:not(.has-custom-bg) {
+      background: #0f141c;
+      background-image:
+        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0, 179, 54, 0.18) 0%, rgba(15, 20, 28, 0) 70%),
+        linear-gradient(180deg, #0f141c 0%, #161e2b 100%);
+      background-color: #0f141c;
+      color: #f0f4f8;
+    }
+    html[data-color-theme="theeame"]:not([data-theme="light"]) .login-brand h1 {
+      color: #f0f4f8 !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="theeame"]:not([data-theme="light"]) .login-card {
+      background: #161e2b !important;
+      border: 1px solid #263346 !important;
+      border-top: 3px solid #00b336 !important;
+      color: #f0f4f8 !important;
+    }
+    html[data-color-theme="theeame"]:not([data-theme="light"]) .login-card .form-label {
+      color: #cbd5e1 !important;
+    }
+    html[data-color-theme="theeame"]:not([data-theme="light"]) .login-card .form-input {
+      background: #1e2838 !important;
+      border: 1px solid #263346 !important;
+      color: #f0f4f8 !important;
+    }
+    html[data-color-theme="theeame"]:not([data-theme="light"]) .login-footer {
+      color: #94a3b8 !important;
+      text-shadow: none !important;
+    }
+
+    /* Shared Login Brand & Buttons for Theeame */
+    html[data-color-theme="theeame"] .login-card {
+      border-radius: 6px !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    html[data-color-theme="theeame"] .login-card .form-label {
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="theeame"] .login-card .form-input {
+      border-radius: 4px !important;
+    }
+    html[data-color-theme="theeame"] .login-card .form-input:focus {
+      border-color: #00b336 !important;
+      box-shadow: 0 0 0 3px rgba(0, 179, 54, 0.25) !important;
+    }
+    html[data-color-theme="theeame"] .login-card .btn-login {
+      background: #00b336 !important;
+      border: 1px solid #00992e !important;
+      border-radius: 4px !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      box-shadow: 0 1px 3px rgba(0, 179, 54, 0.3) !important;
+    }
+    html[data-color-theme="theeame"] .login-card .btn-login:hover {
+      background: #00992e !important;
+      border-color: #008227 !important;
+      box-shadow: 0 4px 14px rgba(0, 179, 54, 0.4) !important;
+    }
+    /* Sfondo e Stile Login AcroVault (Enterprise Cyber Defense) */
+    html[data-color-theme="acrovault"][data-theme="light"] body.login-page:not(.has-custom-bg) {
+      background: #f2f5f9;
+      background-image:
+        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0, 114, 206, 0.12) 0%, rgba(242, 245, 249, 0) 70%),
+        linear-gradient(180deg, #ffffff 0%, #f2f5f9 100%);
+      background-color: #f2f5f9;
+      color: #09182b;
+    }
+    html[data-color-theme="acrovault"][data-theme="light"] .login-brand h1 {
+      color: #09182b !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="acrovault"][data-theme="light"] .login-card {
+      background: #ffffff !important;
+      border: 1px solid #ccd9ea !important;
+      border-top: 3px solid #0072ce !important;
+      color: #09182b !important;
+      box-shadow: 0 10px 30px rgba(9, 24, 43, 0.08) !important;
+    }
+    html[data-color-theme="acrovault"][data-theme="light"] .login-card .form-label {
+      color: #475e7a !important;
+    }
+    html[data-color-theme="acrovault"][data-theme="light"] .login-card .form-input {
+      background: #ffffff !important;
+      border: 1px solid #ccd9ea !important;
+      color: #09182b !important;
+    }
+    html[data-color-theme="acrovault"][data-theme="light"] .login-footer {
+      color: #6e85a3 !important;
+      text-shadow: none !important;
+    }
+
+    /* Dark Variant for AcroVault Login */
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) body.login-page:not(.has-custom-bg) {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0, 114, 206, 0.25) 0%, rgba(7, 17, 30, 0) 70%),
+        linear-gradient(180deg, #0b192c 0%, #07111e 100%);
+      background-color: #07111e;
+      color: #f0f5fc;
+    }
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) .login-brand h1 {
+      color: #f0f5fc !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) .login-card {
+      background: #0d1e34 !important;
+      border: 1px solid #1b375b !important;
+      border-top: 3px solid #0072ce !important;
+      color: #f0f5fc !important;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5) !important;
+    }
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) .login-card .form-label {
+      color: #8fa8c7 !important;
+    }
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) .login-card .form-input {
+      background: #07111e !important;
+      border: 1px solid #1b375b !important;
+      color: #f0f5fc !important;
+    }
+    html[data-color-theme="acrovault"]:not([data-theme="light"]) .login-footer {
+      color: #5b7596 !important;
+      text-shadow: none !important;
+    }
+
+    /* Shared Login Brand & Buttons for AcroVault */
+    html[data-color-theme="acrovault"] .login-card {
+      border-radius: 6px !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    html[data-color-theme="acrovault"] .login-card .form-label {
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="acrovault"] .login-card .form-input {
+      border-radius: 4px !important;
+    }
+    html[data-color-theme="acrovault"] .login-card .form-input:focus {
+      border-color: #0072ce !important;
+      box-shadow: 0 0 0 3px rgba(0, 114, 206, 0.25) !important;
+    }
+    html[data-color-theme="acrovault"] .login-card .btn-login {
+      background: linear-gradient(135deg, #0056d6 0%, #0072ce 100%) !important;
+      border: 1px solid #0056d6 !important;
+      border-radius: 4px !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      box-shadow: 0 2px 8px rgba(0, 114, 206, 0.35) !important;
+    }
+    html[data-color-theme="acrovault"] .login-card .btn-login:hover {
+      background: linear-gradient(135deg, #0060ec 0%, #0080e6 100%) !important;
+      border-color: #0072ce !important;
+      box-shadow: 0 4px 14px rgba(0, 114, 206, 0.45) !important;
+    }
+    /* Sfondo Default EmberXP (Stile Windows XP — Iconic Bliss Hill Sky & Green Meadows) */
+    html[data-color-theme="emberxp"] body.login-page:not(.has-custom-bg) {
+      background: url('/static/img/bliss.svg') no-repeat center bottom fixed !important;
+      background-size: cover !important;
+      background-color: #5ba324 !important;
+    }
+    html[data-color-theme="emberxp"] .login-card {
+      background: #ece9d8 !important;
+      border: 3px solid #0055ea !important;
+      border-radius: 8px 8px 4px 4px !important;
+      box-shadow: 0 16px 48px rgba(0, 30, 100, 0.5) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      color: #000000 !important;
+    }
+    html[data-color-theme="emberxp"] .login-card .form-label {
+      color: #000000 !important;
+      font-family: "Tahoma", sans-serif !important;
+      text-shadow: none !important;
+    }
+    html[data-color-theme="emberxp"] .login-card .form-input {
+      background: #ffffff !important;
+      border: 1px solid #7f9db9 !important;
+      color: #000000 !important;
+      border-radius: 2px !important;
+      box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.15) !important;
+    }
+    html[data-color-theme="emberxp"] .login-card .btn-login {
+      background: linear-gradient(to bottom, #4da4ff 0%, #2b78e4 20%, #1e62c7 70%, #114bb1 100%) !important;
+      border: 1px solid #0831d9 !important;
+      color: #ffffff !important;
+      border-radius: 3px !important;
+      font-family: "Tahoma", sans-serif !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+      text-shadow: 0 1px 1px #041c6d !important;
+    }
+    html[data-color-theme="emberxp"] .login-card .btn-login:hover {
+      background: linear-gradient(to bottom, #6cb6ff 0%, #3d88f5 20%, #2671db 70%, #1656bf 100%) !important;
+      box-shadow: inset 0 1px 0 #ffffff, 0 0 8px #2b78e4 !important;
+    }
+    /* Sfondo Default iEmberVault (Mac OS X Aqua Classic Swirl) */
+    html[data-color-theme="iembervault"] body.login-page:not(.has-custom-bg) {
+      background: url('/static/img/aqua-wallpaper.svg') no-repeat center center fixed !important;
+      background-size: cover !important;
+      background-color: #0d3a78 !important;
+    }
+    html[data-color-theme="iembervault"] .login-card {
+      background: #ffffff !important;
+      border: 1px solid #8e8e93 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      color: #1d1d1f !important;
+      position: relative !important;
+      padding-top: 44px !important;
+    }
+    html[data-color-theme="iembervault"] .login-card::before {
+      content: "" !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: 32px !important;
+      background: repeating-linear-gradient(to bottom, #f8f8fa, #f8f8fa 1px, #e8e8ec 1px, #e8e8ec 2px) !important;
+      border-bottom: 1px solid #bcbcbe !important;
+      border-radius: 9px 9px 0 0 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+    html[data-color-theme="iembervault"] .login-card::after {
+      content: "" !important;
+      position: absolute !important;
+      top: 9px !important;
+      left: 14px !important;
+      width: 54px !important;
+      height: 14px !important;
+      background: url('/static/img/aqua-traffic-lights.svg') no-repeat center !important;
+      background-size: 54px 14px !important;
+      pointer-events: none !important;
+    }
+    html[data-color-theme="iembervault"] .login-card .form-label {
+      color: #1d1d1f !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Lucida Grande", sans-serif !important;
+      text-shadow: none !important;
+      font-weight: 600 !important;
+    }
+    html[data-color-theme="iembervault"] .login-card .form-input {
+      background: #ffffff !important;
+      border: 1px solid #9c9ca2 !important;
+      color: #1d1d1f !important;
+      border-radius: 6px !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+    }
+    html[data-color-theme="iembervault"] .login-card .form-input:focus {
+      border-color: #3ca0f6 !important;
+      box-shadow: 0 0 0 3px rgba(60, 160, 246, 0.45), inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+    html[data-color-theme="iembervault"] .login-card .btn-login {
+      background: linear-gradient(to bottom, #7fc3f9 0%, #3ca0f6 48%, #167fe7 52%, #0869d8 100%) !important;
+      border: 1px solid #0050b3 !important;
+      color: #ffffff !important;
+      border-radius: 14px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Lucida Grande", sans-serif !important;
+      font-weight: 600 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 5px rgba(0, 80, 200, 0.3) !important;
+      text-shadow: 0 1px 1px rgba(0, 30, 80, 0.6) !important;
+    }
+    html[data-color-theme="iembervault"] .login-card .btn-login:hover {
+      background: linear-gradient(to bottom, #96d2ff 0%, #52aef9 48%, #208af0 52%, #0c76e6 100%) !important;
+      box-shadow: inset 0 1px 0 #ffffff, 0 0 8px rgba(56, 149, 245, 0.6) !important;
+    }
+
+    /* Varianti Scure EmberXP (Royale Noir) & iEmberVault (Aqua Dark Pinstripe) */
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) body.login-page:not(.has-custom-bg) {
+      background: url('/static/img/bliss-dark.svg') no-repeat center bottom fixed !important;
+      background-size: cover !important;
+      background-color: #060f1e !important;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card {
+      background: #1a2130 !important;
+      border: 3px solid #2b4c8c !important;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.78) !important;
+      color: #eef2fa !important;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .form-label {
+      color: #eef2fa !important;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .form-input,
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .totp-input {
+      background: #111622 !important;
+      border: 1px solid #3e5073 !important;
+      color: #eef2fa !important;
+      box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.45) !important;
+      color-scheme: dark;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .form-input:focus,
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .totp-input:focus {
+      border-color: #5b9bff !important;
+      box-shadow: 0 0 0 2px rgba(59, 134, 235, 0.38) !important;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .btn-login,
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .btn-verify {
+      background: linear-gradient(to bottom, #3b86eb 0%, #2364cc 25%, #184eb0 75%, #113a8c 100%) !important;
+      border: 1px solid #599dff !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 5px rgba(0, 0, 0, 0.5) !important;
+    }
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .btn-login:hover,
+    html[data-color-theme="emberxp"]:not([data-theme="light"]) .login-card .btn-verify:hover {
+      background: linear-gradient(to bottom, #4f98f7 0%, #2e73df 25%, #1f5bc4 75%, #1646a1 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 8px #3b86eb !important;
+    }
+
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) body.login-page:not(.has-custom-bg) {
+      background: url('/static/img/aqua-wallpaper-dark.svg') no-repeat center center fixed !important;
+      background-size: cover !important;
+      background-color: #040c1c !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card {
+      background: #1b1f27 !important;
+      border: 1px solid #414857 !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+      color: #eef1f7 !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card::before {
+      background: repeating-linear-gradient(to bottom, #2c313b, #2c313b 1px, #232730 1px, #232730 2px) !important;
+      border-bottom: 1px solid #14171d !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .form-label {
+      color: #eef1f7 !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .form-input,
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .totp-input {
+      background: #12161d !important;
+      border: 1px solid #3c4454 !important;
+      color: #eef1f7 !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      color-scheme: dark;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .form-input:focus,
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .totp-input:focus {
+      border-color: #4aa3f8 !important;
+      box-shadow: 0 0 0 3px rgba(60, 160, 246, 0.4), inset 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .btn-login,
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .btn-verify {
+      background: linear-gradient(to bottom, #6ab6fa 0%, #2e8ef3 48%, #156ee0 52%, #0959c8 100%) !important;
+      border: 1px solid #1c7ef0 !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 6px rgba(10, 90, 210, 0.45) !important;
+    }
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .btn-login:hover,
+    html[data-color-theme="iembervault"]:not([data-theme="light"]) .login-card .btn-verify:hover {
+      background: linear-gradient(to bottom, #80c4ff 0%, #409cf7 48%, #1d7ae8 52%, #0d66d8 100%) !important;
+    }
+    body.login-page.has-custom-bg {
+      background-image: linear-gradient(rgba(13, 17, 23, 0.65), rgba(13, 17, 23, 0.78)), url('/api/ui/settings/login-background') !important;
+      background-size: cover !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-brand img {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 4px 18px var(--ember-glow));
+    }
+    .login-brand h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: var(--ember-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+    }
+    .login-card {
+      background: rgba(22, 27, 34, 0.90);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-lg);
+      padding: 34px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 122, 0, 0.15);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #f0f6fc;
+      margin-bottom: 8px;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .totp-input {
+      width: 100%;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 1.5rem;
+      letter-spacing: 6px;
+      text-align: center;
+      background: rgba(13, 17, 23, 0.85);
+      border: 2px solid #30363d;
+      border-radius: var(--radius-md);
+      color: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .totp-input::placeholder {
+      color: #8b949e;
+      opacity: 0.8;
+    }
+    .totp-input:focus {
+      outline: none;
+      border-color: var(--ember-primary);
+      box-shadow: 0 0 0 3px var(--ember-glow);
+      background: rgba(13, 17, 23, 0.98);
+    }
+    .btn-verify {
+      width: 100%;
+      padding: 12px;
+      background: var(--ember-gradient);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px var(--ember-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .btn-verify:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.85rem;
+      color: #8b949e;
+    }
+    .subtext {
+      color: #c9d1d9;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .recovery-hint {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #8b949e;
+    }
+  </style>
+</head>
+<body class="login-page {% if has_custom_bg %}has-custom-bg{% endif %}">
+  <div class="login-container">
+    <div class="login-brand">
+      <img src="{{ app_logo_url }}" alt="{{ app_name }} Logo">
+      <h1>{{ _('two_factor_title') }}</h1>
+    </div>
+
+    <div class="login-card">
+      <p class="subtext">{{ _('two_factor_prompt') }}</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert" style="margin-bottom: 16px;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/login/2fa" id="form-2fa">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="form-group">
+          <label for="code" class="form-label">{{ _('totp_code_label') }}</label>
+          <input
+            type="text"
+            id="code"
+            name="code"
+            class="totp-input"
+            autocomplete="one-time-code"
+            required
+            autofocus
+            placeholder="123456"
+          >
+        </div>
+
+        <button type="submit" class="btn-verify" id="btn-submit-2fa">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>{{ _('btn_verify_2fa') }}</span>
+        </button>
+      </form>
+
+      <div class="recovery-hint">
+        {{ _('login_2fa_lost_access_hint') | safe }}
+      </div>
+    </div>
+
+    <div class="login-footer">
+      <a href="/login" style="color: var(--text-secondary); text-decoration: none;">&larr; {{ _('login_2fa_back_to_login') }}</a>
+    </div>
+  </div>
+</body>
+</html>

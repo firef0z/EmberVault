@@ -1,0 +1,139 @@
+{
+  "$defs": {
+    "DiscoveryStatus": {
+      "description": "Status of folder discovery.",
+      "enum": [
+        "unverified",
+        "in_progress",
+        "verified",
+        "failed"
+      ],
+      "title": "DiscoveryStatus",
+      "type": "string"
+    },
+    "DiscoveryStatusLevel": {
+      "description": "Warning level evaluated against parallel task thresholds.",
+      "enum": [
+        "ok",
+        "warn",
+        "blocked"
+      ],
+      "title": "DiscoveryStatusLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Payload for GET /internal/v1/discoveries/{id}.",
+  "properties": {
+    "id": {
+      "description": "Discovery task UUID",
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "source_remote_id": {
+      "description": "Source remote UUID",
+      "format": "uuid",
+      "title": "Source Remote Id",
+      "type": "string"
+    },
+    "source_path": {
+      "description": "Source path inspected",
+      "title": "Source Path",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/DiscoveryStatus",
+      "description": "Current discovery status"
+    },
+    "subfolders": {
+      "description": "First-level subfolder names discovered",
+      "items": {
+        "type": "string"
+      },
+      "title": "Subfolders",
+      "type": "array"
+    },
+    "root_files": {
+      "description": "Root file names discovered",
+      "items": {
+        "type": "string"
+      },
+      "title": "Root Files",
+      "type": "array"
+    },
+    "total_subfolders": {
+      "default": 0,
+      "description": "Total subfolders count",
+      "minimum": 0,
+      "title": "Total Subfolders",
+      "type": "integer"
+    },
+    "total_root_files": {
+      "default": 0,
+      "description": "Total root files count",
+      "minimum": 0,
+      "title": "Total Root Files",
+      "type": "integer"
+    },
+    "truncated": {
+      "default": false,
+      "description": "Whether directory listing was capped",
+      "title": "Truncated",
+      "type": "boolean"
+    },
+    "task_count_estimate": {
+      "default": 0,
+      "description": "Estimated tasks (1 + subfolders)",
+      "minimum": 0,
+      "title": "Task Count Estimate",
+      "type": "integer"
+    },
+    "status_level": {
+      "$ref": "#/$defs/DiscoveryStatusLevel",
+      "default": "ok",
+      "description": "Threshold evaluation (ok, warn, blocked)"
+    },
+    "error_message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Error details if discovery failed",
+      "title": "Error Message"
+    },
+    "created_at": {
+      "description": "Creation timestamp (UTC)",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Completion timestamp (UTC)",
+      "title": "Completed At"
+    }
+  },
+  "required": [
+    "id",
+    "source_remote_id",
+    "source_path",
+    "status"
+  ],
+  "title": "DiscoveryResponse",
+  "type": "object"
+}

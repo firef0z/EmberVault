@@ -1,0 +1,150 @@
+{
+  "$defs": {
+    "RemoteConfigPayload": {
+      "additionalProperties": false,
+      "description": "Sanitized remote connection parameters passed to the proxy.",
+      "properties": {
+        "alias": {
+          "description": "Internal alias for the remote (e.g. 'src', 'dst')",
+          "title": "Alias",
+          "type": "string"
+        },
+        "backend_type": {
+          "description": "RClone backend provider type (e.g. 's3', 'drive', 'local')",
+          "title": "Backend Type",
+          "type": "string"
+        },
+        "config": {
+          "additionalProperties": true,
+          "description": "Configuration dictionary for the remote provider",
+          "title": "Config",
+          "type": "object"
+        },
+        "path": {
+          "description": "Target path or folder inside the remote",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alias",
+        "backend_type",
+        "path"
+      ],
+      "title": "RemoteConfigPayload",
+      "type": "object"
+    },
+    "TaskKind": {
+      "description": "Execution kind of a task.",
+      "enum": [
+        "transfer",
+        "discover"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskOperation": {
+      "description": "RClone operation type for transfer tasks.",
+      "enum": [
+        "copy",
+        "sync"
+      ],
+      "title": "TaskOperation",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Payload accepted by POST /v1/tasks to launch a job task.",
+  "properties": {
+    "attempt_id": {
+      "description": "Unique attempt UUID for idempotency",
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "task_id": {
+      "description": "Parent task UUID",
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "run_id": {
+      "description": "Parent run UUID",
+      "format": "uuid",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/TaskKind",
+      "default": "transfer",
+      "description": "Task kind: transfer or discover"
+    },
+    "operation": {
+      "$ref": "#/$defs/TaskOperation",
+      "default": "copy",
+      "description": "RClone operation: copy or sync"
+    },
+    "timeout_s": {
+      "default": 3600,
+      "description": "Hard timeout in seconds",
+      "maximum": 86400,
+      "minimum": 10,
+      "title": "Timeout S",
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/RemoteConfigPayload",
+      "description": "Source remote configuration"
+    },
+    "destination": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RemoteConfigPayload"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Destination remote configuration (omitted for discover tasks)"
+    },
+    "files_from": {
+      "description": "Optional list of relative file paths for --files-from",
+      "items": {
+        "type": "string"
+      },
+      "title": "Files From",
+      "type": "array"
+    },
+    "options": {
+      "additionalProperties": true,
+      "description": "Whitelisted rclone transfer options and flags",
+      "title": "Options",
+      "type": "object"
+    },
+    "secret_fields": {
+      "description": "List of secret config keys requiring obscuring and masking",
+      "items": {
+        "type": "string"
+      },
+      "title": "Secret Fields",
+      "type": "array"
+    },
+    "referenced_remotes": {
+      "description": "Optional configurations of upstream/referenced remotes for wrapper backends",
+      "items": {
+        "$ref": "#/$defs/RemoteConfigPayload"
+      },
+      "title": "Referenced Remotes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "task_id",
+    "run_id",
+    "source"
+  ],
+  "title": "TaskDispatchPayload",
+  "type": "object"
+}

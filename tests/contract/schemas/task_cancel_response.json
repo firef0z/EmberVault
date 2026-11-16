@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "Response returned by POST /v1/tasks/{attempt_id}/cancel.",
+  "properties": {
+    "attempt_id": {
+      "description": "Attempt UUID",
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "status": {
+      "default": "cancelled",
+      "description": "Status code ('cancelled')",
+      "title": "Status",
+      "type": "string"
+    },
+    "message": {
+      "default": "",
+      "description": "Information message",
+      "title": "Message",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id"
+  ],
+  "title": "TaskCancelResponse",
+  "type": "object"
+}

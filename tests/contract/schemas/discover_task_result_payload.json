@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "DiscoveryStatusLevel": {
+      "description": "Warning level evaluated against parallel task thresholds.",
+      "enum": [
+        "ok",
+        "warn",
+        "blocked"
+      ],
+      "title": "DiscoveryStatusLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Result payload produced by a discover task.",
+  "properties": {
+    "subfolders": {
+      "description": "First-level subfolder names discovered in source path",
+      "items": {
+        "type": "string"
+      },
+      "title": "Subfolders",
+      "type": "array"
+    },
+    "root_files": {
+      "description": "Root files discovered directly inside source path",
+      "items": {
+        "type": "string"
+      },
+      "title": "Root Files",
+      "type": "array"
+    },
+    "total_subfolders": {
+      "default": 0,
+      "description": "Total number of first-level subfolders",
+      "minimum": 0,
+      "title": "Total Subfolders",
+      "type": "integer"
+    },
+    "total_root_files": {
+      "default": 0,
+      "description": "Total number of root files",
+      "minimum": 0,
+      "title": "Total Root Files",
+      "type": "integer"
+    },
+    "truncated": {
+      "default": false,
+      "description": "Whether the result was truncated due to exceeding discovery cap",
+      "title": "Truncated",
+      "type": "boolean"
+    },
+    "task_count_estimate": {
+      "default": 0,
+      "description": "Estimated parallel tasks: 1 (root files if present) + total_subfolders",
+      "minimum": 0,
+      "title": "Task Count Estimate",
+      "type": "integer"
+    },
+    "status_level": {
+      "$ref": "#/$defs/DiscoveryStatusLevel",
+      "default": "ok",
+      "description": "Threshold classification: ok, warn, or blocked"
+    }
+  },
+  "title": "DiscoverTaskResultPayload",
+  "type": "object"
+}

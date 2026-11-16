@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('nav_about') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('nav_about') }}{% endblock %}
+
+{% block content %}
+<div class="content-card" style="margin-bottom: 24px;">
+  <div class="card-body" style="padding: 32px;">
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+      <img src="{{ app_logo_url }}" alt="{{ app_name }} Logo" style="max-width: 120px; max-height: 64px; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 4px 12px var(--ember-glow));">
+      <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; background: var(--ember-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          {{ _('about_title') }}
+        </h2>
+        <p style="color: var(--text-secondary); margin-top: 4px;">{{ _('about_desc') }}</p>
+      </div>
+    </div>
+
+    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background-color: var(--bg-tertiary); border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;">
+      <span style="color: var(--text-secondary);">{{ _('about_version') }}:</span>
+      <span style="color: var(--ember-primary);">v{{ version }}</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">{{ _('about_services') }}</h3>
+
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px;">
+  <!-- 1. embervault-app -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-online">Frontend</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_8080') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-app</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_app') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-online" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          {{ _('net_external') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>edge</code>, <code>backend</code> &middot; Host: <code>0.0.0.0:8080</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. embervault-postgres -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-cooldown">Core DB</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_5432') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-postgres</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_db') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-cooldown" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {{ _('net_docker_private') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>backend</code> (internal) &middot; Host: <em>Non esposta</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. embervault-orchestrator -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-ember" style="background-color: rgba(255,106,0,0.15); color: var(--ember-primary);">Backend Leader</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_8081') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-orchestrator</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_orch') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-cooldown" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {{ _('net_docker_private') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>backend</code>, <code>proxy_net</code>, <code>hooks_net</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. embervault-hook-runner -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-untrusted">Sandbox Sidecar</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_8082') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-hook-runner</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_hook_runner') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-untrusted" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          {{ _('net_docker_private_isolated') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>hooks_net</code> (internal, isolato da DB/Edge)
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. embervault-proxy -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-untrusted">Worker Node</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_8443_tls') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-proxy</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_proxy') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-untrusted" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          {{ _('net_external_mtls') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>proxy_net</code> / Remote Host: <code>8443 (mTLS)</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. embervault-portal -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-online">Public Portal</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_8083') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-portal</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_portal') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-online" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          {{ _('net_external') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>edge</code>, <code>backend</code> &middot; Host: <code>0.0.0.0:8083</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. embervault-migrate -->
+  <div class="stat-card" style="flex-direction: column; gap: 12px; align-items: flex-start; justify-content: space-between;">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+        <span class="badge badge-unknown">Migration Job</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">{{ _('about_port_cli') }}</span>
+      </div>
+      <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">embervault-migrate</h4>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">{{ _('service_migrate') }}</p>
+    </div>
+    <div style="width: 100%; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+      <div>
+        <span class="badge badge-cooldown" style="font-size: 0.72rem; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {{ _('net_docker_private') }}
+        </span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Docker: <code>backend</code> (internal) &middot; One-off Job
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Architecture & Network Segmentation Detail -->
+<div class="content-card">
+  <div class="card-header">
+    <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+        <line x1="6" y1="6" x2="6.01" y2="6"/>
+        <line x1="6" y1="18" x2="6.01" y2="18"/>
+      </svg>
+      {{ _('about_networks_title') }}
+    </div>
+  </div>
+  <div class="card-body" style="padding: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+      <div style="padding: 16px; background-color: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid #22c55e;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">edge</strong>
+          <span class="badge badge-online" style="font-size: 0.7rem;">Bridge / Host</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">{{ _('about_network_edge_desc') }}</p>
+      </div>
+
+      <div style="padding: 16px; background-color: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid #3b82f6;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">backend</strong>
+          <span class="badge badge-cooldown" style="font-size: 0.7rem;">Internal Only</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">{{ _('about_network_backend_desc') }}</p>
+      </div>
+
+      <div style="padding: 16px; background-color: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid #a855f7;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">proxy_net</strong>
+          <span class="badge badge-untrusted" style="font-size: 0.7rem;">mTLS Transit</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">{{ _('about_network_proxynet_desc') }}</p>
+      </div>
+
+      <div style="padding: 16px; background-color: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid #ef4444;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">hooks_net</strong>
+          <span class="badge badge-untrusted" style="font-size: 0.7rem;">Isolated Sandbox</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">{{ _('about_network_hooksnet_desc') }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

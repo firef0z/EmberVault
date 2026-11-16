@@ -1,0 +1,2550 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('job_edit_title') if is_edit else _('job_create_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('job_edit_title') if is_edit else _('job_create_title') }}{% endblock %}
+
+{% block content %}
+<style>
+  .job-tabs-nav {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0 16px 4px 16px;
+    background: rgba(0, 0, 0, 0.14);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  [data-theme="light"] .job-tabs-nav {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .job-tabs-nav::-webkit-scrollbar {
+    height: var(--scrollbar-size-h, 6px);
+  }
+
+  .job-tabs-nav::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: var(--scrollbar-radius, 4px);
+  }
+
+  .job-tabs-nav::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--scrollbar-radius, 4px);
+    transition: background 0.15s ease;
+  }
+
+  .job-tabs-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  .job-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  .job-tab-btn:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .job-tab-btn.active {
+    color: var(--color-brand);
+    font-weight: 600;
+    border-bottom-color: var(--color-brand);
+    background: rgba(255, 107, 0, 0.08);
+  }
+
+  .job-tab-pane {
+    display: none;
+  }
+
+  .job-tab-pane.active {
+    display: block;
+    animation: fadeInJobTab 0.18s ease;
+  }
+
+  @keyframes fadeInJobTab {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 6px;
+  }
+
+  @media (max-width: 768px) {
+    .job-tabs-nav {
+      padding: 0 8px;
+    }
+
+    .job-tab-btn {
+      padding: 11px 12px;
+      font-size: 0.85rem;
+      gap: 6px;
+    }
+
+    .grid-2col-responsive {
+      grid-template-columns: 1fr !important;
+    }
+
+    .grid-general-responsive {
+      grid-template-columns: 1fr !important;
+    }
+
+    .grid-schedule-responsive {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
+<div style="max-width: 960px; margin: 0 auto;">
+  <div style="margin-bottom: 20px;">
+    <a href="/jobs" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      {{ _('job_edit_back_to_jobs') }}
+    </a>
+  </div>
+
+  <div class="content-card" style="overflow: hidden;">
+    <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 18px 24px;">
+      <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0; color: var(--color-text-primary);">
+        {{ _('job_edit_header_edit') if is_edit else _('job_edit_header_create') }}
+      </h2>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="job-tabs-nav" role="tablist">
+      <button type="button" class="job-tab-btn active" data-tab="tab-name-coords" id="btn-tab-name-coords" role="tab"
+        aria-selected="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>{{ _('job_tab_name_coords') }}</span>
+      </button>
+
+      <button type="button" class="job-tab-btn" data-tab="tab-mode-schedule" id="btn-tab-mode-schedule" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>{{ _('job_tab_mode_schedule') }}</span>
+      </button>
+
+      <button type="button" class="job-tab-btn" data-tab="tab-proxy-affinity" id="btn-tab-proxy-affinity" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <span>{{ _('job_tab_proxy_affinity') }}</span>
+      </button>
+
+      <button type="button" class="job-tab-btn" data-tab="tab-run-policies" id="btn-tab-run-policies" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>{{ _('job_tab_run_policies') }}</span>
+      </button>
+
+      <button type="button" class="job-tab-btn" data-tab="tab-rclone-params" id="btn-tab-rclone-params" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        <span>{{ _('job_tab_rclone_params') }}</span>
+      </button>
+
+      <button type="button" class="job-tab-btn" data-tab="tab-notifications" id="btn-tab-notifications" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span>{{ _('settings_tab_notifications') }}</span>
+      </button>
+
+      {% if hooks_enabled %}
+      <button type="button" class="job-tab-btn" data-tab="tab-hooks" id="btn-tab-hooks" role="tab"
+        aria-selected="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+        <span>Hook Bash</span>
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="card-body" style="padding: 24px;">
+      <form id="job-form" novalidate>
+        <input type="hidden" id="last-discovery-id"
+          value="{{ job.last_discovery_id if job and job.last_discovery_id else '' }}">
+
+        <div id="form-error-alert"
+          style="display: none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.95rem; font-weight: 500;">
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: NOME E COORDINATE                   -->
+        <!-- ========================================== -->
+        <div class="job-tab-pane active" id="tab-name-coords" role="tabpanel">
+          <!-- Dati Generali -->
+          <div style="margin-bottom: 28px;">
+            <h3 class="section-title">{{ _('job_section_general') }}</h3>
+            <div class="grid-general-responsive"
+              style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: flex-end;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="job-name">{{ _('job_name_label') }} *</label>
+                <input type="text" class="form-control" id="job-name" name="name" value="{{ job.name if job else '' }}"
+                  placeholder="{{ _('job_name_placeholder') }}" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="display: block; margin-bottom: 6px;">{{ _('job_status_label')
+                  }}</label>
+                <input type="checkbox" id="job-enabled" name="enabled" {% if not job or job.enabled %}checked{% endif %}
+                  style="display: none;">
+                <button type="button" id="btn-toggle-job-enabled" class="btn"
+                  style="height: 38px; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 0.9rem; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                  <!-- Popolato via JS -->
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coordinate di Archiviazione -->
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_storage_coords') }}</h3>
+
+            <div class="grid-2col-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+              <!-- Source Card -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 18px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                  <span
+                    style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">{{
+                    _('job_source_badge') }}</span>
+                </div>
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" for="source-remote-id" style="margin-bottom: 0;">{{
+                      _('job_source_remote_label') }} *</label>
+                    {% if is_edit and not can_edit_source_remote %}
+                    <span class="badge badge-secondary" style="font-size: 0.72rem; padding: 2px 7px;"
+                      title="{{ _('job_remote_locked_notice') }}">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 2px;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      {{ _('job_remote_locked_badge') }}
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% if is_edit and not can_edit_source_remote %}
+                  <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 8px 0; line-height: 1.35;">{{
+                    _('job_remote_locked_notice') }}</p>
+                  <input type="hidden" id="source-remote-id-hidden" value="{{ job.source_remote_id }}">
+                  {% endif %}
+                  <select class="form-control" id="source-remote-id" name="source_remote_id" {% if is_edit and not
+                    can_edit_source_remote %}disabled
+                    style="opacity: 0.8; cursor: not-allowed; background: var(--bg-secondary);" {% else %}required{%
+                    endif %}>
+                    <option value="" disabled {% if not job %}selected{% endif %}>{{ _('job_select_remote_placeholder')
+                      }}</option>
+                    {% if is_edit and not can_edit_source_remote and job and job.source_remote and (job.source_remote.id
+                    not in (remotes | map(attribute='id') | list)) %}
+                    <option value="{{ job.source_remote.id }}" selected>
+                      {{ job.source_remote.name }} ({{ job.source_remote.backend_type }})
+                    </option>
+                    {% endif %}
+                    {% for r in remotes %}
+                    <option value="{{ r.id }}" {% if job and job.source_remote_id==r.id %}selected{% endif %}>
+                      {{ r.name }} ({{ r.backend_type }})
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="source-path">{{ _('job_source_path_label') }}</label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" class="form-control" id="source-path" name="source_path"
+                      value="{{ job.source_path if job else '/' }}" placeholder="{{ _('job_source_path_placeholder') }}"
+                      required style="flex: 1;">
+                    <button type="button" id="btn-browse-source" class="btn btn-secondary"
+                      style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; padding: 8px 14px; border-radius: 8px; transition: all 0.2s ease; {% if is_edit and not can_edit_source_remote %}display: none;{% endif %}"
+                      title="{{ _('btn_browse_remote') if (job and job.source_remote_id) else _('browse_select_remote_first_tooltip') }}"
+                      {% if not job or not job.source_remote_id or (is_edit and not can_edit_source_remote) %}disabled{%
+                      endif %}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>{{ _('btn_browse_remote') }}</span>
+                    </button>
+                  </div>
+                  <small style="color: var(--color-text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">{{
+                    _('job_source_path_hint_html') | safe }}</small>
+                </div>
+              </div>
+
+              <!-- Destination Card -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 18px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                  <span
+                    style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">{{
+                    _('job_destination_badge') }}</span>
+                </div>
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" for="destination-remote-id" style="margin-bottom: 0;">{{
+                      _('job_destination_remote_label') }} *</label>
+                    {% if is_edit and not can_edit_dest_remote %}
+                    <span class="badge badge-secondary" style="font-size: 0.72rem; padding: 2px 7px;"
+                      title="{{ _('job_remote_locked_notice') }}">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 2px;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      {{ _('job_remote_locked_badge') }}
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% if is_edit and not can_edit_dest_remote %}
+                  <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 8px 0; line-height: 1.35;">{{
+                    _('job_remote_locked_notice') }}</p>
+                  <input type="hidden" id="dest-remote-id-hidden" value="{{ job.destination_remote_id }}">
+                  {% endif %}
+                  <select class="form-control" id="destination-remote-id" name="destination_remote_id" {% if is_edit and
+                    not can_edit_dest_remote %}disabled
+                    style="opacity: 0.8; cursor: not-allowed; background: var(--bg-secondary);" {% else %}required{%
+                    endif %}>
+                    <option value="" disabled {% if not job %}selected{% endif %}>{{ _('job_select_remote_placeholder')
+                      }}</option>
+                    {% if is_edit and not can_edit_dest_remote and job and job.destination_remote and
+                    (job.destination_remote.id not in (remotes | map(attribute='id') | list)) %}
+                    <option value="{{ job.destination_remote.id }}" selected>
+                      {{ job.destination_remote.name }} ({{ job.destination_remote.backend_type }})
+                    </option>
+                    {% endif %}
+                    {% for r in remotes %}
+                    <option value="{{ r.id }}" {% if job and job.destination_remote_id==r.id %}selected{% endif %}>
+                      {{ r.name }} ({{ r.backend_type }})
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="destination-path">{{ _('job_destination_path_label') }}</label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" class="form-control" id="destination-path" name="destination_path"
+                      value="{{ job.destination_path if job else '/' }}"
+                      placeholder="{{ _('job_destination_path_placeholder') }}" required style="flex: 1;">
+                    <button type="button" id="btn-browse-destination" class="btn btn-secondary"
+                      style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; padding: 8px 14px; border-radius: 8px; transition: all 0.2s ease; {% if is_edit and not can_edit_dest_remote %}display: none;{% endif %}"
+                      title="{{ _('btn_browse_remote') if (job and job.destination_remote_id) else _('browse_select_remote_first_tooltip') }}"
+                      {% if not job or not job.destination_remote_id or (is_edit and not can_edit_dest_remote)
+                      %}disabled{% endif %}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>{{ _('btn_browse_remote') }}</span>
+                    </button>
+                  </div>
+                  <small style="color: var(--color-text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">{{
+                    _('job_destination_path_hint') }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: MODALITÀ E PIANIFICAZIONE           -->
+        <!-- ========================================== -->
+        <div class="job-tab-pane" id="tab-mode-schedule" role="tabpanel">
+          <!-- Metodo di Esecuzione & Parallelizzazione -->
+          <div style="margin-bottom: 28px;">
+            <h3 class="section-title">{{ _('job_section_execution_parallel') }}</h3>
+
+            <div class="grid-2col-responsive"
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+              <!-- Operation Selection -->
+              <div>
+                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">{{
+                  _('job_operation_type_label') }}</label>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <label
+                    style="display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--color-bg-card);">
+                    <input type="radio" name="operation" value="copy" {% if not job or job.operation=='copy' %}checked{%
+                      endif %} style="margin-top: 3px; accent-color: var(--color-brand);">
+                    <div>
+                      <strong style="color: var(--color-text-primary); font-size: 0.95rem;">{{ _('job_op_copy_title')
+                        }}</strong>
+                      <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                        {{ _('job_op_copy_desc') }}
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    style="display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--color-bg-card);">
+                    <input type="radio" name="operation" value="sync" {% if job and job.operation=='sync' %}checked{%
+                      endif %} style="margin-top: 3px; accent-color: var(--color-brand);">
+                    <div>
+                      <strong style="color: #ef4444; font-size: 0.95rem;">{{ _('job_op_sync_title') }}</strong>
+                      <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                        {{ _('job_op_sync_desc') }}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Parallelization Selection -->
+              <div>
+                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">{{
+                  _('job_parallel_strategy_label') }}</label>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <label
+                    style="display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--color-bg-card);">
+                    <input type="radio" name="parallelization" id="parallel-none" value="none" {% if not job or
+                      job.parallelization=='none' %}checked{% endif %}
+                      style="margin-top: 3px; accent-color: var(--color-brand);">
+                    <div>
+                      <strong style="color: var(--color-text-primary); font-size: 0.95rem;">{{
+                        _('job_parallel_none_title') }}</strong>
+                      <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                        {{ _('job_parallel_none_desc') }}
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    style="display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--color-bg-card);">
+                    <input type="radio" name="parallelization" id="parallel-subfolder" value="by_subfolder" {% if job
+                      and job.parallelization=='by_subfolder' %}checked{% endif %}
+                      style="margin-top: 3px; accent-color: var(--color-brand);">
+                    <div>
+                      <strong style="color: #10b981; font-size: 0.95rem;">{{ _('job_parallel_subfolder_title')
+                        }}</strong>
+                      <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                        {{ _('job_parallel_subfolder_desc') }}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Discovery Card -->
+            <div id="discovery-panel"
+              style="background: rgba(255, 107, 0, 0.05); border: 1px solid rgba(255, 107, 0, 0.25); border-radius: 10px; padding: 20px; margin-top: 16px;">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                <div>
+                  <strong
+                    style="color: var(--color-text-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    {{ _('job_discovery_card_title') }}
+                  </strong>
+                  <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 0.82rem;">
+                    {{ _('job_discovery_card_desc') }}
+                  </p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-trigger-discovery"
+                  style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                  <span id="discovery-spinner" style="display: none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      class="spin">
+                      <circle cx="12" cy="12" r="10"></circle>
+                    </svg>
+                  </span>
+                  {{ _('job_discovery_trigger_btn') }}
+                </button>
+              </div>
+
+              <!-- Discovery Results -->
+              <div id="discovery-results"
+                style="display: none; margin-top: 14px; border-top: 1px solid rgba(255, 107, 0, 0.2); padding-top: 14px;">
+                <div id="discovery-alert"
+                  style="padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 0.88rem;"></div>
+
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                  <div
+                    style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 14px;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ _('job_disc_subfolders_label')
+                      }}</div>
+                    <div id="disc-folder-count"
+                      style="font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary);">0</div>
+                  </div>
+                  <div
+                    style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 14px;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ _('job_disc_root_files_label')
+                      }}</div>
+                    <div id="disc-root-files"
+                      style="font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary);">0</div>
+                  </div>
+                  <div
+                    style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 14px;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{
+                      _('job_disc_estimated_tasks_label') }}</div>
+                    <div id="disc-task-estimate"
+                      style="font-size: 1.25rem; font-weight: 700; color: var(--color-brand);">0</div>
+                  </div>
+                  <div
+                    style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 14px;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{
+                      _('job_disc_threshold_status_label') }}</div>
+                    <div id="disc-level-badge" style="margin-top: 4px;"></div>
+                  </div>
+                </div>
+
+                <!-- Folder preview container -->
+                <details style="font-size: 0.82rem; color: var(--color-text-secondary); cursor: pointer;">
+                  <summary style="font-weight: 600; margin-bottom: 8px;">{{ _('job_disc_show_preview_summary') }}
+                  </summary>
+                  <div id="disc-folder-list"
+                    style="max-height: 140px; overflow-y: auto; background: var(--color-bg-body); border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; font-family: monospace;">
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pianificazione & Limiti di Concorrenza -->
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_schedule_concurrency') }}</h3>
+
+            {% set selected_tz = (job.timezone if (is_edit and job and job.timezone) else (user_timezone_name or 'UTC'))
+            %}
+            <div class="grid-schedule-responsive"
+              style="display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(200px, 1fr) auto; gap: 16px; align-items: start; margin-bottom: 18px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="schedule-cron">{{ _('job_schedule_cron_label') }}</label>
+                <input type="text" class="form-control" id="schedule-cron" name="schedule_cron"
+                  value="{{ job.schedule_cron if job and job.schedule_cron else '' }}"
+                  placeholder="{{ _('job_schedule_cron_placeholder') }}">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                  <button type="button" class="btn btn-sm btn-secondary cron-preset" data-cron="">{{
+                    _('cron_preset_manual') }}</button>
+                  <button type="button" class="btn btn-sm btn-secondary cron-preset" data-cron="0 * * * *">{{
+                    _('cron_preset_every_hour') }}</button>
+                  <button type="button" class="btn btn-sm btn-secondary cron-preset" data-cron="0 2 * * *">{{
+                    _('cron_preset_nightly_2am') }}</button>
+                  <button type="button" class="btn btn-sm btn-secondary cron-preset" data-cron="0 3 * * 0">{{
+                    _('cron_preset_weekly_sun') }}</button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="schedule-timezone">{{ _('job_schedule_timezone_label') }}</label>
+                <select class="form-control" id="schedule-timezone" name="timezone">
+                  {% if selected_tz and selected_tz not in available_timezones %}
+                  <option value="{{ selected_tz }}" selected>{{ selected_tz }}</option>
+                  {% endif %}
+                  {% for tz_opt in available_timezones %}
+                  <option value="{{ tz_opt }}" {% if tz_opt==selected_tz %}selected{% endif %}>{{ tz_opt }}</option>
+                  {% endfor %}
+                </select>
+                <small style="color: var(--color-text-muted); font-size: 0.76rem; display: block; margin-top: 4px;">{{
+                  _('job_schedule_timezone_hint') }}</small>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="display: block; margin-bottom: 6px;">&nbsp;</label>
+                <label for="schedule-follow-dst"
+                  style="display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-card); cursor: pointer; white-space: nowrap;">
+                  <input type="checkbox" id="schedule-follow-dst" name="follow_dst" {% if not job or job.follow_dst is
+                    not sameas false %}checked{% endif %}
+                    style="width: 16px; height: 16px; accent-color: var(--color-brand); cursor: pointer;">
+                  <span style="font-size: 0.88rem; font-weight: 500; color: var(--color-text-primary);">{{
+                    _('job_schedule_follow_dst_label') }}</span>
+                </label>
+                <small
+                  style="color: var(--color-text-muted); font-size: 0.76rem; display: block; margin-top: 4px; max-width: 240px;">{{
+                  _('job_schedule_follow_dst_hint') }}</small>
+              </div>
+            </div>
+
+            <div class="form-group" style="max-width: 320px;">
+              <label class="form-label" for="max-parallel-tasks">{{ _('job_max_parallel_tasks_label') }}</label>
+              <input type="number" class="form-control" id="max-parallel-tasks" name="max_parallel_tasks"
+                value="{{ job.max_parallel_tasks if job and job.max_parallel_tasks else 4 }}" min="1" max="20">
+              <small style="color: var(--color-text-muted); font-size: 0.78rem;">{{ _('job_max_parallel_tasks_hint')
+                }}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: AFFINITÀ PROXY                      -->
+        <!-- ========================================== -->
+        <div class="job-tab-pane" id="tab-proxy-affinity" role="tabpanel">
+          <!-- Proxy di Esecuzione Assegnati -->
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_assigned_proxies') }}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 14px;">
+              {{ _('job_assigned_proxies_desc_line1') }}<br>
+              {{ _('job_assigned_proxies_desc_line2_html') | safe }}
+            </p>
+
+            {% if proxies %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;"
+              id="assigned-proxies-container">
+              {% set assigned_ids = (job.assigned_proxies | map(attribute='id') | list) if (job and
+              job.assigned_proxies) else [] %}
+              {% for p in proxies %}
+              <label
+                style="display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 14px; cursor: pointer; background: var(--color-bg-card); transition: all 0.15s ease;"
+                class="proxy-select-card" data-proxy-id="{{ p.id }}"
+                data-reachable-remotes="{{ p.reachable_remotes | map(attribute='id') | join(',') }}">
+                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                  <input type="checkbox" name="assigned_proxy_ids" value="{{ p.id }}" class="proxy-assign-checkbox" {%
+                    if p.id in assigned_ids %}checked{% endif %}
+                    style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;">
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                      <strong
+                        style="color: var(--color-text-primary); font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{
+                        p.name }}</strong>
+                      {% if p.status and p.status.state == 'online' %}
+                      <span class="badge badge-online" style="font-size: 0.7rem; padding: 2px 6px;">Online</span>
+                      {% elif p.status and p.status.state == 'cooldown' %}
+                      <span class="badge badge-cooldown" style="font-size: 0.7rem; padding: 2px 6px;">Cooldown</span>
+                      {% else %}
+                      <span class="badge badge-offline" style="font-size: 0.7rem; padding: 2px 6px;">Offline</span>
+                      {% endif %}
+                    </div>
+                    <div
+                      style="font-size: 0.78rem; color: var(--color-text-muted); margin-top: 3px; font-family: monospace;">
+                      {{ p.address or p.host }}:{{ p.port }}
+                    </div>
+                  </div>
+                </div>
+                <div class="proxy-reachability-warning"
+                  style="display: none; padding: 4px 8px; border-radius: 4px; background: rgba(239, 68, 68, 0.12); color: #f87171; font-size: 0.74rem; border: 1px solid rgba(239, 68, 68, 0.25);">
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div
+              style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--color-border); border-radius: 8px; padding: 16px; text-align: center; color: var(--color-text-muted); font-size: 0.88rem;">
+              {{ _('job_no_proxies_registered_queue_msg') }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: POLICY DI ESECUZIONE                -->
+        <!-- ========================================== -->
+        {% set cur_missed = job.missed_run_policy if job and job.missed_run_policy else '' %}
+        {% set cur_overlap = job.overlap_policy if job and job.overlap_policy else '' %}
+        {% set cur_pending = job.pending_policy if job and job.pending_policy else '' %}
+        {% set def_missed = default_missed_run_policy or 'run_once' %}
+        {% set def_overlap = default_overlap_policy or 'skip' %}
+        {% set def_pending = default_pending_policy or 'fail' %}
+        {% set def_missed_label = _('job_missed_policy_fail') if def_missed == 'fail' else
+        (_('job_missed_policy_skip_option') if def_missed == 'skip' else _('job_missed_policy_run_once')) %}
+        {% set def_overlap_label = _('job_overlap_policy_allow') if def_overlap == 'allow' else
+        (_('job_overlap_policy_cancel_previous') if def_overlap == 'cancel_previous' else _('job_overlap_policy_skip'))
+        %}
+        {% set def_pending_label = _('job_pending_policy_retry') if def_pending == 'retry' else
+        _('job_pending_policy_fail') %}
+        {% set cur_max_rt = job.max_runtime_minutes if job and job.max_runtime_minutes else None %}
+        {% set cur_max_rt_hours = (cur_max_rt // 60) if cur_max_rt else 1 %}
+        {% set cur_max_rt_mins = (cur_max_rt % 60) if cur_max_rt else 0 %}
+        <div class="job-tab-pane" id="tab-run-policies" role="tabpanel">
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_run_policies_title') }}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 16px;">
+              {{ _('job_run_policies_desc') }}
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- 1. Missed Run Policy -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 260px;">
+                    <label class="form-label" for="job-missed-run-policy"
+                      style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">
+                      {{ _('job_missed_policy_title') }}
+                    </label>
+                    <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0 0 10px 0;">
+                      {{ _('job_missed_policy_desc') }}
+                    </p>
+                    <select class="form-control" id="job-missed-run-policy" name="missed_run_policy">
+                      <option value="" {% if not cur_missed %}selected{% endif %}>
+                        {{ _('job_policy_default_option', policy=def_missed_label) }}
+                      </option>
+                      <option value="run_once" {% if cur_missed=='run_once' %}selected{% endif %}>
+                        {{ _('job_missed_policy_run_once') }}
+                      </option>
+                      <option value="fail" {% if cur_missed=='fail' %}selected{% endif %}>
+                        {{ _('job_missed_policy_fail') }}
+                      </option>
+                      <option value="skip" {% if cur_missed=='skip' %}selected{% endif %}>
+                        {{ _('job_missed_policy_skip_option') }}
+                      </option>
+                    </select>
+                  </div>
+                  <div style="min-width: 210px; padding-top: 4px;">
+                    <label for="job-missed-run-notify"
+                      style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                      <input type="checkbox" id="job-missed-run-notify" name="missed_run_notify" {% if job and
+                        job.missed_run_notify %}checked{% endif %}
+                        style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer;">
+                      <span style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary);">
+                        {{ _('job_policy_notify_label') }}
+                      </span>
+                    </label>
+                    <small
+                      style="display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 0.76rem; max-width: 280px;">
+                      {{ _('job_missed_policy_notify_help') }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Overlap Policy -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 260px;">
+                    <label class="form-label" for="job-overlap-policy"
+                      style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">
+                      {{ _('job_overlap_policy_title') }}
+                    </label>
+                    <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0 0 10px 0;">
+                      {{ _('job_overlap_policy_desc') }}
+                    </p>
+                    <select class="form-control" id="job-overlap-policy" name="overlap_policy">
+                      <option value="" {% if not cur_overlap %}selected{% endif %}>
+                        {{ _('job_policy_default_option', policy=def_overlap_label) }}
+                      </option>
+                      <option value="allow" {% if cur_overlap=='allow' %}selected{% endif %}>
+                        {{ _('job_overlap_policy_allow') }}
+                      </option>
+                      <option value="cancel_previous" {% if cur_overlap=='cancel_previous' %}selected{% endif %}>
+                        {{ _('job_overlap_policy_cancel_previous') }}
+                      </option>
+                      <option value="skip" {% if cur_overlap=='skip' %}selected{% endif %}>
+                        {{ _('job_overlap_policy_skip') }}
+                      </option>
+                    </select>
+                  </div>
+                  <div style="min-width: 210px; padding-top: 4px;">
+                    <label for="job-overlap-notify"
+                      style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                      <input type="checkbox" id="job-overlap-notify" name="overlap_notify" {% if job and
+                        job.overlap_notify %}checked{% endif %}
+                        style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer;">
+                      <span style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary);">
+                        {{ _('job_policy_notify_label') }}
+                      </span>
+                    </label>
+                    <small
+                      style="display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 0.76rem; max-width: 280px;">
+                      {{ _('job_overlap_policy_notify_help') }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Pending Policy -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 260px;">
+                    <label class="form-label" for="job-pending-policy"
+                      style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">
+                      {{ _('job_pending_policy_title') }}
+                    </label>
+                    <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0 0 10px 0;">
+                      {{ _('job_pending_policy_desc') }}
+                    </p>
+                    <select class="form-control" id="job-pending-policy" name="pending_policy">
+                      <option value="" {% if not cur_pending %}selected{% endif %}>
+                        {{ _('job_policy_default_option', policy=def_pending_label) }}
+                      </option>
+                      <option value="fail" {% if cur_pending=='fail' %}selected{% endif %}>
+                        {{ _('job_pending_policy_fail') }}
+                      </option>
+                      <option value="retry" {% if cur_pending=='retry' %}selected{% endif %}>
+                        {{ _('job_pending_policy_retry') }}
+                      </option>
+                    </select>
+                  </div>
+                  <div style="min-width: 210px; padding-top: 4px;">
+                    <label for="job-pending-notify"
+                      style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                      <input type="checkbox" id="job-pending-notify" name="pending_notify" {% if job and
+                        job.pending_notify %}checked{% endif %}
+                        style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer;">
+                      <span style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary);">
+                        {{ _('job_policy_notify_label') }}
+                      </span>
+                    </label>
+                    <small
+                      style="display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 0.76rem; max-width: 280px;">
+                      {{ _('job_pending_policy_notify_help') }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Max Runtime Policy -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 260px;">
+                    <div
+                      style="font-weight: 600; font-size: 0.95rem; color: var(--color-text-primary); margin-bottom: 4px;">
+                      {{ _('job_max_runtime_policy_title') }}
+                    </div>
+                    <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0 0 12px 0;">
+                      {{ _('job_max_runtime_policy_desc') }}
+                    </p>
+                    <div style="margin-bottom: 12px;">
+                      <label for="job-max-runtime-enabled"
+                        style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="job-max-runtime-enabled" name="max_runtime_enabled" {% if cur_max_rt
+                          is not none %}checked{% endif %}
+                          style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer;">
+                        <span style="font-weight: 500; font-size: 0.9rem; color: var(--color-text-primary);">
+                          {{ _('job_max_runtime_enable_label') }}
+                        </span>
+                      </label>
+                    </div>
+                    <div id="max-runtime-duration-group"
+                      style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; {% if cur_max_rt is none %}opacity: 0.5;{% endif %}">
+                      <div style="width: 130px;">
+                        <label class="form-label" for="job-max-runtime-hours" style="font-size: 0.82rem;">
+                          {{ _('job_max_runtime_hours_label') }}
+                        </label>
+                        <input type="number" class="form-control" id="job-max-runtime-hours" name="max_runtime_hours"
+                          min="0" max="999" value="{{ cur_max_rt_hours }}" {% if cur_max_rt is none %}disabled{% endif
+                          %}>
+                      </div>
+                      <div style="width: 130px;">
+                        <label class="form-label" for="job-max-runtime-minutes" style="font-size: 0.82rem;">
+                          {{ _('job_max_runtime_minutes_label') }}
+                        </label>
+                        <input type="number" class="form-control" id="job-max-runtime-minutes"
+                          name="max_runtime_minutes" min="0" max="59" value="{{ cur_max_rt_mins }}" {% if cur_max_rt is
+                          none %}disabled{% endif %}>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="min-width: 210px; padding-top: 4px;">
+                    <label for="job-max-runtime-notify"
+                      style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                      <input type="checkbox" id="job-max-runtime-notify" name="max_runtime_notify" {% if job and
+                        job.max_runtime_notify %}checked{% endif %}
+                        style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer;">
+                      <span style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary);">
+                        {{ _('job_policy_notify_label') }}
+                      </span>
+                    </label>
+                    <small
+                      style="display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 0.76rem; max-width: 280px;">
+                      {{ _('job_max_runtime_policy_notify_help') }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: PARAMETRI DI RCLONE                 -->
+        <!-- ========================================== -->
+        {% set job_rclone = (job.rclone_options or {}) if job else {} %}
+        {% set defs = global_rclone_defaults or {} %}
+        <div class="job-tab-pane" id="tab-rclone-params" role="tabpanel">
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_rclone_params_filters') }}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 14px;">
+              {{ _('job_rclone_params_desc_line1') }}<br>
+              {{ _('job_rclone_params_desc_line2_html') | safe }}
+            </p>
+
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 18px;">
+              <!-- Retry count -->
+              <div class="form-group">
+                <label class="form-label" for="job-retry-count" style="font-size: 0.85rem;">
+                  Retry per Task
+                </label>
+                <input type="number" class="form-control" id="job-retry-count" name="retry_count" min="0" max="10"
+                  value="{{ job_rclone.get('retry_count') if job_rclone.get('retry_count') is not none else '' }}"
+                  placeholder="{{ _('job_global_default_placeholder').format(val=defs.get('task_retries', 2)) }}">
+                <small style="color: var(--color-text-muted); font-size: 0.74rem;">{{ _('job_retry_count_hint')
+                  }}</small>
+              </div>
+
+              <!-- Checkers -->
+              <div class="form-group">
+                <label class="form-label" for="job-checkers" style="font-size: 0.85rem;">
+                  {{ _('job_checkers_label') }}
+                </label>
+                <input type="number" class="form-control" id="job-checkers" name="checkers" min="1" max="128"
+                  value="{{ job_rclone.get('checkers') if job_rclone.get('checkers') is not none else '' }}"
+                  placeholder="{{ _('job_global_default_placeholder').format(val=defs.get('rclone_checkers', 8)) }}">
+                <small style="display: block; margin-top: 4px;">
+                  <a href="https://rclone.org/docs/#checkers-int" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); font-size: 0.74rem; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>{{ _('job_rclone_doc_link') }}: --checkers</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </small>
+              </div>
+
+              <!-- Transfers -->
+              <div class="form-group">
+                <label class="form-label" for="job-transfers" style="font-size: 0.85rem;">
+                  {{ _('job_transfers_label') }}
+                </label>
+                <input type="number" class="form-control" id="job-transfers" name="transfers" min="1" max="64"
+                  value="{{ job_rclone.get('transfers') if job_rclone.get('transfers') is not none else '' }}"
+                  placeholder="{{ _('job_global_default_placeholder').format(val=defs.get('rclone_transfers', 4)) }}">
+                <small style="display: block; margin-top: 4px;">
+                  <a href="https://rclone.org/docs/#transfers-int" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); font-size: 0.74rem; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>{{ _('job_rclone_doc_link') }}: --transfers</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </small>
+              </div>
+
+              <!-- Order By -->
+              <div class="form-group">
+                <label class="form-label" for="job-order-by" style="font-size: 0.85rem;">
+                  {{ _('job_order_by_label') }}
+                </label>
+                <input type="text" class="form-control" id="job-order-by" name="order_by"
+                  value="{{ job_rclone.get('order_by', '') }}" placeholder="{{ _('job_order_by_placeholder') }}">
+                <small style="display: block; margin-top: 4px;">
+                  <a href="https://rclone.org/docs/#order-by-string" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); font-size: 0.74rem; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>{{ _('job_rclone_doc_link') }}: --order-by</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </small>
+              </div>
+            </div>
+
+            <div class="grid-2col-responsive"
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+              <!-- Check first -->
+              <div class="form-group">
+                <label class="form-label" for="job-check-first" style="font-size: 0.85rem;">
+                  {{ _('job_check_first_label') }}
+                </label>
+                <select class="form-control" id="job-check-first" name="check_first">
+                  <option value="" {% if job_rclone.get('check_first') is none %}selected{% endif %}>
+                    {{ _('job_global_default_option').format(val=(_('status_enabled') if defs.get('rclone_check_first')
+                    else _('status_disabled'))) }}
+                  </option>
+                  <option value="true" {% if job_rclone.get('check_first') is sameas true %}selected{% endif %}>
+                    {{ _('status_enabled') }} (--check-first)
+                  </option>
+                  <option value="false" {% if job_rclone.get('check_first') is sameas false %}selected{% endif %}>
+                    {{ _('status_disabled') }}
+                  </option>
+                </select>
+                <small style="display: block; margin-top: 4px;">
+                  <a href="https://rclone.org/docs/#check-first" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); font-size: 0.74rem; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>{{ _('job_rclone_doc_link') }}: --check-first</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </small>
+              </div>
+
+              <!-- Recurse -->
+              <div class="form-group">
+                <label class="form-label" for="job-recurse" style="font-size: 0.85rem;">
+                  {{ _('job_recurse_label') }}
+                </label>
+                <select class="form-control" id="job-recurse" name="recurse">
+                  <option value="" {% if job_rclone.get('recurse') is none %}selected{% endif %}>
+                    {{ _('job_global_default_option').format(val=(_('job_recurse_yes') if defs.get('rclone_recurse',
+                    True) else _('job_recurse_no_max_depth'))) }}
+                  </option>
+                  <option value="true" {% if job_rclone.get('recurse') is sameas true %}selected{% endif %}>
+                    {{ _('status_enabled') }} ({{ _('job_recurse_yes') }})
+                  </option>
+                  <option value="false" {% if job_rclone.get('recurse') is sameas false %}selected{% endif %}>
+                    {{ _('status_disabled') }} (--max-depth 1)
+                  </option>
+                </select>
+                <small style="display: block; margin-top: 4px;">
+                  <a href="https://rclone.org/docs/#max-depth-int" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); font-size: 0.74rem; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>{{ _('job_rclone_doc_link') }}: --max-depth</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </small>
+              </div>
+            </div>
+
+            <!-- Altri Parametri RClone -->
+            <div
+              style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                <label class="form-label" for="input-additional-param"
+                  style="font-weight: 600; font-size: 0.88rem; margin: 0; color: var(--color-text-primary);">
+                  {{ _('job_additional_params_label') }}
+                </label>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.76rem;">
+                  <span style="color: var(--color-text-muted);">{{ _('job_rclone_doc_link') }}:</span>
+                  <a href="https://rclone.org/commands/rclone_sync/" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); text-decoration: underline; display: inline-flex; align-items: center; gap: 3px;">
+                    <span>RClone Sync</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                  <span style="color: var(--color-border);">|</span>
+                  <a href="https://rclone.org/commands/rclone_copy/" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--color-brand); text-decoration: underline; display: inline-flex; align-items: center; gap: 3px;">
+                    <span>RClone Copy</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" class="form-control" id="input-additional-param"
+                  placeholder="es. --fast-list, --min-size 10M, --ignore-existing"
+                  style="flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.84rem;">
+                <button type="button" id="btn-add-additional-param" class="btn btn-secondary"
+                  style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 14px; font-weight: 700; font-size: 1.1rem; line-height: 1; border-radius: 6px; cursor: pointer; flex-shrink: 0;"
+                  title="{{ _('btn_add_param_title') }}">
+                  +
+                </button>
+              </div>
+              <div id="additional-param-error"
+                style="display: none; color: #ef4444; font-size: 0.76rem; margin-top: 6px;"></div>
+
+              <!-- List of added parameters -->
+              <div id="additional-params-list"
+                style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="grid-2col-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- First Level Filters -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label class="form-label" for="job-first-level-filters"
+                    style="font-weight: 600; color: #38bdf8; font-size: 0.88rem; margin: 0;">
+                    {{ _('job_first_level_filters_label') }}
+                  </label>
+                  <span style="font-size: 0.72rem; color: var(--color-text-muted);">{{
+                    _('job_first_level_filters_badge') }}</span>
+                </div>
+                <textarea id="job-first-level-filters" name="first_level_filters" class="form-control" rows="5"
+                  placeholder="- folder1/**&#10;- *.txt&#10;+ */**"
+                  style="width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; line-height: 1.4; resize: vertical;">{% if job_rclone.get('first_level_filters') %}{% for f in job_rclone.get('first_level_filters') %}{{ f }}&#10;{% endfor %}{% endif %}</textarea>
+                <small style="display: block; margin-top: 6px; color: var(--color-text-muted); font-size: 0.74rem;">
+                  {{ _('job_first_level_filters_hint_html') | safe }}
+                  <span style="display: block; margin-top: 4px;">
+                    <a href="https://rclone.org/filtering/" target="_blank" rel="noopener noreferrer"
+                      style="color: var(--color-brand); text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                      <span>{{ _('job_rclone_doc_link') }}: Filtering</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                    </a>
+                  </span>
+                </small>
+              </div>
+
+              <!-- Second Level Filters -->
+              <div id="second-level-filters-container"
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 8px; padding: 14px; transition: opacity 0.2s ease; {% if not job or job.parallelization != 'by_subfolder' %}opacity: 0.6;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label class="form-label" for="job-second-level-filters"
+                    style="font-weight: 600; color: #a78bfa; font-size: 0.88rem; margin: 0;">
+                    {{ _('job_second_level_filters_label') }}
+                  </label>
+                  <span class="badge"
+                    style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; font-size: 0.7rem;">{{
+                    _('job_second_level_filters_badge') }}</span>
+                </div>
+                <textarea id="job-second-level-filters" name="second_level_filters" class="form-control" rows="5"
+                  placeholder="- *.txt&#10;- File*&#10;+ */**"
+                  style="width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; line-height: 1.4; resize: vertical; {% if not job or job.parallelization != 'by_subfolder' %}cursor: not-allowed; background-color: rgba(0, 0, 0, 0.2);{% endif %}"
+                  {% if not job or job.parallelization !='by_subfolder' %}disabled{% endif %} {% if not job or
+                  job.parallelization !='by_subfolder' %}title="{{ _('job_second_level_filters_disabled_tooltip') }}" {%
+                  endif
+                  %}>{% if job_rclone.get('second_level_filters') %}{% for f in job_rclone.get('second_level_filters') %}{{ f }}&#10;{% endfor %}{% endif %}</textarea>
+                <small style="display: block; margin-top: 6px; color: var(--color-text-muted); font-size: 0.74rem;">
+                  {{ _('job_second_level_filters_hint_html') | safe }}
+                  <span style="display: block; margin-top: 4px;">
+                    <a href="https://rclone.org/filtering/" target="_blank" rel="noopener noreferrer"
+                      style="color: var(--color-brand); text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                      <span>{{ _('job_rclone_doc_link') }}: Filtering</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                    </a>
+                  </span>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: NOTIFICHE                           -->
+        <!-- ========================================== -->
+        <div class="job-tab-pane" id="tab-notifications" role="tabpanel">
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_notifications') }}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 14px;">
+              {{ _('job_notifications_desc') }}
+            </p>
+
+            <div
+              style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"
+                  title="{{ _('job_notifications_enable_title') }}">
+                  <input type="checkbox" id="job-notifications-enabled" name="notifications_enabled" {% if not job or
+                    job.notifications_enabled %}checked{% endif %}
+                    style="width: 18px; height: 18px; accent-color: var(--color-brand);">
+                  <span style="font-weight: 500; color: var(--color-text-primary); font-size: 0.95rem;">{{
+                    _('job_notifications_enable_label') }}</span>
+                </label>
+                <small
+                  style="display: block; margin-top: 4px; margin-left: 26px; color: var(--color-text-muted); font-size: 0.8rem;">
+                  {{ _('job_notifications_enable_hint') }}
+                </small>
+              </div>
+
+              <div class="form-group" style="max-width: 480px; margin-bottom: 0;">
+                <label class="form-label" for="job-notification-policy">
+                  {{ _('job_notification_policy_label') }}
+                </label>
+                <select class="form-control" id="job-notification-policy" name="notification_policy">
+                  <option value="" {% if not job or not job.notification_policy %}selected{% endif %}>
+                    {{ _('job_notification_policy_inherit') }}
+                  </option>
+                  <option value="always" {% if job and job.notification_policy=='always' %}selected{% endif %}>
+                    {{ _('job_notification_policy_always') }}
+                  </option>
+                  <option value="only_errors" {% if job and job.notification_policy=='only_errors' %}selected{% endif
+                    %}>
+                    {{ _('job_notification_policy_only_errors') }}
+                  </option>
+                </select>
+                <small style="display: block; margin-top: 6px; color: var(--color-text-muted); font-size: 0.78rem;">
+                  {{ _('job_notification_policy_hint') }}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: HOOK BASH                           -->
+        <!-- ========================================== -->
+        {% if hooks_enabled %}
+        <div class="job-tab-pane" id="tab-hooks" role="tabpanel">
+          <div style="margin-bottom: 12px;">
+            <h3 class="section-title">{{ _('job_section_hooks') }}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 14px;">
+              {{ _('job_hooks_desc') }}
+            </p>
+
+            <div class="grid-2col-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- Pre-Run Hook Card -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <label class="form-label" for="pre-run-hook"
+                    style="font-weight: 600; color: #38bdf8; margin: 0; font-size: 0.88rem;">
+                    Pre-Run Hook Script
+                  </label>
+                  <span style="font-size: 0.75rem; color: var(--color-text-muted);">{{ _('job_pre_hook_badge') }}</span>
+                </div>
+                <textarea id="pre-run-hook" name="pre_run_hook" class="form-control" rows="7"
+                  placeholder="{{ _('job_pre_hook_placeholder') }}"
+                  style="width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; line-height: 1.45; background: #090d13; color: #e2e8f0; border: 1px solid var(--color-border); border-radius: 6px; padding: 10px 12px; resize: vertical;">{{ job.pre_run_hook if job and job.pre_run_hook else '' }}</textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                  <small style="color: var(--color-text-muted); font-size: 0.74rem;">
+                    {{ _('job_hook_vars_prefix') }} <code>$EMBERVAULT_JOB_NAME</code>, <code>$EMBERVAULT_RUN_ID</code>
+                  </small>
+                  <span id="pre-hook-hash-display"
+                    style="font-size: 0.72rem; color: var(--color-text-muted); font-family: monospace;"></span>
+                </div>
+              </div>
+
+              <!-- Post-Run Hook Card -->
+              <div
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <label class="form-label" for="post-run-hook"
+                    style="font-weight: 600; color: #a78bfa; margin: 0; font-size: 0.88rem;">
+                    Post-Run Hook Script
+                  </label>
+                  <span style="font-size: 0.75rem; color: var(--color-text-muted);">{{ _('job_post_hook_badge')
+                    }}</span>
+                </div>
+                <textarea id="post-run-hook" name="post_run_hook" class="form-control" rows="7"
+                  placeholder="{{ _('job_post_hook_placeholder') }}"
+                  style="width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; line-height: 1.45; background: #090d13; color: #e2e8f0; border: 1px solid var(--color-border); border-radius: 6px; padding: 10px 12px; resize: vertical;">{{ job.post_run_hook if job and job.post_run_hook else '' }}</textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                  <small style="color: var(--color-text-muted); font-size: 0.74rem;">
+                    {{ _('job_hook_vars_prefix') }} <code>$EMBERVAULT_RUN_STATUS</code>,
+                    <code>$EMBERVAULT_BYTES_TRANSFERRED</code>
+                  </small>
+                  <span id="post-hook-hash-display"
+                    style="font-size: 0.72rem; color: var(--color-text-muted); font-family: monospace;"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" id="pre-run-hook" name="pre_run_hook"
+          value="{{ job.pre_run_hook if job and job.pre_run_hook else '' }}">
+        <input type="hidden" id="post-run-hook" name="post_run_hook"
+          value="{{ job.post_run_hook if job and job.post_run_hook else '' }}">
+        {% endif %}
+
+        <!-- Submit Actions (Comune a tutti i tab) -->
+        <div
+          style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--color-border); padding-top: 20px; margin-top: 20px;">
+          <a href="/jobs" class="btn btn-secondary">{{ _('btn_cancel') }}</a>
+          <button type="submit" class="btn btn-primary" id="btn-save-job">
+            {{ _('btn_save_changes') if is_edit else _('job_create_submit_btn') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal Esplora / Sfoglia Remote per Job -->
+<div id="modal-browse-remote" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 680px; width: 100%;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: var(--color-brand); display: flex;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </span>
+        <h3 id="modal-browse-title-text" style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{
+          _('modal_browse_title') }}</h3>
+      </div>
+      <button type="button" class="btn-icon" data-close-modal="modal-browse-remote"
+        aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <!-- Remote Info Badge & Target Name -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 2px;">
+        <span id="browse-target-badge"
+          style="font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+          {{ _('job_source_badge') }}
+        </span>
+        <span id="browse-remote-name"
+          style="font-size: 0.88rem; color: var(--color-text-secondary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        </span>
+      </div>
+
+      <!-- Current Path Bar with Copy Button -->
+      <div>
+        <label
+          style="font-size: 0.78rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 6px; display: block;">
+          {{ _('browse_current_path_label') }}
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div id="browse-current-path-label"
+            style="flex: 1; padding: 9px 12px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; font-family: monospace; font-size: 0.88rem; color: var(--color-text-primary); word-break: break-all; min-height: 40px; display: flex; align-items: center;"
+            title="{{ _('browse_current_path_title') }}">
+            /
+          </div>
+          <button type="button" id="btn-copy-browse-path" class="btn btn-secondary btn-sm"
+            style="display: inline-flex; align-items: center; gap: 6px; height: 40px; flex-shrink: 0;"
+            title="{{ _('browse_copy_path_title') }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btn-copy-browse-text">{{ _('btn_copy') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Bar with Parent Level Button "..." and Item Count -->
+      <div
+        style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px;">
+        <button type="button" id="btn-browse-parent" class="btn btn-secondary btn-sm"
+          style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;"
+          title="{{ _('browse_parent_level_title') }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          ...
+          <span style="font-weight: 400; font-size: 0.82rem; margin-left: 4px; color: var(--color-text-muted);">{{
+            _('browse_parent_level_text') }}</span>
+        </button>
+
+        <span id="browse-items-count" style="font-size: 0.82rem; color: var(--color-text-secondary);"></span>
+      </div>
+
+      <!-- Error / Notice Box -->
+      <div id="browse-error"
+        style="display: none; padding: 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.88rem;">
+      </div>
+
+      <!-- Listing Container -->
+      <div id="browse-list-container"
+        style="border: 1px solid var(--color-border); border-radius: 8px; max-height: 340px; min-height: 200px; overflow-y: auto; background: var(--color-bg-surface);">
+        <!-- Populated via JavaScript -->
+        <div id="browse-loading" style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+          <div
+            style="width: 24px; height: 24px; border: 2px solid rgba(255,107,0,0.3); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px auto;">
+          </div>
+          <span>{{ _('browse_loading_text') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer"
+      style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; gap: 12px;">
+      <small style="color: var(--color-text-muted); font-size: 0.8rem; flex: 1;">
+        {{ _('job_browse_modal_hint') }}
+      </small>
+      <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-browse-remote">{{ _('btn_cancel')
+          }}</button>
+        <button type="button" id="btn-confirm-browse-path" class="btn btn-primary"
+          style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span id="btn-confirm-browse-text">{{ _('browse_btn_use_current_path') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+  document.addEventListener('DOMContentLoaded', function () {
+    // ----------------------------------------------------
+    // I18N DICTIONARY FOR SCRIPT
+    // ----------------------------------------------------
+    const I18N = {
+      browseRemote: {{ _('btn_browse_remote') | tojson
+  }},
+    selectRemoteFirst: {{ _('browse_select_remote_first_tooltip') | tojson }},
+    loadingItems: {{ _('browse_loading_text') | tojson }},
+    errorLoading: {{ _('browse_error_loading') | tojson }},
+    noDataError: {{ _('browse_no_data_error') | tojson }},
+    folders: {{ _('browse_folders_count') | tojson }},
+    files: {{ _('browse_files_count') | tojson }},
+    emptyFolder: {{ _('browse_empty_folder') | tojson }},
+    openFolder: {{ _('browse_open_folder') | tojson }},
+    fileBadge: {{ _('browse_file_badge') | tojson }},
+    connFailed: {{ _('browse_connection_failed') | tojson }},
+    copy: {{ _('btn_copy') | tojson }},
+    copied: {{ _('btn_copied') | tojson }},
+    copyFailed: {{ _('browse_copy_failed') | tojson }},
+    networkErrorPrefix: {{ _('remote_network_error_prefix') | tojson }},
+    selectFolder: {{ _('browse_btn_select_folder') | tojson }},
+    useCurrentPath: {{ _('browse_btn_use_current_path') | tojson }},
+    badgeSource: {{ _('job_source_badge') | tojson }},
+    badgeDestination: {{ _('job_destination_badge') | tojson }},
+    titleSource: {{ _('job_browse_title_source') | tojson }},
+    titleDestination: {{ _('job_browse_title_destination') | tojson }},
+    pathSelectedToast: {{ _('job_browse_path_selected_toast') | tojson }},
+    noAdditionalParams: {{ _('job_no_additional_params') | tojson }},
+    errParamEmpty: {{ _('err_param_empty') | tojson }},
+    errParamStartDash: {{ _('err_param_start_dash') | tojson }},
+    errParamDuplicate: {{ _('err_param_duplicate') | tojson }},
+    errParamForbiddenChars: {{ _('err_param_forbidden_chars') | tojson }},
+    errParamForbiddenFlag: {{ _('err_param_forbidden_flag') | tojson }}
+  };
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ----------------------------------------------------
+  // REMOTE BROWSER (SFOGLIA...) LOGIC
+  // ----------------------------------------------------
+  const sourceRemoteSelect = document.getElementById('source-remote-id');
+  const btnBrowseSource = document.getElementById('btn-browse-source');
+  const destRemoteSelect = document.getElementById('destination-remote-id');
+  const btnBrowseDest = document.getElementById('btn-browse-destination');
+
+  const modalBrowse = document.getElementById('modal-browse-remote');
+  const browsePathLabel = document.getElementById('browse-current-path-label');
+  const btnCopyBrowsePath = document.getElementById('btn-copy-browse-path');
+  const btnCopyBrowseText = document.getElementById('btn-copy-browse-text');
+  const btnBrowseParent = document.getElementById('btn-browse-parent');
+  const browseListContainer = document.getElementById('browse-list-container');
+  const browseError = document.getElementById('browse-error');
+  const browseItemsCount = document.getElementById('browse-items-count');
+
+  let activeBrowseTarget = null; // 'source' or 'destination'
+  let activeRemoteId = null;
+  let activeRemoteName = '';
+  let browseCurrentPath = '';
+
+  function updateBrowseButtonsState() {
+    if (btnBrowseSource && sourceRemoteSelect) {
+      const hasSource = Boolean(sourceRemoteSelect.value);
+      btnBrowseSource.disabled = !hasSource;
+      btnBrowseSource.style.cursor = hasSource ? 'pointer' : 'not-allowed';
+      btnBrowseSource.style.opacity = hasSource ? '1' : '0.5';
+      btnBrowseSource.title = hasSource ? I18N.browseRemote : I18N.selectRemoteFirst;
+    }
+    if (btnBrowseDest && destRemoteSelect) {
+      const hasDest = Boolean(destRemoteSelect.value);
+      btnBrowseDest.disabled = !hasDest;
+      btnBrowseDest.style.cursor = hasDest ? 'pointer' : 'not-allowed';
+      btnBrowseDest.style.opacity = hasDest ? '1' : '0.5';
+      btnBrowseDest.title = hasDest ? I18N.browseRemote : I18N.selectRemoteFirst;
+    }
+  }
+
+  sourceRemoteSelect?.addEventListener('change', updateBrowseButtonsState);
+  destRemoteSelect?.addEventListener('change', updateBrowseButtonsState);
+  updateBrowseButtonsState();
+
+  // Dynamic proxy reachability validation UI
+  function getCardReachableRemotes(card) {
+    const raw = card?.dataset?.reachableRemotes || '';
+    if (!raw) return [];
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        return JSON.parse(raw);
+      } catch (_) { }
+    }
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  function updateProxyReachabilityCards() {
+    const sId = document.getElementById('source-remote-id')?.value;
+    const dId = document.getElementById('destination-remote-id')?.value;
+
+    document.querySelectorAll('.proxy-select-card').forEach(card => {
+      const reachable = getCardReachableRemotes(card);
+      const warningEl = card.querySelector('.proxy-reachability-warning');
+      const issues = [];
+
+      if (sId && !reachable.includes(sId)) {
+        issues.push({{ _('proxy_cannot_reach_source_short') | tojson }});
+      }
+      if (dId && !reachable.includes(dId)) {
+        issues.push({{ _('proxy_cannot_reach_dest_short') | tojson }});
+      }
+
+  if (issues.length > 0) {
+    if (warningEl) {
+      warningEl.textContent = issues.join(" • ");
+      warningEl.style.display = 'block';
+    }
+    card.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+  } else {
+    if (warningEl) {
+      warningEl.style.display = 'none';
+    }
+    card.style.borderColor = 'var(--color-border)';
+  }
+    });
+  }
+
+  document.getElementById('source-remote-id')?.addEventListener('change', updateProxyReachabilityCards);
+  document.getElementById('destination-remote-id')?.addEventListener('change', updateProxyReachabilityCards);
+  setTimeout(updateProxyReachabilityCards, 50);
+
+  function getParentPath(path) {
+    if (!path || path === '/' || !path.includes('/')) return '';
+    const parts = path.split('/').filter(Boolean);
+    parts.pop();
+    return parts.join('/');
+  }
+
+  function updateBrowsePathLabel(path) {
+    if (browsePathLabel) {
+      browsePathLabel.textContent = path ? `/${path}` : '/';
+    }
+  }
+
+  function applySelectedPath(fullPath) {
+    const formatted = fullPath.startsWith('/') ? fullPath : ('/' + fullPath);
+    if (activeBrowseTarget === 'source') {
+      const sourceInput = document.getElementById('source-path');
+      if (sourceInput) {
+        sourceInput.value = formatted;
+        sourceInput.dispatchEvent(new Event('input', { bubbles: true }));
+        sourceInput.dispatchEvent(new Event('change', { bubbles: true }));
+        sourceInput.focus();
+      }
+    } else if (activeBrowseTarget === 'destination') {
+      const destInput = document.getElementById('destination-path');
+      if (destInput) {
+        destInput.value = formatted;
+        destInput.dispatchEvent(new Event('input', { bubbles: true }));
+        destInput.dispatchEvent(new Event('change', { bubbles: true }));
+        destInput.focus();
+      }
+    }
+
+    modalBrowse?.classList.remove('active');
+    if (typeof showToast === 'function') {
+      const msg = (I18N.pathSelectedToast || 'Percorso impostato: {path}').replace('{path}', formatted);
+      showToast(msg, 'success');
+    }
+  }
+
+  async function loadBrowseDirectory(path) {
+    browseCurrentPath = path ? path.replace(/^\/+|\/+$/g, '') : '';
+    updateBrowsePathLabel(browseCurrentPath);
+
+    if (btnBrowseParent) {
+      btnBrowseParent.disabled = (browseCurrentPath === '');
+      btnBrowseParent.style.opacity = (browseCurrentPath === '') ? '0.5' : '1';
+      btnBrowseParent.style.cursor = (browseCurrentPath === '') ? 'not-allowed' : 'pointer';
+    }
+
+    if (browseError) browseError.style.display = 'none';
+    if (browseItemsCount) browseItemsCount.textContent = '';
+
+    if (browseListContainer) {
+      browseListContainer.innerHTML = `
+        <div style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+          <div style="width: 24px; height: 24px; border: 2px solid rgba(255,107,0,0.3); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px auto;"></div>
+          <span>${I18N.loadingItems}</span>
+        </div>
+      `;
+    }
+
+    try {
+      const res = await fetch('/api/ui/remotes/browse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({
+          remote_id: activeRemoteId,
+          path: browseCurrentPath,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.status === 'error') {
+        if (browseCurrentPath !== '') {
+          return loadBrowseDirectory('');
+        }
+        if (browseError) {
+          browseError.textContent = data.message || I18N.errorLoading;
+          browseError.style.display = 'block';
+        }
+        if (browseListContainer) {
+          browseListContainer.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: var(--color-text-muted);">
+              ${I18N.noDataError}
+            </div>
+          `;
+        }
+        return;
+      }
+
+      const dirs = Array.isArray(data.directories) ? data.directories : [];
+      const files = Array.isArray(data.files) ? data.files : [];
+      const totalCount = dirs.length + files.length;
+
+      if (browseItemsCount) {
+        browseItemsCount.textContent = `${dirs.length} ${I18N.folders}, ${files.length} ${I18N.files}`;
+      }
+
+      if (totalCount === 0) {
+        if (browseListContainer) {
+          browseListContainer.innerHTML = `
+            <div style="padding: 36px 20px; text-align: center; color: var(--color-text-muted);">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.6;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <div>${I18N.emptyFolder}</div>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      const listEl = document.createElement('div');
+      listEl.style.display = 'flex';
+      listEl.style.flexDirection = 'column';
+
+      // 1. Render directories
+      dirs.forEach(dirItem => {
+        const dirName = (typeof dirItem === 'string') ? dirItem : (dirItem && dirItem.name ? dirItem.name : String(dirItem || ''));
+        const itemRow = document.createElement('div');
+        itemRow.className = 'browse-item-folder';
+        itemRow.style.display = 'flex';
+        itemRow.style.alignItems = 'center';
+        itemRow.style.justifyContent = 'space-between';
+        itemRow.style.padding = '8px 14px';
+        itemRow.style.borderBottom = '1px solid var(--color-border)';
+        itemRow.style.cursor = 'pointer';
+        itemRow.style.transition = 'background-color 0.15s ease';
+
+        itemRow.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1; min-width: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span style="font-weight: 500; font-size: 0.92rem; color: var(--color-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">${escapeHtml(dirName)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm btn-pick-subfolder"
+              style="padding: 3px 8px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;"
+              title="${I18N.selectFolder}"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>${I18N.selectFolder}</span>
+            </button>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        `;
+
+        itemRow.addEventListener('mouseenter', () => {
+          itemRow.style.backgroundColor = 'rgba(255, 107, 0, 0.08)';
+        });
+        itemRow.addEventListener('mouseleave', () => {
+          itemRow.style.backgroundColor = 'transparent';
+        });
+
+        const btnPick = itemRow.querySelector('.btn-pick-subfolder');
+        btnPick?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetPath = browseCurrentPath ? `/${browseCurrentPath}/${dirName}` : `/${dirName}`;
+          applySelectedPath(targetPath);
+        });
+
+        itemRow.addEventListener('click', () => {
+          const nextPath = browseCurrentPath ? `${browseCurrentPath}/${dirName}` : dirName;
+          loadBrowseDirectory(nextPath);
+        });
+
+        listEl.appendChild(itemRow);
+      });
+
+      // 2. Render files
+      files.forEach(fileObj => {
+        const fileName = (typeof fileObj === 'string') ? fileObj : (fileObj.name || 'file');
+        const itemRow = document.createElement('div');
+        itemRow.className = 'browse-item-file';
+        itemRow.style.display = 'flex';
+        itemRow.style.alignItems = 'center';
+        itemRow.style.justifyContent = 'space-between';
+        itemRow.style.padding = '8px 14px';
+        itemRow.style.borderBottom = '1px solid var(--color-border)';
+        itemRow.style.opacity = '0.75';
+
+        itemRow.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--color-text-muted);">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            <span style="font-size: 0.9rem; color: var(--color-text-secondary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">${escapeHtml(fileName)}</span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em;">${I18N.fileBadge}</span>
+        `;
+        listEl.appendChild(itemRow);
+      });
+
+      if (browseListContainer) {
+        browseListContainer.innerHTML = '';
+        browseListContainer.appendChild(listEl);
+      }
+    } catch (err) {
+      if (browseError) {
+        browseError.textContent = `${I18N.networkErrorPrefix} ${err}`;
+        browseError.style.display = 'block';
+      }
+      if (browseListContainer) {
+        browseListContainer.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: var(--color-text-muted);">
+            ${I18N.connFailed}
+          </div>
+        `;
+      }
+    }
+  }
+
+  function openBrowseModal(target) {
+    activeBrowseTarget = target;
+    const isSource = (target === 'source');
+    const selectEl = isSource ? sourceRemoteSelect : destRemoteSelect;
+    const pathInput = isSource ? document.getElementById('source-path') : document.getElementById('destination-path');
+
+    if (!selectEl || !selectEl.value) {
+      if (typeof showToast === 'function') {
+        showToast(I18N.selectRemoteFirst, 'error');
+      }
+      return;
+    }
+
+    activeRemoteId = selectEl.value;
+    activeRemoteName = selectEl.options[selectEl.selectedIndex]?.text || '';
+
+    const badgeEl = document.getElementById('browse-target-badge');
+    const nameEl = document.getElementById('browse-remote-name');
+    const modalTitleEl = document.getElementById('modal-browse-title-text');
+
+    if (badgeEl) {
+      badgeEl.textContent = isSource ? I18N.badgeSource : I18N.badgeDestination;
+      badgeEl.style.background = isSource ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+      badgeEl.style.color = isSource ? '#3b82f6' : '#10b981';
+    }
+    if (nameEl) {
+      nameEl.textContent = activeRemoteName;
+    }
+    if (modalTitleEl) {
+      modalTitleEl.textContent = isSource ? I18N.titleSource : I18N.titleDestination;
+    }
+
+    const initialVal = pathInput?.value?.trim() || '';
+    const initialClean = (initialVal && initialVal !== '/') ? initialVal.replace(/^\/+|\/+$/g, '') : '';
+
+    modalBrowse?.classList.add('active');
+    loadBrowseDirectory(initialClean);
+  }
+
+  btnBrowseSource?.addEventListener('click', () => openBrowseModal('source'));
+  btnBrowseDest?.addEventListener('click', () => openBrowseModal('destination'));
+
+  document.getElementById('btn-confirm-browse-path')?.addEventListener('click', () => {
+    const fullPath = browseCurrentPath ? `/${browseCurrentPath}` : '/';
+    applySelectedPath(fullPath);
+  });
+
+  btnCopyBrowsePath?.addEventListener('click', async () => {
+    const fullPathToCopy = browseCurrentPath ? `/${browseCurrentPath}` : '/';
+    try {
+      await navigator.clipboard.writeText(fullPathToCopy);
+      if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copied;
+      setTimeout(() => {
+        if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copy;
+      }, 2000);
+    } catch {
+      if (typeof showToast === 'function') {
+        showToast(I18N.copyFailed, 'error');
+      }
+    }
+  });
+
+  btnBrowseParent?.addEventListener('click', () => {
+    if (!browseCurrentPath) return;
+    const parentPath = getParentPath(browseCurrentPath);
+    loadBrowseDirectory(parentPath);
+  });
+
+  document.querySelectorAll('[data-close-modal="modal-browse-remote"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modalBrowse?.classList.remove('active');
+    });
+  });
+
+  modalBrowse?.addEventListener('click', (e) => {
+    if (e.target === modalBrowse) {
+      modalBrowse.classList.remove('active');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalBrowse?.classList.contains('active')) {
+      modalBrowse.classList.remove('active');
+    }
+  });
+  const isEdit = {{ 'true' if is_edit else 'false' }};
+  const jobId = "{{ job.id if job else '' }}";
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+  // ----------------------------------------------------
+  // GESTIONE TAB
+  // ----------------------------------------------------
+  const tabButtons = document.querySelectorAll('.job-tab-btn');
+  const tabPanes = document.querySelectorAll('.job-tab-pane');
+
+  function switchTab(tabId) {
+    let targetPane = document.getElementById(tabId);
+    if (!targetPane) {
+      tabId = 'tab-name-coords';
+      targetPane = document.getElementById(tabId);
+    }
+
+    tabButtons.forEach(btn => {
+      const isTarget = btn.dataset.tab === tabId;
+      btn.classList.toggle('active', isTarget);
+      btn.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+    });
+
+    tabPanes.forEach(pane => {
+      const isTarget = pane.id === tabId;
+      pane.classList.toggle('active', isTarget);
+      pane.style.display = isTarget ? 'block' : 'none';
+    });
+
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, null, '#' + tabId);
+    }
+  }
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Ripristina tab da hash URL se presente
+  if (window.location.hash) {
+    const rawHash = window.location.hash.substring(1);
+    if (document.getElementById(rawHash)) {
+      switchTab(rawHash);
+    } else {
+      switchTab('tab-name-coords');
+    }
+  } else {
+    switchTab('tab-name-coords');
+  }
+
+  // ----------------------------------------------------
+  // TOGGLE STATO DEL JOB (Attivo / Disattivato)
+  // ----------------------------------------------------
+  const jobEnabledInput = document.getElementById('job-enabled');
+  const btnToggleEnabled = document.getElementById('btn-toggle-job-enabled');
+
+  function updateEnabledButtonState() {
+    if (!btnToggleEnabled || !jobEnabledInput) return;
+    const isEnabled = jobEnabledInput.checked;
+    btnToggleEnabled.setAttribute('aria-pressed', isEnabled ? 'true' : 'false');
+    if (isEnabled) {
+      btnToggleEnabled.style.background = '#059669';
+      btnToggleEnabled.style.color = '#ffffff';
+      btnToggleEnabled.style.border = '1px solid #10b981';
+      btnToggleEnabled.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.25)';
+      btnToggleEnabled.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>${ {{ _('status_active') | tojson }} }</span>
+      `;
+    } else {
+      btnToggleEnabled.style.background = '#7f1d1d';
+      btnToggleEnabled.style.color = '#fecaca';
+      btnToggleEnabled.style.border = '1px solid #991b1b';
+      btnToggleEnabled.style.boxShadow = '0 0 10px rgba(153, 27, 27, 0.25)';
+      btnToggleEnabled.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+        <span>${ {{ _('status_disabled') | tojson }} }</span>
+      `;
+    }
+  }
+
+  if (btnToggleEnabled && jobEnabledInput) {
+    btnToggleEnabled.addEventListener('click', () => {
+      jobEnabledInput.checked = !jobEnabledInput.checked;
+      updateEnabledButtonState();
+    });
+    updateEnabledButtonState();
+  }
+
+  // ----------------------------------------------------
+  // CRON PRESETS & TIMEZONE DEFAULT
+  // ----------------------------------------------------
+  document.querySelectorAll('.cron-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('schedule-cron').value = btn.getAttribute('data-cron');
+    });
+  });
+
+  const scheduleTimezoneSelect = document.getElementById('schedule-timezone');
+  if (scheduleTimezoneSelect && !isEdit) {
+    try {
+      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (browserTz) {
+        const currentVal = scheduleTimezoneSelect.value;
+        const serverFallbackTz = {{ (user_timezone_name or 'UTC') | tojson }};
+        if (currentVal === 'UTC' || currentVal === serverFallbackTz) {
+          let matchingOpt = Array.from(scheduleTimezoneSelect.options).find(opt => opt.value === browserTz);
+          if (!matchingOpt) {
+            matchingOpt = document.createElement('option');
+            matchingOpt.value = browserTz;
+            matchingOpt.textContent = browserTz;
+            scheduleTimezoneSelect.appendChild(matchingOpt);
+          }
+          scheduleTimezoneSelect.value = browserTz;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // ----------------------------------------------------
+  // HOOK HASH LIVE DISPLAY
+  // ----------------------------------------------------
+  async function computeSha256(text) {
+    if (!text || !text.trim()) return '';
+    try {
+      const msgBuffer = new TextEncoder().encode(text.trim());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex.substring(0, 16) + '...';
+    } catch {
+      return '';
+    }
+  }
+
+  const preHookEl = document.getElementById('pre-run-hook');
+  const postHookEl = document.getElementById('post-run-hook');
+  const preHashDisplay = document.getElementById('pre-hook-hash-display');
+  const postHashDisplay = document.getElementById('post-hook-hash-display');
+
+  async function updateHookHashes() {
+    if (preHookEl && preHashDisplay) {
+      const h = await computeSha256(preHookEl.value);
+      preHashDisplay.textContent = h ? `SHA - 256: ${ h } ` : '';
+    }
+    if (postHookEl && postHashDisplay) {
+      const h = await computeSha256(postHookEl.value);
+      postHashDisplay.textContent = h ? `SHA - 256: ${ h } ` : '';
+    }
+  }
+
+  if (preHookEl) preHookEl.addEventListener('input', updateHookHashes);
+  if (postHookEl) postHookEl.addEventListener('input', updateHookHashes);
+  updateHookHashes();
+
+  // ----------------------------------------------------
+  // ROOT DISCOVERY TRIGGER
+  // ----------------------------------------------------
+  const btnDiscovery = document.getElementById('btn-trigger-discovery');
+  const spinner = document.getElementById('discovery-spinner');
+  const resultsDiv = document.getElementById('discovery-results');
+  const alertDiv = document.getElementById('discovery-alert');
+  const lastDiscoveryInput = document.getElementById('last-discovery-id');
+
+  if (btnDiscovery) {
+    btnDiscovery.addEventListener('click', async () => {
+      const sourceRemoteId = document.getElementById('source-remote-id').value;
+      const sourcePath = document.getElementById('source-path').value || '/';
+
+      if (!sourceRemoteId) {
+        showToast({{ _('err_select_source_remote_first') | tojson }}, 'error');
+        switchTab('tab-name-coords');
+        document.getElementById('source-remote-id').focus();
+        return;
+      }
+
+      btnDiscovery.disabled = true;
+      if (spinner) spinner.style.display = 'inline-block';
+
+      try {
+        const assignedProxyCheckboxes = document.querySelectorAll('.proxy-assign-checkbox:checked');
+        const cardsToCheck = assignedProxyCheckboxes.length > 0
+          ? Array.from(assignedProxyCheckboxes).map(cb => cb.closest('.proxy-select-card')).filter(Boolean)
+          : Array.from(document.querySelectorAll('.proxy-select-card'));
+
+        for (const card of cardsToCheck) {
+          const reachable = getCardReachableRemotes(card);
+          const proxyName = card?.querySelector('strong')?.textContent?.trim() || 'Proxy';
+          if (sourceRemoteId && !reachable.includes(sourceRemoteId)) {
+            const msg = ({{ _('job_proxy_cannot_reach_source_named') | tojson }}).replace('{proxy}', proxyName);
+            showToast(msg, 'error');
+            btnDiscovery.disabled = false;
+            if (spinner) spinner.style.display = 'none';
+            return;
+          }
+        }
+        const assignedProxyIds = Array.from(assignedProxyCheckboxes).map(cb => cb.value);
+
+        const resp = await fetch('/api/ui/jobs/discover', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            source_remote_id: sourceRemoteId,
+            source_path: sourcePath,
+            assigned_proxy_ids: assignedProxyIds.length > 0 ? assignedProxyIds : undefined
+          })
+        });
+
+        const data = await resp.json();
+        resultsDiv.style.display = 'block';
+
+        const isSuccess = resp.ok && (data.status === 'ok' || data.status === 'succeeded' || !!data.discovery);
+        if (isSuccess && data.status !== 'error') {
+          const disc = data.discovery || data;
+          if (disc.id) {
+            lastDiscoveryInput.value = disc.id;
+          }
+
+          const folderCount = disc.folder_count ?? disc.total_subfolders ?? (disc.subfolders ? disc.subfolders.length : 0);
+          const rootFilesCount = disc.root_file_count ?? disc.total_root_files ?? (disc.root_files ? disc.root_files.length : 0);
+          const taskEstimate = disc.task_count_estimate ?? Math.max(1, (rootFilesCount > 0 ? 1 : 0) + folderCount);
+          const level = disc.level ?? disc.status_level ?? 'ok';
+
+          document.getElementById('disc-folder-count').textContent = folderCount;
+          document.getElementById('disc-root-files').textContent = rootFilesCount;
+          document.getElementById('disc-task-estimate').textContent = taskEstimate;
+
+          const levelBadge = document.getElementById('disc-level-badge');
+          if (level === 'ok') {
+            levelBadge.innerHTML = '<span class="badge badge-online">' + {{ _('job_disc_level_ok_badge') | tojson }} + '</span>';
+            alertDiv.style.background = 'rgba(16, 185, 129, 0.1)';
+            alertDiv.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            alertDiv.style.color = '#10b981';
+            alertDiv.innerHTML = ({{ _('job_disc_level_ok_alert_html') | tojson }}).replace('{folders}', folderCount).replace('{tasks}', taskEstimate);
+          } else if (level === 'warn') {
+            levelBadge.innerHTML = '<span class="badge badge-cooldown">' + {{ _('job_disc_level_warn_badge') | tojson }} + '</span>';
+            alertDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+            alertDiv.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+            alertDiv.style.color = '#f59e0b';
+            alertDiv.innerHTML = ({{ _('job_disc_level_warn_alert_html') | tojson }}).replace('{tasks}', taskEstimate);
+          } else {
+            levelBadge.innerHTML = '<span class="badge badge-offline">' + {{ _('job_disc_level_block_badge') | tojson }} + '</span>';
+            alertDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+            alertDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            alertDiv.style.color = '#ef4444';
+            alertDiv.innerHTML = ({{ _('job_disc_level_block_alert_html') | tojson }}).replace('{folders}', folderCount);
+          }
+
+          // Folder list preview
+          const folderListEl = document.getElementById('disc-folder-list');
+          const folders = (disc.entries && (disc.entries.folders || disc.entries.subfolders)) || disc.subfolders || [];
+          function escapeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          }
+          if (folders.length > 0) {
+            folderListEl.innerHTML = folders.map(f => `<div>📁 ${escapeHtml(f)}</div>`).join('');
+          } else {
+            folderListEl.innerHTML = '<span style="color: var(--color-text-muted);">' + {{ _('job_disc_no_subfolders_root_only') | tojson }} + '</span>';
+          }
+        } else {
+          alertDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+          alertDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+          alertDiv.style.color = '#ef4444';
+          alertDiv.innerHTML = `<strong>${ {{ _('err_discovery_prefix') | tojson }} }</strong> ${data.message || data.error || {{ _('err_discovery_failed') | tojson }}}`;
+        }
+      } catch (err) {
+        resultsDiv.style.display = 'block';
+        alertDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        alertDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        alertDiv.style.color = '#ef4444';
+        alertDiv.innerHTML = `<strong>${ {{ _('err_connection_label') | tojson }} }</strong> ${err.message}`;
+      } finally {
+        btnDiscovery.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+      }
+    });
+  }
+
+  // ----------------------------------------------------
+  // GESTIONE FILTRI DI SECONDO LIVELLO & PARALLELIZZAZIONE
+  // ----------------------------------------------------
+  const secondLevelFiltersTextarea = document.getElementById('job-second-level-filters');
+  const secondLevelFiltersContainer = document.getElementById('second-level-filters-container');
+  const parallelRadios = document.querySelectorAll('input[name="parallelization"]');
+
+  function updateSecondLevelFiltersState() {
+    if (!secondLevelFiltersTextarea) return;
+    const selectedParallel = document.querySelector('input[name="parallelization"]:checked')?.value || 'none';
+    const isParallelActive = (selectedParallel === 'by_subfolder');
+
+    secondLevelFiltersTextarea.disabled = !isParallelActive;
+    if (isParallelActive) {
+      secondLevelFiltersTextarea.removeAttribute('disabled');
+      secondLevelFiltersTextarea.style.opacity = '1';
+      secondLevelFiltersTextarea.style.cursor = 'text';
+      secondLevelFiltersTextarea.style.backgroundColor = '';
+      secondLevelFiltersTextarea.title = '';
+      if (secondLevelFiltersContainer) {
+        secondLevelFiltersContainer.style.opacity = '1';
+      }
+    } else {
+      secondLevelFiltersTextarea.setAttribute('disabled', 'disabled');
+      secondLevelFiltersTextarea.style.opacity = '0.6';
+      secondLevelFiltersTextarea.style.cursor = 'not-allowed';
+      secondLevelFiltersTextarea.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+      secondLevelFiltersTextarea.title = {{ _('job_second_level_filters_disabled_tooltip') | tojson }};
+      if (secondLevelFiltersContainer) {
+        secondLevelFiltersContainer.style.opacity = '0.6';
+      }
+    }
+  }
+
+  parallelRadios.forEach(radio => {
+    radio.addEventListener('change', updateSecondLevelFiltersState);
+  });
+  updateSecondLevelFiltersState();
+
+  // ----------------------------------------------------
+  // GESTIONE ALTRI PARAMETRI RCLONE
+  // ----------------------------------------------------
+  const FORBIDDEN_RCLONE_FLAGS = [
+    '--rc',
+    '--rc-addr',
+    '--rc-user',
+    '--rc-pass',
+    '--password-command',
+    '--config',
+    '--log-file',
+    '--syslog',
+    '--daemon',
+    '--pid-file',
+    '--cache-dir'
+  ];
+
+  {% set rclone_opts = (job.rclone_options or {}) if job else {} %}
+  let additionalParamsList = {{ (rclone_opts.get('additional_args') or rclone_opts.get('additional_params') or []) | tojson }};
+  if (!Array.isArray(additionalParamsList)) {
+    additionalParamsList = [];
+  }
+
+  const inputAdditionalParam = document.getElementById('input-additional-param');
+  const btnAddAdditionalParam = document.getElementById('btn-add-additional-param');
+  const additionalParamError = document.getElementById('additional-param-error');
+  const additionalParamsContainer = document.getElementById('additional-params-list');
+
+  function showParamError(msg) {
+    if (!additionalParamError) return;
+    additionalParamError.textContent = msg;
+    additionalParamError.style.display = 'block';
+  }
+
+  function clearParamError() {
+    if (!additionalParamError) return;
+    additionalParamError.textContent = '';
+    additionalParamError.style.display = 'none';
+  }
+
+  function renderAdditionalParams() {
+    if (!additionalParamsContainer) return;
+    if (!additionalParamsList || additionalParamsList.length === 0) {
+      additionalParamsContainer.innerHTML = `< div style = "color: var(--color-text-muted); font-size: 0.78rem; font-style: italic; padding: 4px 0;" > ${ escapeHtml(I18N.noAdditionalParams) }</div > `;
+      return;
+    }
+
+    let html = '';
+    additionalParamsList.forEach((param, idx) => {
+      html += `
+    < div class="additional-param-item" style = "display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 12px; gap: 8px;" >
+          <span class="param-token" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.84rem; color: #38bdf8; word-break: break-all;">${escapeHtml(param)}</span>
+          <button type="button" class="btn-remove-additional-param" data-index="${idx}" title="&times;" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.15s ease;" onmouseover="this.style.color='#f87171'; this.style.background='rgba(239, 68, 68, 0.1)';" onmouseout="this.style.color='#ef4444'; this.style.background='none';">&times;</button>
+        </div >
+    `;
+    });
+    additionalParamsContainer.innerHTML = html;
+
+    additionalParamsContainer.querySelectorAll('.btn-remove-additional-param').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const idx = parseInt(this.getAttribute('data-index'), 10);
+        removeAdditionalParam(idx);
+      });
+    });
+  }
+
+  function addAdditionalParam() {
+    if (!inputAdditionalParam) return;
+    const rawVal = inputAdditionalParam.value.trim();
+    clearParamError();
+
+    if (!rawVal) {
+      showParamError(I18N.errParamEmpty);
+      inputAdditionalParam.focus();
+      return;
+    }
+
+    if (!rawVal.startsWith('-')) {
+      showParamError(I18N.errParamStartDash);
+      inputAdditionalParam.focus();
+      return;
+    }
+
+    if (/[;&|`$\n\r\x00() <>]/.test(rawVal)) {
+    showParamError(I18N.errParamForbiddenChars);
+    inputAdditionalParam.focus();
+    return;
+  }
+
+  const flagToken = rawVal.split(/\s+/)[0].split('=')[0].toLowerCase();
+  if (FORBIDDEN_RCLONE_FLAGS.includes(flagToken)) {
+    showParamError(I18N.errParamForbiddenFlag);
+    inputAdditionalParam.focus();
+    return;
+  }
+
+  if (additionalParamsList.includes(rawVal)) {
+    showParamError(I18N.errParamDuplicate);
+    inputAdditionalParam.focus();
+    return;
+  }
+
+  additionalParamsList.push(rawVal);
+  inputAdditionalParam.value = '';
+  renderAdditionalParams();
+  inputAdditionalParam.focus();
+  }
+
+  function removeAdditionalParam(index) {
+    if (index >= 0 && index < additionalParamsList.length) {
+      additionalParamsList.splice(index, 1);
+      renderAdditionalParams();
+    }
+  }
+
+  btnAddAdditionalParam?.addEventListener('click', (e) => {
+    e.preventDefault();
+    addAdditionalParam();
+  });
+
+  inputAdditionalParam?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addAdditionalParam();
+    }
+  });
+
+  inputAdditionalParam?.addEventListener('input', () => {
+    clearParamError();
+  });
+
+  renderAdditionalParams();
+
+  // ----------------------------------------------------
+  // SUBMISSION FORM
+  // ----------------------------------------------------
+  const form = document.getElementById('job-form');
+  const errorAlert = document.getElementById('form-error-alert');
+  const btnSave = document.getElementById('btn-save-job');
+
+  const maxRtEnableCb = document.getElementById('job-max-runtime-enabled');
+  const maxRtDurationGroup = document.getElementById('max-runtime-duration-group');
+  const maxRtHoursInput = document.getElementById('job-max-runtime-hours');
+  const maxRtMinsInput = document.getElementById('job-max-runtime-minutes');
+
+  function syncMaxRuntimeFields() {
+    if (!maxRtEnableCb) return;
+    const enabled = maxRtEnableCb.checked;
+    if (maxRtHoursInput) maxRtHoursInput.disabled = !enabled;
+    if (maxRtMinsInput) maxRtMinsInput.disabled = !enabled;
+    if (maxRtDurationGroup) maxRtDurationGroup.style.opacity = enabled ? '1' : '0.5';
+  }
+  maxRtEnableCb?.addEventListener('change', syncMaxRuntimeFields);
+  syncMaxRuntimeFields();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorAlert.style.display = 'none';
+
+    const name = document.getElementById('job-name').value.trim();
+    const enabled = document.getElementById('job-enabled').checked;
+    const sourceRemoteId = document.getElementById('source-remote-id').value || document.getElementById('source-remote-id-hidden')?.value;
+    const sourcePath = document.getElementById('source-path').value.trim() || '/';
+    const destinationRemoteId = document.getElementById('destination-remote-id').value || document.getElementById('dest-remote-id-hidden')?.value;
+    const destinationPath = document.getElementById('destination-path').value.trim() || '/';
+    const operation = document.querySelector('input[name="operation"]:checked')?.value || 'copy';
+    const parallelization = document.querySelector('input[name="parallelization"]:checked')?.value || 'none';
+    const scheduleCron = document.getElementById('schedule-cron').value.trim() || null;
+    const scheduleTimezone = document.getElementById('schedule-timezone')?.value.trim() || 'UTC';
+    const followDstCheckbox = document.getElementById('schedule-follow-dst');
+    const followDst = followDstCheckbox ? followDstCheckbox.checked : true;
+    const maxParallelTasks = parseInt(document.getElementById('max-parallel-tasks').value, 10) || 4;
+    const lastDiscoveryId = document.getElementById('last-discovery-id').value || null;
+
+    const notificationsEnabled = document.getElementById('job-notifications-enabled').checked;
+    const notificationPolicy = document.getElementById('job-notification-policy')?.value.trim() || null;
+
+    const missedRunPolicy = document.getElementById('job-missed-run-policy')?.value.trim() || null;
+    const overlapPolicy = document.getElementById('job-overlap-policy')?.value.trim() || null;
+    const pendingPolicy = document.getElementById('job-pending-policy')?.value.trim() || null;
+    const missedRunNotify = document.getElementById('job-missed-run-notify')?.checked || false;
+    const overlapNotify = document.getElementById('job-overlap-notify')?.checked || false;
+    const pendingNotify = document.getElementById('job-pending-notify')?.checked || false;
+    const maxRuntimeNotify = document.getElementById('job-max-runtime-notify')?.checked || false;
+    const maxRuntimeEnabled = maxRtEnableCb ? maxRtEnableCb.checked : false;
+    const maxRuntimeHours = parseInt(maxRtHoursInput?.value || '0', 10) || 0;
+    const maxRuntimeMins = parseInt(maxRtMinsInput?.value || '0', 10) || 0;
+    const maxRuntimeTotalMinutes = maxRuntimeEnabled ? (maxRuntimeHours * 60 + maxRuntimeMins) : null;
+
+    if (maxRuntimeEnabled && (maxRuntimeHours < 0 || maxRuntimeMins < 0 || maxRuntimeTotalMinutes < 1)) {
+      errorAlert.style.display = 'block';
+      errorAlert.textContent = {{ _('err_job_max_runtime_invalid') | tojson }};
+      switchTab('tab-run-policies');
+      errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!name || !sourceRemoteId || !destinationRemoteId) {
+      errorAlert.style.display = 'block';
+      errorAlert.textContent = {{ _('err_job_required_fields') | tojson }};
+      switchTab('tab-name-coords');
+      return;
+    }
+
+    if (sourceRemoteId === destinationRemoteId && sourcePath === destinationPath) {
+      errorAlert.style.display = 'block';
+      errorAlert.textContent = {{ _('err_job_same_source_dest') | tojson }};
+      switchTab('tab-name-coords');
+      return;
+    }
+
+    const assignedProxyCheckboxes = document.querySelectorAll('.proxy-assign-checkbox:checked');
+    const cardsToCheck = assignedProxyCheckboxes.length > 0
+      ? Array.from(assignedProxyCheckboxes).map(cb => cb.closest('.proxy-select-card')).filter(Boolean)
+      : Array.from(document.querySelectorAll('.proxy-select-card'));
+
+    for (const card of cardsToCheck) {
+      const reachable = getCardReachableRemotes(card);
+      const proxyName = card?.querySelector('strong')?.textContent?.trim() || 'Proxy';
+      if (sourceRemoteId && !reachable.includes(sourceRemoteId)) {
+        errorAlert.style.display = 'block';
+        errorAlert.textContent = ({{ _('job_proxy_cannot_reach_source_named') | tojson }}).replace('{proxy}', proxyName);
+        switchTab('tab-proxy-affinity');
+        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      if (destinationRemoteId && !reachable.includes(destinationRemoteId)) {
+        errorAlert.style.display = 'block';
+        errorAlert.textContent = ({{ _('job_proxy_cannot_reach_dest_named') | tojson }}).replace('{proxy}', proxyName);
+        switchTab('tab-proxy-affinity');
+        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+  const assignedProxyIds = Array.from(assignedProxyCheckboxes).map(cb => cb.value);
+
+  const preRunHook = document.getElementById('pre-run-hook')?.value ?? '';
+  const postRunHook = document.getElementById('post-run-hook')?.value ?? '';
+
+  // RClone Options & Filters
+  const retryCountVal = document.getElementById('job-retry-count')?.value.trim() ?? '';
+  const checkersVal = document.getElementById('job-checkers')?.value.trim() ?? '';
+  const transfersVal = document.getElementById('job-transfers')?.value.trim() ?? '';
+  const orderByVal = document.getElementById('job-order-by')?.value.trim() ?? '';
+  const checkFirstVal = document.getElementById('job-check-first')?.value ?? '';
+  const recurseVal = document.getElementById('job-recurse')?.value ?? '';
+
+  const f1Raw = document.getElementById('job-first-level-filters')?.value ?? '';
+  const f1 = f1Raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  const f2Raw = document.getElementById('job-second-level-filters')?.value ?? '';
+  const f2 = f2Raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  const rcloneOptions = {};
+  if (retryCountVal !== '') rcloneOptions.retry_count = parseInt(retryCountVal, 10);
+  if (checkersVal !== '') rcloneOptions.checkers = parseInt(checkersVal, 10);
+  if (transfersVal !== '') rcloneOptions.transfers = parseInt(transfersVal, 10);
+  if (orderByVal !== '') rcloneOptions.order_by = orderByVal;
+  if (checkFirstVal === 'true') rcloneOptions.check_first = true;
+  else if (checkFirstVal === 'false') rcloneOptions.check_first = false;
+  if (recurseVal === 'true') rcloneOptions.recurse = true;
+  else if (recurseVal === 'false') rcloneOptions.recurse = false;
+  if (f1.length > 0) rcloneOptions.first_level_filters = f1;
+  if (parallelization === 'by_subfolder' && f2.length > 0) rcloneOptions.second_level_filters = f2;
+  if (additionalParamsList && additionalParamsList.length > 0) {
+    rcloneOptions.additional_args = additionalParamsList;
+  } else {
+    rcloneOptions.additional_args = [];
+  }
+
+  const payload = {
+    name: name,
+    enabled: enabled,
+    notifications_enabled: notificationsEnabled,
+    notification_policy: notificationPolicy,
+    source_remote_id: sourceRemoteId,
+    source_path: sourcePath,
+    destination_remote_id: destinationRemoteId,
+    destination_path: destinationPath,
+    operation: operation,
+    parallelization: parallelization,
+    schedule_cron: scheduleCron,
+    timezone: scheduleTimezone,
+    follow_dst: followDst,
+    max_parallel_tasks: maxParallelTasks,
+    last_discovery_id: lastDiscoveryId,
+    missed_run_policy: missedRunPolicy,
+    overlap_policy: overlapPolicy,
+    pending_policy: pendingPolicy,
+    max_runtime_enabled: maxRuntimeEnabled,
+    max_runtime_minutes: maxRuntimeTotalMinutes,
+    missed_run_notify: missedRunNotify,
+    overlap_notify: overlapNotify,
+    pending_notify: pendingNotify,
+    max_runtime_notify: maxRuntimeNotify,
+    assigned_proxy_ids: assignedProxyIds,
+    pre_run_hook: preRunHook,
+    post_run_hook: postRunHook,
+    rclone_options: rcloneOptions
+  };
+
+  btnSave.disabled = true;
+  btnSave.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+  const url = isEdit ? `/api/ui/jobs/${jobId}` : '/api/ui/jobs';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  try {
+    const resp = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const resData = await resp.json();
+    if (resp.ok) {
+      window.location.href = '/jobs';
+    } else {
+      errorAlert.style.display = 'block';
+      errorAlert.textContent = resData.message || {{ _('err_saving_job') | tojson }};
+      btnSave.disabled = false;
+      btnSave.textContent = isEdit ? {{ _('btn_save_changes') | tojson }} : {{ _('job_create_submit_btn') | tojson }};
+    }
+  } catch (err) {
+    errorAlert.style.display = 'block';
+    errorAlert.textContent = {{ _('err_connection_prefix') | tojson }} + err.message;
+    btnSave.disabled = false;
+    btnSave.textContent = isEdit ? {{ _('btn_save_changes') | tojson }} : {{ _('job_create_submit_btn') | tojson }};
+  }
+  });
+});
+</script>
+{% endblock %}

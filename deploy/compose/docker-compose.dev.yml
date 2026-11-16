@@ -1,0 +1,35 @@
+# Development overrides for Docker Compose
+# Adds source bind mounts and auto-reload flags for development
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  app:
+    command: ["gunicorn", "--reload", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "8", "--timeout", "120", "--access-logfile", "-", "embervault_app.factory:create_app()"]
+    environment:
+      EMBERVAULT_LOG_LEVEL: "DEBUG"
+    volumes:
+      - ../../packages/embervault-common/src/embervault_common:/app/packages/embervault-common/src/embervault_common:ro
+      - ../../packages/embervault-db/src/embervault_db:/app/packages/embervault-db/src/embervault_db:ro
+      - ../../services/app/src/embervault_app:/app/services/app/src/embervault_app:ro
+
+  orchestrator:
+    command: ["gunicorn", "--reload", "--bind", "0.0.0.0:8081", "--workers", "1", "--threads", "4", "embervault_orchestrator.factory:create_orchestrator_app()"]
+    volumes:
+      - ../../packages/embervault-common/src/embervault_common:/app/packages/embervault-common/src/embervault_common:ro
+      - ../../packages/embervault-db/src/embervault_db:/app/packages/embervault-db/src/embervault_db:ro
+      - ../../services/orchestrator/src/embervault_orchestrator:/app/services/orchestrator/src/embervault_orchestrator:ro
+
+  proxy-1:
+    command: ["python3", "-m", "embervault_proxy.main"]
+    volumes:
+      - ../../packages/embervault-common/src/embervault_common:/app/packages/embervault-common/src/embervault_common:ro
+      - ../../services/proxy/src/embervault_proxy:/app/services/proxy/src/embervault_proxy:ro
+
+  proxy-2:
+    command: ["python3", "-m", "embervault_proxy.main"]
+    volumes:
+      - ../../packages/embervault-common/src/embervault_common:/app/packages/embervault-common/src/embervault_common:ro
+      - ../../services/proxy/src/embervault_proxy:/app/services/proxy/src/embervault_proxy:ro

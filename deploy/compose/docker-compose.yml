@@ -1,0 +1,242 @@
+# Base Docker Compose configuration for EmberVault
+name: embervault
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: embervault-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-embervault}
+      POSTGRES_USER: ${POSTGRES_USER:-embervault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password_change_me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/app.Dockerfile
+    container_name: embervault-migrate
+    command: ["python", "-m", "embervault_db.cli", "all"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-embervault}:${POSTGRES_PASSWORD:-postgres_dev_password_change_me}@postgres:5432/${POSTGRES_DB:-embervault}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-embervault}
+      POSTGRES_USER: ${POSTGRES_USER:-embervault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password_change_me}
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_MASTER_KEY: ${EMBERVAULT_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/app.Dockerfile
+    container_name: embervault-app
+    environment:
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_LOG_LEVEL: ${EMBERVAULT_LOG_LEVEL:-INFO}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-embervault}:${POSTGRES_PASSWORD:-postgres_dev_password_change_me}@postgres:5432/${POSTGRES_DB:-embervault}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-embervault}
+      POSTGRES_USER: ${POSTGRES_USER:-embervault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password_change_me}
+      EMBERVAULT_MASTER_KEY: ${EMBERVAULT_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      EMBERVAULT_SECRET_KEY: ${EMBERVAULT_SECRET_KEY:-super_secret_session_signing_key_32_chars_min}
+      EMBERVAULT_INTERNAL_API_TOKEN: ${EMBERVAULT_INTERNAL_API_TOKEN:-internal_api_token_very_secure_random_string_32}
+      EMBERVAULT_APP_BIND: 0.0.0.0
+      EMBERVAULT_APP_PORT: 8080
+      EMBERVAULT_PUBLIC_URL: ${EMBERVAULT_PUBLIC_URL:-http://localhost:8080}
+      EMBERVAULT_PORTAL_URL: ${EMBERVAULT_PORTAL_URL:-}
+      EMBERVAULT_DEV_NOAUTH: ${EMBERVAULT_DEV_NOAUTH:-true}
+    ports:
+      - "${EMBERVAULT_APP_BIND_IP:-0.0.0.0}:${EMBERVAULT_APP_PORT:-8080}:8080"
+    volumes:
+      - backups:/backups
+    networks:
+      - edge
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "app"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/orchestrator.Dockerfile
+    container_name: embervault-orchestrator
+    environment:
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_LOG_LEVEL: ${EMBERVAULT_LOG_LEVEL:-INFO}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-embervault}:${POSTGRES_PASSWORD:-postgres_dev_password_change_me}@postgres:5432/${POSTGRES_DB:-embervault}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-embervault}
+      POSTGRES_USER: ${POSTGRES_USER:-embervault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password_change_me}
+      EMBERVAULT_MASTER_KEY: ${EMBERVAULT_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      EMBERVAULT_INTERNAL_API_TOKEN: ${EMBERVAULT_INTERNAL_API_TOKEN:-internal_api_token_very_secure_random_string_32}
+      EMBERVAULT_ORCH_BIND: 0.0.0.0
+      EMBERVAULT_ORCH_PORT: 8081
+      EMBERVAULT_ORCH_METRICS_PORT: 9091
+      EMBERVAULT_PUBLIC_URL: ${EMBERVAULT_PUBLIC_URL:-http://localhost:8080}
+      EMBERVAULT_HOOK_RUNNER_URL: http://hook-runner:8082
+    volumes:
+      - backups:/backups
+    networks:
+      - backend
+      - proxy_net
+      - hooks_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      hook-runner:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "orchestrator"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  hook-runner:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/hook-runner.Dockerfile
+    container_name: embervault-hook-runner
+    environment:
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_LOG_LEVEL: ${EMBERVAULT_LOG_LEVEL:-INFO}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+      EMBERVAULT_INTERNAL_API_TOKEN: ${EMBERVAULT_INTERNAL_API_TOKEN:-internal_api_token_very_secure_random_string_32}
+      EMBERVAULT_HOOK_RUNNER_PORT: 8082
+    networks:
+      - hooks_net
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "hook-runner"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  proxy-1:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/proxy.Dockerfile
+    container_name: embervault-proxy-1
+    command: ["python3", "-m", "embervault_proxy.main"]
+    environment:
+      TOKEN: ${PROXY_1_TOKEN:-proxy_token_secret_min_32_characters_dev_1}
+      EMBERVAULT_PROXY_PORT: 8443
+      EMBERVAULT_PROXY_STATE_DIR: /var/lib/embervault/proxy
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+    volumes:
+      - proxy1_state:/var/lib/embervault/proxy
+    networks:
+      - proxy_net
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  proxy-2:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/proxy.Dockerfile
+    container_name: embervault-proxy-2
+    command: ["python3", "-m", "embervault_proxy.main"]
+    environment:
+      TOKEN: ${PROXY_2_TOKEN:-proxy_token_secret_min_32_characters_dev_2}
+      EMBERVAULT_PROXY_PORT: 8443
+      EMBERVAULT_PROXY_STATE_DIR: /var/lib/embervault/proxy
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-dev}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+    volumes:
+      - proxy2_state:/var/lib/embervault/proxy
+    networks:
+      - proxy_net
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  portal:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/portal.Dockerfile
+    container_name: embervault-portal
+    environment:
+      EMBERVAULT_ORCHESTRATOR_URL: http://orchestrator:8081
+      PORTAL_SECRET_KEY: ${PORTAL_SECRET_KEY:-portal_secret_key_change_in_production}
+      PORTAL_PORT: 8083
+    ports:
+      - "${PORTAL_PORT:-8083}:8083"
+    networks:
+      - edge
+      - backend
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "portal", "--port", "8083"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+
+networks:
+  edge:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+  proxy_net:
+    driver: bridge
+  hooks_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  pgdata:
+  proxy1_state:
+  proxy2_state:
+  backups:

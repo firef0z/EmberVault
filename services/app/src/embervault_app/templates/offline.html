@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}" dir="{% if current_locale == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <title>{{ _('offline_page_title') }} - {{ app_name }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="{{ app_logo_url }}">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background-color: #0d1117;">
+  <div class="content-card" style="max-width: 480px; text-align: center; margin: 20px;">
+    <div class="card-body" style="padding: 40px 24px;">
+      <div class="empty-state-icon" style="margin: 0 auto 20px auto; background-color: rgba(239, 68, 68, 0.15); color: #ef4444;">
+        <svg viewBox="0 0 24 24"><line x1="1" x2="23" y1="1" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>
+      </div>
+      <h1 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; color: #f0f6fc;">{{ _('offline_heading') }}</h1>
+      <p style="color: #8b949e; font-size: 0.95rem; margin-bottom: 24px;">
+        {{ _('offline_message') }}
+      </p>
+      <button type="button" class="btn btn-primary" data-action="reload">
+        {{ _('offline_reconnect_btn') }}
+      </button>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce }}" src="/static/js/app.js"></script>
+</body>
+</html>

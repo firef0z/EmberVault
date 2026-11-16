@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "Response returned by POST /v1/tasks.",
+  "properties": {
+    "attempt_id": {
+      "description": "Attempt UUID",
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "status": {
+      "description": "'accepted' for new task (HTTP 202) or 'already_known' (HTTP 200)",
+      "title": "Status",
+      "type": "string"
+    },
+    "message": {
+      "default": "",
+      "description": "Optional human-readable informational message",
+      "title": "Message",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "status"
+  ],
+  "title": "TaskDispatchResponse",
+  "type": "object"
+}

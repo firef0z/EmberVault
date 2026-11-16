@@ -1,0 +1,69 @@
+{
+  "additionalProperties": false,
+  "description": "Payload returned by GET /v1/health.",
+  "properties": {
+    "status": {
+      "default": "ok",
+      "description": "Proxy health status ('ok')",
+      "title": "Status",
+      "type": "string"
+    },
+    "proxy_version": {
+      "description": "Semantic version of embervault-proxy",
+      "title": "Proxy Version",
+      "type": "string"
+    },
+    "rclone_version": {
+      "description": "Pinned rclone binary version string",
+      "title": "Rclone Version",
+      "type": "string"
+    },
+    "uptime_s": {
+      "description": "Uptime of proxy process in seconds",
+      "minimum": 0,
+      "title": "Uptime S",
+      "type": "number"
+    },
+    "capacity": {
+      "description": "Declared max concurrent task capacity",
+      "minimum": 1,
+      "title": "Capacity",
+      "type": "integer"
+    },
+    "running_tasks": {
+      "description": "Currently executing tasks count",
+      "minimum": 0,
+      "title": "Running Tasks",
+      "type": "integer"
+    },
+    "server_time": {
+      "description": "Current server time (UTC)",
+      "format": "date-time",
+      "title": "Server Time",
+      "type": "string"
+    },
+    "cert_expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Expiration timestamp (UTC) of proxy TLS certificate",
+      "title": "Cert Expires At"
+    }
+  },
+  "required": [
+    "proxy_version",
+    "rclone_version",
+    "uptime_s",
+    "capacity",
+    "running_tasks"
+  ],
+  "title": "ProxyHealthResponse",
+  "type": "object"
+}

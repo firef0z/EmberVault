@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "description": "Payload for POST /internal/v1/proxies/probe.",
+  "properties": {
+    "host": {
+      "description": "Proxy hostname or IP address",
+      "title": "Host",
+      "type": "string"
+    },
+    "port": {
+      "default": 8443,
+      "description": "Proxy HTTPS port",
+      "maximum": 65535,
+      "minimum": 1,
+      "title": "Port",
+      "type": "integer"
+    },
+    "token": {
+      "description": "Proxy authentication Bearer token",
+      "format": "password",
+      "title": "Token",
+      "type": "string",
+      "writeOnly": true
+    }
+  },
+  "required": [
+    "host",
+    "token"
+  ],
+  "title": "ProxyProbeRequest",
+  "type": "object"
+}

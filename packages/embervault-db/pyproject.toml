@@ -1,0 +1,21 @@
+[project]
+name = "embervault-db"
+version = "1.0.0"
+description = "EmberVault database access and migrations"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "embervault-common",
+    "sqlalchemy>=2.0.35",
+    "alembic>=1.13.3",
+    "psycopg[binary]>=3.2.3",
+    "apscheduler>=3.10.4",
+]
+
+[project.scripts]
+embervault-db = "embervault_db.cli:main"
+migrate = "embervault_db.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

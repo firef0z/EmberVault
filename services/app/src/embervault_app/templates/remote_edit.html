@@ -1,0 +1,1509 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('remote_edit_title') if is_edit else _('remote_create_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('remote_edit_title') if is_edit else _('remote_create_title') }}{% endblock %}
+
+{% block content %}
+{% macro render_backend_icon(backend_type, size=20) %}
+  {% if backend_type == 'drive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 3.5h6l6 10.5h-6z"></path>
+      <path d="M3 14l3-5.5 6 10.5H6z"></path>
+      <path d="M9 14h12l-3 5.5H6z"></path>
+    </svg>
+  {% elif backend_type == 'smb' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path>
+      <circle cx="8" cy="14" r="1.5"></circle>
+      <circle cx="16" cy="14" r="1.5"></circle>
+      <path d="M9.5 14h5"></path>
+    </svg>
+  {% elif backend_type == 's3' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+      <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path>
+      <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"></path>
+    </svg>
+  {% elif backend_type == 'b2' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.4 2.1c-.3.4-.6.9-.8 1.4-.8 1.8-.4 3.4.6 4.9.9 1.4 1 2.8.4 4.2-.5 1.2-1.5 2-2.8 2.2-1.7.3-3.1-.5-3.9-1.9-.4-.7-.6-1.5-.6-2.4 0-.4-.1-.7-.4-.8-.3-.1-.6.1-.8.4-1 1.6-1.3 3.3-1 5.2.5 3.3 2.8 5.8 6.1 6.5 4.1.8 8.1-1.4 9.4-5.3 1.1-3.3.1-6.4-2.5-8.7-1.4-1.2-2.3-2.7-2.7-4.5-.2-.4-.5-.9-1-1.2z"/>
+    </svg>
+  {% elif backend_type == 'sftp' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="4 17 10 11 4 5"></polyline>
+      <line x1="12" y1="19" x2="20" y2="19"></line>
+    </svg>
+  {% elif backend_type == 'local' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+      <circle cx="12" cy="9" r="4"></circle>
+      <circle cx="12" cy="9" r="1.5"></circle>
+      <path d="M12 9l3 4"></path>
+      <line x1="8" y1="18" x2="8.01" y2="18"></line>
+      <line x1="16" y1="18" x2="16.01" y2="18"></line>
+    </svg>
+  {% elif backend_type == 'webdav' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+  {% elif backend_type == 'azureblob' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m3 19 8.5-15h4.5l-6 15H3z"></path>
+      <path d="m14 10 3.5 6H9l2.5-4h4.5l1 2"></path>
+    </svg>
+  {% elif backend_type == 'onedrive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+      <path d="M6 19a4.5 4.5 0 0 1-1.5-8.7A5 5 0 0 1 13 8"></path>
+    </svg>
+  {% elif backend_type == 'dropbox' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 4L2 7.5l5 3.5 5-3.5L7 4z"></path>
+      <path d="M17 4l-5 3.5 5 3.5 5-3.5L17 4z"></path>
+      <path d="M2 14.5l5 3.5 5-3.5-5-3.5-5 3.5z"></path>
+      <path d="M22 14.5l-5-3.5-5 3.5 5 3.5 5-3.5z"></path>
+      <path d="M7 19.5l5 3.5 5-3.5"></path>
+    </svg>
+  {% elif backend_type == 'box' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+      <path d="m3.3 7 8.7 5 8.7-5"></path>
+      <path d="M12 22V12"></path>
+    </svg>
+  {% elif backend_type == 'ftp' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m17 2 4 4-4 4"></path>
+      <path d="M3 6h18"></path>
+      <path d="m7 22-4-4 4-4"></path>
+      <path d="M21 18H3"></path>
+    </svg>
+  {% elif backend_type == 'google cloud storage' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"></path>
+      <circle cx="12" cy="13" r="2.5"></circle>
+    </svg>
+  {% elif backend_type == 'pcloud' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+      <path d="M10 9h3a2 2 0 0 1 0 4h-3v5"></path>
+    </svg>
+  {% elif backend_type == 'protondrive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      <path d="M12 8v8"></path>
+      <path d="M9 11l3-3 3 3"></path>
+    </svg>
+  {% elif backend_type == 'mega' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M7 16V8l5 4 5-4v8"></path>
+    </svg>
+  {% elif backend_type == 'swift' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+    </svg>
+  {% elif backend_type in ['opendrive', 'koofr', 'qingstor', 'yandex', 'zoho'] %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 16.2A4.5 4.5 0 0 0 21.5 8a6 6 0 0 0-11.2-2A7 7 0 0 0 2 13a5 5 0 0 0 5 5h13a4.5 4.5 0 0 0 0-1.8Z"></path>
+    </svg>
+  {% elif backend_type == 'http' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+  {% elif backend_type == 'alias' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8"></path>
+      <path d="M9 19.89H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5"></path>
+    </svg>
+  {% elif backend_type == 'crypt' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      <circle cx="12" cy="16" r="1"></circle>
+    </svg>
+  {% elif backend_type == 'compress' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v6"></path>
+      <path d="M12 21v-6"></path>
+      <path d="m8 6 4-3 4 3"></path>
+      <path d="m8 18 4 3 4-3"></path>
+      <rect x="4" y="9" width="16" height="6" rx="2"></rect>
+    </svg>
+  {% elif backend_type == 'chunker' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="2 2"></line>
+      <rect x="2" y="5" width="8" height="14" rx="2"></rect>
+      <rect x="14" y="5" width="8" height="14" rx="2"></rect>
+    </svg>
+  {% elif backend_type == 'union' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="18" cy="18" r="3"></circle>
+      <circle cx="6" cy="6" r="3"></circle>
+      <path d="M6 21V9a9 9 0 0 0 9 9"></path>
+    </svg>
+  {% else %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+    </svg>
+  {% endif %}
+{% endmacro %}
+
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 20px;">
+    <a href="/remotes" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      {{ _('btn_back_to_remotes') }}
+    </a>
+  </div>
+
+  <div class="content-card">
+    <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 18px 24px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 6px;">
+      <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0; color: var(--color-text-primary); white-space: nowrap;">
+        {{ _('remote_config_edit_title') if is_edit else _('remote_config_create_title') }}
+      </h2>
+      <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.78rem;">
+        {{ _('remote_envelope_encryption_notice') }}
+      </p>
+    </div>
+
+    <div class="card-body" style="padding: 24px;">
+      <form id="remote-form">
+        <!-- Navigation Tabs -->
+        <div class="proxy-tabs-nav" role="tablist" style="margin-bottom: 24px;">
+          <button type="button" class="proxy-tab-btn active" data-tab="tab-remote-config" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>{{ _('remote_tab_config') }}</span>
+          </button>
+          <button type="button" class="proxy-tab-btn" data-tab="tab-remote-proxy-affinity" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            <span>{{ _('remote_tab_proxy_affinity') }}</span>
+          </button>
+          <button type="button" class="proxy-tab-btn" data-tab="tab-remote-permissions" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>{{ _('remote_tab_permissions') }}</span>
+          </button>
+        </div>
+
+        <!-- Tab 1: Configurazione -->
+        <div class="proxy-tab-pane active" id="tab-remote-config" role="tabpanel">
+        <!-- 1. Provider Selection (Disabled/Fixed in edit mode) -->
+        {% if not is_edit %}
+        <div style="margin-bottom: 24px;">
+          <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 12px; font-size: 1.05rem;">
+            {{ _('remote_step1_select_provider') }}
+          </label>
+
+          <!-- Sezione Più usati -->
+          <div style="margin-bottom: 22px;">
+            <div style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              {{ _('remote_section_popular') }}
+            </div>
+            <div class="provider-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
+              {% for b in catalog if b.is_popular %}
+              <div
+                class="provider-card {% if loop.first %}active{% endif %}"
+                data-backend="{{ b.backend_type }}"
+                style="border: 2px solid {% if loop.first %}var(--ember-primary){% else %}var(--border-color){% endif %}; background: {% if loop.first %}rgba(255, 107, 0, 0.08){% else %}var(--bg-secondary){% endif %}; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;"
+              >
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="color: var(--ember-primary); display: flex; align-items: center;">
+                    {{ render_backend_icon(b.backend_type, 22) }}
+                  </span>
+                  <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ b.label }}</strong>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.3;">
+                  {{ b.description }}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Sezione Altri Provider (Collapsata di default) -->
+          <div id="other-backends-section" style="margin-top: 24px; border-top: 1px dashed var(--color-border); padding-top: 16px;">
+            <div
+              id="header-other-backends"
+              class="collapsible-section-header"
+              data-target="content-other-backends"
+              style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; cursor: pointer; user-select: none; transition: background 0.15s ease;"
+            >
+              <div style="font-size: 0.84rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>{{ _('remote_section_other') }}</span>
+                <span class="badge badge-neutral" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 4px;">{{ catalog|selectattr('is_popular', 'false')|selectattr('is_special', 'false')|list|length }} {{ _('remote_badge_providers') }}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.78rem; color: var(--color-text-muted);" class="toggle-hint">{{ _('remote_expand') }}</span>
+                <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <div id="content-other-backends" style="display: none; margin-top: 14px;">
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <div style="position: relative; width: 100%; max-width: 340px;">
+                  <input
+                    type="text"
+                    id="backend-search-input"
+                    class="form-control"
+                    placeholder="{{ _('remote_search_placeholder') }}"
+                    style="width: 100%; padding: 7px 12px 7px 32px; font-size: 0.82rem; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text-primary);"
+                  />
+                  <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Compact grid for "Altri" without scrollbars -->
+              <div id="other-backends-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; padding: 2px;">
+                {% for b in catalog if not b.is_popular and not b.is_special %}
+                <div
+                  class="provider-card other-provider-card"
+                  data-backend="{{ b.backend_type }}"
+                  data-keywords="{{ (b.label + ' ' + b.backend_type + ' ' + b.description + ' ' + b.category)|lower }}"
+                  title="{{ b.description }}"
+                  style="border: 1px solid var(--border-color); background: var(--bg-secondary); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 8px;"
+                >
+                  <span class="other-provider-icon" style="color: var(--ember-primary); display: flex; align-items: center; flex-shrink: 0;">
+                    {{ render_backend_icon(b.backend_type, 18) }}
+                  </span>
+                  <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">
+                    <strong style="color: var(--text-primary); font-size: 0.85rem; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ b.label }}</strong>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ _(b.category) }}</span>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <div id="no-backend-found" style="display: none; padding: 16px; text-align: center; color: var(--color-text-muted); font-size: 0.85rem;">
+                {{ _('remote_no_backends_found') }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Sezione Backend speciali (Collapsata di default) -->
+          <div id="special-backends-section" style="margin-top: 16px; border-top: 1px dashed var(--color-border); padding-top: 16px;">
+            <div
+              id="header-special-backends"
+              class="collapsible-section-header"
+              data-target="content-special-backends"
+              style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; cursor: pointer; user-select: none; transition: background 0.15s ease;"
+            >
+              <div style="font-size: 0.84rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>{{ _('remote_section_special') }}</span>
+                <span class="badge badge-neutral" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 4px;">{{ catalog|selectattr('is_special', 'true')|list|length }} {{ _('remote_badge_backends') }}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.78rem; color: var(--color-text-muted);" class="toggle-hint">{{ _('remote_expand') }}</span>
+                <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <div id="content-special-backends" style="display: none; margin-top: 14px;">
+              <div class="special-backends-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">
+                {% for b in catalog if b.is_special %}
+                <div
+                  class="provider-card special-provider-card"
+                  data-backend="{{ b.backend_type }}"
+                  data-keywords="{{ (b.label + ' ' + b.backend_type + ' ' + b.description + ' ' + b.category)|lower }}"
+                  style="border: 1px solid var(--border-color); background: var(--bg-secondary); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: flex-start; gap: 10px;"
+                >
+                  <span class="special-provider-icon" style="color: var(--ember-primary); display: flex; align-items: center; margin-top: 2px; flex-shrink: 0;">
+                    {{ render_backend_icon(b.backend_type, 20) }}
+                  </span>
+                  <div style="overflow: hidden; min-width: 0;">
+                    <strong style="color: var(--text-primary); font-size: 0.9rem; display: block;">{{ b.label }}</strong>
+                    <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.3; margin-top: 2px;">{{ b.description }}</div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div style="margin-bottom: 20px; padding: 14px 18px; background: rgba(255, 107, 0, 0.08); border: 1px solid rgba(255, 107, 0, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: var(--ember-primary); display: flex; align-items: center;">
+              {{ render_backend_icon(remote.backend_type, 24) }}
+            </span>
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.85rem;">{{ _('remote_provider_type_label') }}</span>
+              <strong style="color: var(--ember-primary); font-size: 1.05rem; margin-left: 8px;">{{ _(remote_spec.label) if remote_spec else remote.backend_type }}</strong>
+            </div>
+          </div>
+          <span class="badge badge-neutral">backend: <code>{{ remote.backend_type }}</code></span>
+        </div>
+        {% endif %}
+
+        <!-- 2. Remote General Settings -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div>
+            <label class="form-label" for="remote-name" style="font-weight: 500; margin-bottom: 6px; display: block;">
+              {{ _('remote_name_label') }} <span style="color: var(--color-brand);">*</span>
+            </label>
+            <input
+              type="text"
+              id="remote-name"
+              name="name"
+              class="form-control"
+              placeholder="{{ _('remote_name_placeholder') }}"
+              value="{{ remote.name if remote else '' }}"
+              required
+              style="width: 100%; padding: 10px 14px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-primary);"
+            />
+            <small style="color: var(--color-text-muted); font-size: 0.8rem;">{{ _('remote_name_hint') }}</small>
+          </div>
+          <div>
+            <label class="form-label" style="font-weight: 500; margin-bottom: 6px; display: block;">
+              {{ _('proxy_status') }}
+            </label>
+            <div style="display: flex; align-items: center; gap: 10px; height: 42px;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input
+                  type="checkbox"
+                  id="remote-enabled"
+                  name="is_enabled"
+                  {% if not remote or remote.is_enabled %}checked{% endif %}
+                  style="width: 18px; height: 18px; accent-color: var(--color-brand);"
+                />
+                <span style="font-size: 0.9rem;">{{ _('status_enabled') }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--color-border); margin: 24px 0;" />
+
+        <!-- 3. Dynamic Provider Parameter Fields -->
+        <div>
+          <h3 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 16px 0; color: var(--color-text-primary);">
+            {{ _('remote_connection_params_title') }}
+          </h3>
+
+          <div id="dynamic-fields-container">
+            <!-- Rendered dynamically by JavaScript based on selected backend schema -->
+          </div>
+        </div>
+
+        <!-- 4. Test Connection Feedback Box -->
+        <div id="test-feedback" style="display: none; margin-top: 24px; padding: 16px; border-radius: 8px;"></div>
+        </div><!-- /#tab-remote-config -->
+
+        <!-- Tab 2: Affinità Proxy -->
+        <div class="proxy-tab-pane" id="tab-remote-proxy-affinity" role="tabpanel" style="display: none;">
+          <div style="margin-bottom: 14px;">
+            <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 4px; font-size: 1.05rem; color: var(--color-text-primary);">
+              {{ _('remote_authorized_proxies_title') }}
+            </label>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin: 0 0 14px 0; line-height: 1.45;">
+              {{ _('remote_authorized_proxies_desc') }}
+            </p>
+          </div>
+
+          {% if proxies %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; max-height: 380px; overflow-y: auto; padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: rgba(0,0,0,0.15);" id="remote-proxies-container">
+            {% set reachable_pids = (remote.proxies | map(attribute='id') | list) if remote and remote.proxies else [] %}
+            {% for p in proxies %}
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-base); cursor: pointer;">
+              <input
+                type="checkbox"
+                name="reachable_proxy_ids"
+                value="{{ p.id }}"
+                class="remote-proxy-checkbox"
+                {% if not is_edit or (p.id in reachable_pids) %}checked{% endif %}
+                style="width: 16px; height: 16px; accent-color: var(--color-brand); cursor: pointer;"
+              />
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; font-size: 0.88rem; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ p.name }}</div>
+                <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ p.host }}:{{ p.port }}</div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">
+            {{ _('no_proxies_registered_msg') }}
+          </div>
+          {% endif %}
+        </div><!-- /#tab-remote-proxy-affinity -->
+
+        <!-- Tab 3: Permessi -->
+        <div class="proxy-tab-pane" id="tab-remote-permissions" role="tabpanel" style="display: none;">
+          <div style="margin-bottom: 14px;">
+            <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 4px; font-size: 1.05rem; color: var(--color-text-primary);">
+              {{ _('remote_permissions_title') }}
+            </label>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin: 0 0 14px 0; line-height: 1.45;">
+              {{ _('remote_permissions_desc') }}
+            </p>
+          </div>
+
+          {% if roles %}
+          <div style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: rgba(0,0,0,0.15);" id="remote-roles-container">
+            {% set allowed_rids = (remote.roles | map(attribute='id') | list) if remote and remote.roles else [] %}
+            {% for r in roles %}
+            {% set is_admin_role = r.name|lower in ['admin', 'administrator'] %}
+            <label style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-base); cursor: pointer;">
+              <input
+                type="checkbox"
+                name="allowed_role_ids"
+                value="{{ r.id }}"
+                class="remote-role-checkbox"
+                {% if not is_edit or (r.id in allowed_rids) or is_admin_role %}checked{% endif %}
+                style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--color-brand); cursor: pointer;"
+              />
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="font-size: 0.92rem; color: var(--color-text-primary);">{{ _(r.name) }}</strong>
+                  {% if r.is_system %}
+                    <span class="badge badge-secondary" style="font-size: 0.68rem; padding: 1px 6px;">{{ _('role_builtin') }}</span>
+                  {% endif %}
+                </div>
+                {% if r.description %}
+                <div style="font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.35; margin-top: 3px;">{{ _(r.description) }}</div>
+                {% endif %}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">
+            {{ _('no_roles_configured_msg') }}
+          </div>
+          {% endif %}
+        </div><!-- /#tab-remote-permissions -->
+
+        <!-- 5. Action Buttons -->
+        <div style="margin-top: 28px; display: flex; justify-content: space-between; align-items: center; padding-top: 18px; border-top: 1px solid var(--color-border); flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button
+              type="button"
+              id="btn-test-connection"
+              class="btn btn-secondary"
+              style="display: inline-flex; align-items: center; gap: 8px;"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              {{ _('btn_test_connection_now') }}
+            </button>
+
+            <button
+              type="button"
+              id="btn-browse-remote"
+              class="btn btn-secondary"
+              style="display: inline-flex; align-items: center; gap: 8px;"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              {{ _('btn_browse_remote') }}
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <a href="/remotes" class="btn btn-secondary">{{ _('btn_cancel') }}</a>
+            <button
+              type="submit"
+              id="btn-submit-remote"
+              class="btn btn-primary"
+              style="display: inline-flex; align-items: center; gap: 8px;"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              {{ _('btn_save_changes') if is_edit else _('btn_create_remote') }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Esplora / Sfoglia Remote -->
+<div id="modal-browse-remote" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 860px; width: 100%;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: var(--color-brand); display: flex;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </span>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('modal_browse_title') }}</h3>
+      </div>
+      <button type="button" class="btn-icon" data-close-modal="modal-browse-remote" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <!-- Current Path Bar with Copy Button -->
+      <div>
+        <label style="font-size: 0.78rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 6px; display: block;">
+          {{ _('browse_current_path_label') }}
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div
+            id="browse-current-path-label"
+            style="flex: 1; padding: 9px 12px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; font-family: monospace; font-size: 0.88rem; color: var(--color-text-primary); word-break: break-all; min-height: 40px; display: flex; align-items: center;"
+            title="{{ _('browse_current_path_title') }}"
+          >
+            /
+          </div>
+          <button
+            type="button"
+            id="btn-copy-browse-path"
+            class="btn btn-secondary btn-sm"
+            style="display: inline-flex; align-items: center; gap: 6px; height: 40px; flex-shrink: 0;"
+            title="{{ _('browse_copy_path_title') }}"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btn-copy-browse-text">{{ _('btn_copy') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Bar with Parent Level Button "..." and Reload -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px;">
+        <button
+          type="button"
+          id="btn-browse-parent"
+          class="btn btn-secondary btn-sm"
+          style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;"
+          title="{{ _('browse_parent_level_title') }}"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          ...
+          <span style="font-weight: 400; font-size: 0.82rem; margin-left: 4px; color: var(--color-text-muted);">{{ _('browse_parent_level_text') }}</span>
+        </button>
+
+        <span id="browse-items-count" style="font-size: 0.82rem; color: var(--color-text-secondary);"></span>
+      </div>
+
+      <!-- Error / Notice Box -->
+      <div id="browse-error" style="display: none; padding: 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.88rem;"></div>
+
+      <!-- Listing Container -->
+      <div
+        id="browse-list-container"
+        style="border: 1px solid var(--color-border); border-radius: 8px; max-height: 340px; min-height: 200px; overflow-y: auto; background: var(--color-bg-surface);"
+      >
+        <!-- Populated via JavaScript -->
+        <div id="browse-loading" style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+          <div style="width: 24px; height: 24px; border: 2px solid rgba(255,107,0,0.3); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px auto;"></div>
+          <span>{{ _('browse_loading_text') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px;">
+      <small style="color: var(--color-text-muted); font-size: 0.8rem;">
+        {{ _('browse_modal_hint') }}
+      </small>
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-browse-remote">{{ _('btn_close') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+const I18N = {
+  noneAvailable: "{{ _('remote_none_available') }}",
+  subpathPlaceholder: "{{ _('remote_subpath_placeholder') }}",
+  enableOption: "{{ _('remote_enable_option') }}",
+  keepSecretHint: "{{ _('remote_keep_secret_hint') }}",
+  expand: "{{ _('remote_expand') }}",
+  collapse: "{{ _('remote_collapse') }}",
+  testingConnection: "{{ _('remote_testing_connection') }}",
+  testSuccessTitle: "{{ _('remote_test_success_title') }}",
+  testSuccessMsg: "{{ _('remote_test_success_msg') }}",
+  responseTime: "{{ _('remote_response_time') }}",
+  testFailedTitle: "{{ _('remote_test_failed_title') }}",
+  testFailedMsg: "{{ _('remote_test_failed_msg') }}",
+  networkErrorPrefix: "{{ _('remote_network_error_prefix') }}",
+  colName: "{{ _('browse_col_name') }}",
+  colSize: "{{ _('browse_col_size') }}",
+  colModTime: "{{ _('browse_col_mod_time') }}",
+  saving: "{{ _('remote_saving') }}",
+  saveChanges: "{{ _('btn_save_changes') }}",
+  createRemote: "{{ _('btn_create_remote') }}",
+  loadingItems: "{{ _('browse_loading_text') }}",
+  errorLoading: "{{ _('browse_error_loading') }}",
+  noDataError: "{{ _('browse_no_data_error') }}",
+  folders: "{{ _('browse_folders_count') }}",
+  files: "{{ _('browse_files_count') }}",
+  emptyFolder: "{{ _('browse_empty_folder') }}",
+  openFolder: "{{ _('browse_open_folder') }}",
+  fileBadge: "{{ _('browse_file_badge') }}",
+  connFailed: "{{ _('browse_connection_failed') }}",
+  copy: "{{ _('btn_copy') }}",
+  copied: "{{ _('btn_copied') }}",
+  copyFailed: "{{ _('browse_copy_failed') }}",
+  testSuccessFolders: "{{ _('remote_test_success_folders') }}",
+  testSuccessSingleFolder: "{{ _('remote_test_success_single_folder') }}",
+  testSuccessNoFolders: "{{ _('remote_test_success_no_folders') }}",
+  invalidConfigPrefix: "{{ _('invalid_config_prefix') }}",
+  errorFieldRequired: "{{ _('error_field_required') }}",
+  errorFieldMustBeInteger: "{{ _('error_field_must_be_integer') }}"
+};
+
+const isEdit = {{ 'true' if is_edit else 'false' }};
+const initialBackend = "{{ remote.backend_type if remote else (catalog[0].backend_type if catalog else 's3') }}";
+const initialConfig = {{ masked_config|tojson if masked_config else '{}' }};
+const catalog = {{ catalog|tojson if catalog else '[]' }};
+const existingRemotes = {{ existing_remotes|tojson if existing_remotes else '[]' }};
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+
+let currentBackend = initialBackend;
+
+function renderFields(backendType) {
+  const container = document.getElementById("dynamic-fields-container");
+  container.innerHTML = "";
+  const spec = catalog.find(b => b.backend_type === backendType);
+  if (!spec) return;
+
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "1fr 1fr";
+  grid.style.gap = "16px";
+
+  spec.fields.forEach(f => {
+    const fieldWrap = document.createElement("div");
+    if (f.type === "textarea") {
+      fieldWrap.style.gridColumn = "1 / -1";
+    }
+
+    const label = document.createElement("label");
+    label.className = "form-label";
+    label.style.fontWeight = "500";
+    label.style.marginBottom = "6px";
+    label.style.display = "block";
+    label.innerHTML = `${f.label} ${f.required ? '<span style="color: var(--color-brand);">*</span>' : ''}`;
+    fieldWrap.appendChild(label);
+
+    const currVal = (initialConfig && initialConfig[f.name] !== undefined) ? initialConfig[f.name] : (f.default !== null ? f.default : "");
+
+    let inputEl;
+    if (f.name === "remote" && ["alias", "crypt", "compress", "chunker"].includes(backendType)) {
+      // Split currVal into remoteName and subpath: "remoteName:sub/path"
+      let selectedRemote = "";
+      let subpathVal = "";
+      if (currVal) {
+        const parts = String(currVal).split(":");
+        selectedRemote = parts[0] || "";
+        subpathVal = parts.slice(1).join(":");
+      }
+
+      // Hidden input that stores the final "remote:subpath" value submitted with the form
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.name = f.name;
+      hiddenInput.value = currVal || (existingRemotes.length > 0 ? `${existingRemotes[0].name}:` : "");
+
+      const comboWrap = document.createElement("div");
+      comboWrap.style.display = "flex";
+      comboWrap.style.flexDirection = "column";
+      comboWrap.style.gap = "8px";
+
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gridTemplateColumns = "1fr auto 1fr";
+      row.style.alignItems = "center";
+      row.style.gap = "8px";
+
+      // Select dropdown for existing remotes
+      const remoteSelect = document.createElement("select");
+      remoteSelect.className = "form-control";
+      remoteSelect.style.padding = "10px 14px";
+      remoteSelect.style.background = "var(--color-bg-base)";
+      remoteSelect.style.border = "1px solid var(--color-border)";
+      remoteSelect.style.borderRadius = "8px";
+      remoteSelect.style.color = "var(--color-text-primary)";
+      remoteSelect.id = `select-remote-${f.name}`;
+
+      if (existingRemotes.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = I18N.noneAvailable;
+        remoteSelect.appendChild(opt);
+      } else {
+        existingRemotes.forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r.name;
+          opt.textContent = `${r.name} (${r.backend_type})`;
+          if (r.name === selectedRemote) opt.selected = true;
+          remoteSelect.appendChild(opt);
+        });
+        if (!selectedRemote && existingRemotes.length > 0) {
+          selectedRemote = existingRemotes[0].name;
+          remoteSelect.value = selectedRemote;
+        }
+      }
+
+      // Separator colon ":"
+      const colonSpan = document.createElement("span");
+      colonSpan.textContent = ":";
+      colonSpan.style.fontWeight = "bold";
+      colonSpan.style.fontSize = "1.2rem";
+      colonSpan.style.color = "var(--color-brand)";
+      colonSpan.style.userSelect = "none";
+
+      // Text input for subpath
+      const subpathInput = document.createElement("input");
+      subpathInput.type = "text";
+      subpathInput.className = "form-control";
+      subpathInput.placeholder = I18N.subpathPlaceholder;
+      subpathInput.value = subpathVal;
+      subpathInput.style.padding = "10px 14px";
+      subpathInput.style.background = "var(--color-bg-base)";
+      subpathInput.style.border = "1px solid var(--color-border)";
+      subpathInput.style.borderRadius = "8px";
+      subpathInput.style.color = "var(--color-text-primary)";
+      subpathInput.id = `input-subpath-${f.name}`;
+
+      function updateRemoteValue() {
+        const rName = remoteSelect.value.trim();
+        let sub = subpathInput.value.trim();
+        // Remove leading slashes from subpath
+        while (sub.startsWith("/")) sub = sub.substring(1);
+        hiddenInput.value = rName ? `${rName}:${sub}` : "";
+      }
+
+      remoteSelect.addEventListener("change", updateRemoteValue);
+      subpathInput.addEventListener("input", updateRemoteValue);
+      updateRemoteValue();
+
+      row.appendChild(remoteSelect);
+      row.appendChild(colonSpan);
+      row.appendChild(subpathInput);
+
+      comboWrap.appendChild(row);
+      comboWrap.appendChild(hiddenInput);
+      inputEl = comboWrap;
+    } else if (f.type === "select") {
+      inputEl = document.createElement("select");
+      inputEl.className = "form-control";
+      inputEl.name = f.name;
+      inputEl.style.width = "100%";
+      inputEl.style.padding = "10px 14px";
+      inputEl.style.background = "var(--color-bg-base)";
+      inputEl.style.border = "1px solid var(--color-border)";
+      inputEl.style.borderRadius = "8px";
+      inputEl.style.color = "var(--color-text-primary)";
+
+      f.options.forEach(([val, lbl]) => {
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.textContent = lbl;
+        if (val === currVal) opt.selected = true;
+        inputEl.appendChild(opt);
+      });
+    } else if (f.type === "textarea") {
+      inputEl = document.createElement("textarea");
+      inputEl.className = "form-control";
+      inputEl.name = f.name;
+      inputEl.rows = 4;
+      inputEl.placeholder = f.placeholder || "";
+      inputEl.value = currVal;
+      inputEl.style.width = "100%";
+      inputEl.style.padding = "10px 14px";
+      inputEl.style.background = "var(--color-bg-base)";
+      inputEl.style.border = "1px solid var(--color-border)";
+      inputEl.style.borderRadius = "8px";
+      inputEl.style.color = "var(--color-text-primary)";
+      inputEl.style.fontFamily = "monospace";
+      inputEl.style.fontSize = "0.85rem";
+    } else if (f.type === "boolean") {
+      const boolWrap = document.createElement("div");
+      boolWrap.style.display = "flex";
+      boolWrap.style.alignItems = "center";
+      boolWrap.style.gap = "8px";
+      boolWrap.style.height = "42px";
+
+      inputEl = document.createElement("input");
+      inputEl.type = "checkbox";
+      inputEl.name = f.name;
+      inputEl.checked = Boolean(currVal);
+      inputEl.style.width = "18px";
+      inputEl.style.height = "18px";
+      inputEl.style.accentColor = "var(--color-brand)";
+
+      const span = document.createElement("span");
+      span.textContent = I18N.enableOption;
+      span.style.fontSize = "0.9rem";
+
+      boolWrap.appendChild(inputEl);
+      boolWrap.appendChild(span);
+      fieldWrap.appendChild(boolWrap);
+    } else {
+      inputEl = document.createElement("input");
+      inputEl.type = f.type;
+      inputEl.className = "form-control";
+      inputEl.name = f.name;
+      inputEl.placeholder = f.placeholder || "";
+      inputEl.value = currVal;
+      inputEl.style.width = "100%";
+      inputEl.style.padding = "10px 14px";
+      inputEl.style.background = "var(--color-bg-base)";
+      inputEl.style.border = "1px solid var(--color-border)";
+      inputEl.style.borderRadius = "8px";
+      inputEl.style.color = "var(--color-text-primary)";
+      if (f.required && !isEdit) inputEl.required = true;
+    }
+
+    if (f.type !== "boolean") {
+      fieldWrap.appendChild(inputEl);
+    }
+
+    if (f.is_secret && isEdit) {
+      const notice = document.createElement("small");
+      notice.style.color = "var(--color-text-muted)";
+      notice.style.fontSize = "0.78rem";
+      notice.style.display = "block";
+      notice.style.marginTop = "4px";
+      notice.textContent = I18N.keepSecretHint;
+      fieldWrap.appendChild(notice);
+    } else if (f.help_text) {
+      const help = document.createElement("small");
+      help.style.color = "var(--color-text-muted)";
+      help.style.fontSize = "0.78rem";
+      help.style.display = "block";
+      help.style.marginTop = "4px";
+      help.textContent = f.help_text;
+      fieldWrap.appendChild(help);
+    }
+
+    grid.appendChild(fieldWrap);
+  });
+
+  container.appendChild(grid);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderFields(currentBackend);
+
+  // Tab switching logic for Remote Form
+  function switchRemoteTab(tabId) {
+    const root = document.getElementById("remote-form");
+    if (!root) return;
+    const buttons = root.querySelectorAll(".proxy-tab-btn");
+    const panes = root.querySelectorAll(".proxy-tab-pane");
+    buttons.forEach((btn) => {
+      const isActive = btn.dataset.tab === tabId;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    panes.forEach((pane) => {
+      const isActive = pane.id === tabId;
+      pane.classList.toggle("active", isActive);
+      pane.style.display = isActive ? "block" : "none";
+    });
+  }
+
+  document.querySelectorAll("#remote-form .proxy-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchRemoteTab(btn.dataset.tab);
+    });
+  });
+
+  // Provider cards click selection (new remote mode)
+  if (!isEdit) {
+    function toggleSection(header, forceOpen = null) {
+      const targetId = header.getAttribute("data-target");
+      const content = document.getElementById(targetId);
+      const chevron = header.querySelector(".chevron-icon");
+      const hint = header.querySelector(".toggle-hint");
+      if (!content) return;
+
+      const shouldOpen = forceOpen !== null ? forceOpen : (content.style.display === "none" || !content.style.display);
+      if (shouldOpen) {
+        content.style.display = "block";
+        if (chevron) {
+          chevron.style.transform = "rotate(0deg)";
+        }
+        if (hint) hint.textContent = I18N.collapse;
+      } else {
+        content.style.display = "none";
+        if (chevron) {
+          chevron.style.transform = "rotate(-90deg)";
+        }
+        if (hint) hint.textContent = I18N.expand;
+      }
+    }
+
+    document.querySelectorAll(".collapsible-section-header").forEach(header => {
+      header.addEventListener("click", () => toggleSection(header));
+    });
+
+    // Check if initial backend is inside other or special and auto-open that section
+    const initOther = document.querySelector(`.other-provider-card[data-backend="${currentBackend}"]`);
+    if (initOther) {
+      const h = document.getElementById("header-other-backends");
+      if (h) toggleSection(h, true);
+    }
+    const initSpecial = document.querySelector(`.special-provider-card[data-backend="${currentBackend}"]`);
+    if (initSpecial) {
+      const h = document.getElementById("header-special-backends");
+      if (h) toggleSection(h, true);
+    }
+
+    document.querySelectorAll(".provider-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".provider-card").forEach(c => {
+          c.classList.remove("active");
+          c.style.borderColor = "var(--border-color)";
+          c.style.background = "var(--bg-secondary)";
+        });
+        card.classList.add("active");
+        card.style.borderColor = "var(--ember-primary)";
+        card.style.background = "rgba(255, 107, 0, 0.08)";
+
+        currentBackend = card.getAttribute("data-backend");
+        renderFields(currentBackend);
+      });
+    });
+
+    const searchInput = document.getElementById("backend-search-input");
+    const noResults = document.getElementById("no-backend-found");
+    const specialSection = document.getElementById("special-backends-section");
+    const otherHeader = document.getElementById("header-other-backends");
+    const specialHeader = document.getElementById("header-special-backends");
+
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        
+        // Auto-open other-backends content when typing a query
+        if (query && otherHeader) {
+          toggleSection(otherHeader, true);
+        }
+
+        let otherCount = 0;
+        document.querySelectorAll(".other-provider-card").forEach(card => {
+          const keywords = card.getAttribute("data-keywords") || "";
+          if (!query || keywords.includes(query)) {
+            card.style.display = "flex";
+            otherCount++;
+          } else {
+            card.style.display = "none";
+          }
+        });
+
+        let specialCount = 0;
+        document.querySelectorAll(".special-provider-card").forEach(card => {
+          const keywords = card.getAttribute("data-keywords") || "";
+          if (!query || keywords.includes(query)) {
+            card.style.display = "flex";
+            specialCount++;
+          } else {
+            card.style.display = "none";
+          }
+        });
+
+        if (specialSection) {
+          specialSection.style.display = (specialCount > 0 || !query) ? "block" : "none";
+        }
+
+        // Auto-open special-backends if search matches any special backend
+        if (query && specialHeader && specialCount > 0) {
+          toggleSection(specialHeader, true);
+        }
+
+        if (noResults) {
+          noResults.style.display = (otherCount === 0 && specialCount === 0 && query !== "") ? "block" : "none";
+        }
+      });
+    }
+  }
+
+  function gatherConfig() {
+    const config = {};
+    const container = document.getElementById("dynamic-fields-container");
+    container.querySelectorAll("input, select, textarea").forEach(el => {
+      if (!el.name) return;
+      if (el.type === "checkbox") {
+        config[el.name] = el.checked;
+      } else {
+        config[el.name] = el.value;
+      }
+    });
+    return config;
+  }
+
+  // Live test connection button
+  document.getElementById("btn-test-connection")?.addEventListener("click", async () => {
+    const feedback = document.getElementById("test-feedback");
+    feedback.style.display = "block";
+    feedback.style.background = "rgba(255, 107, 0, 0.1)";
+    feedback.style.border = "1px solid var(--color-brand)";
+    feedback.style.color = "var(--color-brand)";
+    feedback.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 18px; height: 18px; border: 2px solid rgba(255,107,0,0.3); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <span>${I18N.testingConnection}</span>
+      </div>
+    `;
+
+    const config = gatherConfig();
+    try {
+      const res = await fetch("/api/ui/remotes/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+          remote_id: isEdit ? "{{ remote.id if remote else '' }}" : null,
+          candidate_proxy_ids: Array.from(document.querySelectorAll('.remote-proxy-checkbox:checked')).map(cb => cb.value),
+          backend_type: currentBackend,
+          config: config,
+          path: "",
+        }),
+      });
+      const data = await res.json();
+      if (data.status === "ok") {
+        feedback.style.background = "rgba(16, 185, 129, 0.1)";
+        feedback.style.border = "1px solid #10b981";
+        feedback.style.color = "#10b981";
+        let displayMsg = data.message || I18N.testSuccessMsg;
+        if (data.items_found !== undefined && data.items_found !== null) {
+          if (data.items_found === 0) displayMsg = I18N.testSuccessNoFolders;
+          else if (data.items_found === 1) displayMsg = I18N.testSuccessSingleFolder;
+          else displayMsg = I18N.testSuccessFolders.replace("{count}", data.items_found);
+        }
+        feedback.innerHTML = `
+          <strong>${I18N.testSuccessTitle}</strong> ${displayMsg}
+          ${data.latency_ms ? `<div style="font-size: 0.82rem; margin-top: 4px; color: var(--color-text-muted);">${I18N.responseTime} ${data.latency_ms} ms</div>` : ''}
+        `;
+      } else {
+        feedback.style.background = "rgba(239, 68, 68, 0.1)";
+        feedback.style.border = "1px solid #ef4444";
+        feedback.style.color = "#ef4444";
+        feedback.innerHTML = `
+          <strong>${I18N.testFailedTitle}</strong> ${data.message || data.error || I18N.testFailedMsg}
+        `;
+      }
+    } catch (err) {
+      feedback.style.background = "rgba(239, 68, 68, 0.1)";
+      feedback.style.border = "1px solid #ef4444";
+      feedback.style.color = "#ef4444";
+      feedback.innerHTML = `<strong>${I18N.networkErrorPrefix}</strong> ${err}`;
+    }
+  });
+
+  // Submit form
+  document.getElementById("remote-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("remote-name").value.trim();
+    const isEnabled = document.getElementById("remote-enabled").checked;
+    const config = gatherConfig();
+
+    const submitBtn = document.getElementById("btn-submit-remote");
+    submitBtn.disabled = true;
+    submitBtn.textContent = I18N.saving;
+
+    try {
+      const url = isEdit ? "/api/ui/remotes/{{ remote.id if remote else '' }}" : "/api/ui/remotes";
+      const method = isEdit ? "PUT" : "POST";
+      const reachable_proxy_ids = Array.from(document.querySelectorAll('.remote-proxy-checkbox:checked')).map(cb => cb.value);
+      const allowed_role_ids = Array.from(document.querySelectorAll('.remote-role-checkbox:checked')).map(cb => cb.value);
+      const payload = {
+        name: name,
+        backend_type: currentBackend,
+        config: config,
+        is_enabled: isEnabled,
+        reachable_proxy_ids: reachable_proxy_ids,
+        allowed_role_ids: allowed_role_ids,
+      };
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = "/remotes";
+      } else {
+        showToast(data.message || data.error || "Error", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = isEdit ? I18N.saveChanges : I18N.createRemote;
+      }
+    } catch (err) {
+      showToast(`${I18N.networkErrorPrefix} ${err}`, "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = isEdit ? I18N.saveChanges : I18N.createRemote;
+    }
+  });
+
+  // --- Remote Browser (Sfoglia...) Logic ---
+  const modalBrowse = document.getElementById("modal-browse-remote");
+  const btnOpenBrowse = document.getElementById("btn-browse-remote");
+  const browsePathLabel = document.getElementById("browse-current-path-label");
+  const btnCopyBrowsePath = document.getElementById("btn-copy-browse-path");
+  const btnCopyBrowseText = document.getElementById("btn-copy-browse-text");
+  const btnBrowseParent = document.getElementById("btn-browse-parent");
+  const browseListContainer = document.getElementById("browse-list-container");
+  const browseError = document.getElementById("browse-error");
+  const browseItemsCount = document.getElementById("browse-items-count");
+
+  let browseCurrentPath = "";
+
+  function getParentPath(path) {
+    if (!path || path === "/" || !path.includes("/")) return "";
+    const parts = path.split("/").filter(Boolean);
+    parts.pop();
+    return parts.join("/");
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0 || bytes === "0") return "0 B";
+    if (bytes == null || isNaN(Number(bytes)) || Number(bytes) < 0) return "-";
+    const num = Number(bytes);
+    if (num === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(num) / Math.log(k));
+    return parseFloat((num / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return "-";
+    try {
+      const cleanStr = String(isoStr).replace(/(\.\d{3})\d+/, '$1');
+      const d = new Date(cleanStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleString([], { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+      return isoStr;
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function updateBrowsePathLabel(path) {
+    browsePathLabel.textContent = path ? `/${path}` : "/";
+  }
+
+  async function loadBrowseDirectory(path) {
+    browseCurrentPath = path ? path.replace(/^\/+|\/+$/g, "") : "";
+    updateBrowsePathLabel(browseCurrentPath);
+
+    if (btnBrowseParent) {
+      btnBrowseParent.disabled = (browseCurrentPath === "");
+      btnBrowseParent.style.opacity = (browseCurrentPath === "") ? "0.5" : "1";
+      btnBrowseParent.style.cursor = (browseCurrentPath === "") ? "not-allowed" : "pointer";
+    }
+
+    if (browseError) browseError.style.display = "none";
+    if (browseItemsCount) browseItemsCount.textContent = "";
+
+    browseListContainer.innerHTML = `
+      <div style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+        <div style="width: 24px; height: 24px; border: 2px solid rgba(255,107,0,0.3); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px auto;"></div>
+        <span>${I18N.loadingItems}</span>
+      </div>
+    `;
+
+    const config = gatherConfig();
+    try {
+      const res = await fetch("/api/ui/remotes/browse", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+          remote_id: isEdit ? "{{ remote.id if remote else '' }}" : null,
+          candidate_proxy_ids: Array.from(document.querySelectorAll('.remote-proxy-checkbox:checked')).map(cb => cb.value),
+          backend_type: currentBackend,
+          config: config,
+          path: browseCurrentPath,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.status === "error") {
+        if (browseError) {
+          browseError.textContent = data.message || I18N.errorLoading;
+          browseError.style.display = "block";
+        }
+        browseListContainer.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: var(--color-text-muted);">
+            ${I18N.noDataError}
+          </div>
+        `;
+        return;
+      }
+
+      const rawDirs = (data.directory_details && data.directory_details.length > 0)
+        ? data.directory_details
+        : (Array.isArray(data.directories) ? data.directories : []);
+
+      const dirs = rawDirs.map(d => {
+        if (typeof d === "string") return { name: d, type: "directory", mod_time: null };
+        return {
+          ...d,
+          name: d.name || d.Name || "folder",
+          mod_time: d.mod_time || d.ModTime || null,
+          type: "directory"
+        };
+      });
+
+      const files = (Array.isArray(data.files) ? data.files : []).map(f => {
+        if (typeof f === "string") return { name: f, type: "file", size: null, mod_time: null };
+        return {
+          ...f,
+          name: f.name || f.Name || "file",
+          size: (f.size !== undefined && f.size !== null) ? f.size : ((f.Size !== undefined && f.Size !== null) ? f.Size : null),
+          mod_time: f.mod_time || f.ModTime || null,
+          type: "file"
+        };
+      });
+
+      const totalCount = dirs.length + files.length;
+
+      if (browseItemsCount) {
+        browseItemsCount.textContent = `${dirs.length} ${I18N.folders}, ${files.length} ${I18N.files}`;
+      }
+
+      if (totalCount === 0) {
+        browseListContainer.innerHTML = `
+          <div style="padding: 36px 20px; text-align: center; color: var(--color-text-muted);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.6;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <div>${I18N.emptyFolder}</div>
+          </div>
+        `;
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.textAlign = "left";
+      table.style.fontSize = "0.88rem";
+
+      const thead = document.createElement("thead");
+      thead.style.position = "sticky";
+      thead.style.top = "0";
+      thead.style.background = "var(--color-bg-surface)";
+      thead.style.zIndex = "5";
+      thead.style.borderBottom = "1px solid var(--color-border)";
+      thead.innerHTML = `
+        <tr style="border-bottom: 1px solid var(--color-border); background: rgba(15, 23, 42, 0.04); color: var(--color-text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          <th style="padding: 10px 14px;">${I18N.colName}</th>
+          <th style="padding: 10px 14px; width: 130px; text-align: right;">${I18N.colSize}</th>
+          <th style="padding: 10px 14px; width: 180px;">${I18N.colModTime}</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      // 1. Render directories (clickable)
+      dirs.forEach(dirItem => {
+        const dirName = dirItem.name;
+        const tr = document.createElement("tr");
+        tr.className = "browse-item-folder";
+        tr.style.borderBottom = "1px solid var(--color-border)";
+        tr.style.cursor = "pointer";
+        tr.style.transition = "background-color 0.15s ease";
+        tr.setAttribute("tabindex", "0");
+        tr.setAttribute("role", "button");
+        tr.setAttribute("aria-label", `${I18N.openFolder} ${dirName}`);
+
+        const sizeStr = "-";
+        const modStr = formatDate(dirItem.mod_time);
+
+        tr.innerHTML = `
+          <td style="padding: 9px 14px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span style="font-weight: 500; font-size: 0.9rem; color: var(--color-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${escapeHtml(dirName)}">${escapeHtml(dirName)}</span>
+            </div>
+          </td>
+          <td style="padding: 9px 14px; vertical-align: middle; width: 130px; text-align: right; color: var(--color-text-muted); font-family: monospace; font-size: 0.84rem; white-space: nowrap;">${sizeStr}</td>
+          <td style="padding: 9px 14px; vertical-align: middle; width: 180px; color: var(--color-text-muted); font-size: 0.84rem; white-space: nowrap;">${modStr}</td>
+        `;
+
+        tr.addEventListener("mouseenter", () => {
+          tr.style.backgroundColor = "rgba(255, 107, 0, 0.05)";
+        });
+        tr.addEventListener("mouseleave", () => {
+          tr.style.backgroundColor = "transparent";
+        });
+
+        const openFolder = () => {
+          const nextPath = browseCurrentPath ? `${browseCurrentPath}/${dirName}` : dirName;
+          loadBrowseDirectory(nextPath);
+        };
+
+        tr.addEventListener("click", openFolder);
+        tr.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openFolder();
+          }
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      // 2. Render files (non-clickable)
+      files.forEach(fileObj => {
+        const fileName = fileObj.name;
+        const tr = document.createElement("tr");
+        tr.className = "browse-item-file";
+        tr.style.borderBottom = "1px solid var(--color-border)";
+        tr.style.userSelect = "text";
+
+        const sizeStr = formatBytes(fileObj.size);
+        const modStr = formatDate(fileObj.mod_time);
+
+        tr.innerHTML = `
+          <td style="padding: 9px 14px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--color-text-muted);">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+              <span style="font-size: 0.9rem; color: var(--color-text-secondary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</span>
+            </div>
+          </td>
+          <td style="padding: 9px 14px; vertical-align: middle; width: 130px; text-align: right; color: var(--color-text-secondary); font-family: monospace; font-size: 0.84rem; white-space: nowrap;">${sizeStr}</td>
+          <td style="padding: 9px 14px; vertical-align: middle; width: 180px; color: var(--color-text-muted); font-size: 0.84rem; white-space: nowrap;">${modStr}</td>
+        `;
+
+        tr.addEventListener("mouseenter", () => {
+          tr.style.backgroundColor = "rgba(255, 107, 0, 0.05)";
+        });
+        tr.addEventListener("mouseleave", () => {
+          tr.style.backgroundColor = "transparent";
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      browseListContainer.innerHTML = "";
+      browseListContainer.appendChild(table);
+    } catch (err) {
+      if (browseError) {
+        browseError.textContent = `${I18N.networkErrorPrefix} ${err}`;
+        browseError.style.display = "block";
+      }
+      browseListContainer.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: var(--color-text-muted);">
+          ${I18N.connFailed}
+        </div>
+      `;
+    }
+  }
+
+  // Open Browse Modal
+  btnOpenBrowse?.addEventListener("click", () => {
+    if (!modalBrowse) return;
+    modalBrowse.classList.add("active");
+    // Start at root "/"
+    loadBrowseDirectory("");
+  });
+
+  // Level Up button "..."
+  btnBrowseParent?.addEventListener("click", () => {
+    if (!browseCurrentPath) return;
+    const parentPath = getParentPath(browseCurrentPath);
+    loadBrowseDirectory(parentPath);
+  });
+
+  // Copy Full Path Button
+  btnCopyBrowsePath?.addEventListener("click", async () => {
+    const fullPathToCopy = browseCurrentPath ? `/${browseCurrentPath}` : "/";
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(fullPathToCopy);
+      } else {
+        const tempTextarea = document.createElement("textarea");
+        tempTextarea.value = fullPathToCopy;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempTextarea);
+      }
+      if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copied;
+      setTimeout(() => {
+        if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copy;
+      }, 2000);
+    } catch (err) {
+      showToast(I18N.copyFailed, "error");
+    }
+  });
+
+  // Modal close handler for [data-close-modal]
+  document.querySelectorAll('[data-close-modal="modal-browse-remote"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      modalBrowse?.classList.remove("active");
+    });
+  });
+});
+</script>
+{% endblock %}

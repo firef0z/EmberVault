@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 14" width="54" height="14">
+  <defs>
+    <!-- Red Gumdrop Gradient -->
+    <radialGradient id="redGelH" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffb8b8"/>
+      <stop offset="30%" stop-color="#ff453a"/>
+      <stop offset="70%" stop-color="#d61414"/>
+      <stop offset="100%" stop-color="#880404"/>
+    </radialGradient>
+    <radialGradient id="yellowGelH" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fff5b8"/>
+      <stop offset="30%" stop-color="#ffd60a"/>
+      <stop offset="70%" stop-color="#e09900"/>
+      <stop offset="100%" stop-color="#8a5500"/>
+    </radialGradient>
+    <radialGradient id="greenGelH" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#c2f9cb"/>
+      <stop offset="30%" stop-color="#30d158"/>
+      <stop offset="70%" stop-color="#229b3f"/>
+      <stop offset="100%" stop-color="#0c5920"/>
+    </radialGradient>
+    <linearGradient id="specularH" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Red: Close with 'x' glyph -->
+  <g>
+    <circle cx="7" cy="7" r="5.75" fill="url(#redGelH)" stroke="#820808" stroke-width="0.75"/>
+    <ellipse cx="7" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularH)"/>
+    <path d="M5 5 L9 9 M9 5 L5 9" stroke="#4d0000" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Yellow: Minimize with '-' glyph -->
+  <g>
+    <circle cx="25" cy="7" r="5.75" fill="url(#yellowGelH)" stroke="#875600" stroke-width="0.75"/>
+    <ellipse cx="25" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularH)"/>
+    <line x1="22" y1="7" x2="28" y2="7" stroke="#4d2f00" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Green: Zoom with '+' glyph -->
+  <g>
+    <circle cx="43" cy="7" r="5.75" fill="url(#greenGelH)" stroke="#0e5e23" stroke-width="0.75"/>
+    <ellipse cx="43" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularH)"/>
+    <path d="M43 4.5 L43 9.5 M40.5 7 L45.5 7" stroke="#00330f" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+</svg>
+

@@ -1,0 +1,26 @@
+# Standalone Public Portal Docker Compose
+# Deploy this on a separate public/DMZ host communicating with Orchestrator.
+name: embervault-portal
+
+services:
+  portal:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/portal.Dockerfile
+    container_name: embervault-portal
+    restart: unless-stopped
+    ports:
+      - "${PORTAL_PORT:-8083}:8083"
+    environment:
+      EMBERVAULT_ORCHESTRATOR_URL: "${EMBERVAULT_ORCHESTRATOR_URL:-http://localhost:8081}"
+      PORTAL_SECRET_KEY: "${PORTAL_SECRET_KEY:-portal_secret_key_change_in_production}"
+      PORTAL_PORT: "8083"
+      PORTAL_BIND: "0.0.0.0"
+      EMBERVAULT_ENV: "${EMBERVAULT_ENV:-prod}"
+      EMBERVAULT_LOG_FORMAT: "${EMBERVAULT_LOG_FORMAT:-console}"
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "portal", "--port", "8083"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

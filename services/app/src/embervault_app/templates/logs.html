@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('nav_logs') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('nav_logs') }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  .audit-logs-table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+  }
+  .audit-logs-table th.col-shrink,
+  .audit-logs-table td.col-shrink {
+    width: 1%;
+    white-space: nowrap;
+  }
+  .audit-logs-table th.col-details,
+  .audit-logs-table td.col-details {
+    width: auto;
+    max-width: 0;
+  }
+  .audit-details-preview {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <h2 class="card-title" style="margin: 0;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>{{ _('audit_logs_title') }}</span>
+    </h2>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-export-xlsx" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        {{ _('export_xlsx') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border-color);">
+    <form method="GET" action="/logs" id="filter-form" style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <!-- Row count filter -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label for="limit-select" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">{{ _('filter_events_label') }}:</label>
+        <select name="limit" id="limit-select" class="form-input" style="padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-secondary);">
+          <option value="50" {% if current_limit == '50' %}selected{% endif %}>{{ _('filter_last_50') }}</option>
+          <option value="100" {% if current_limit == '100' %}selected{% endif %}>{{ _('filter_last_100') }}</option>
+          <option value="250" {% if current_limit == '250' %}selected{% endif %}>{{ _('filter_last_250') }}</option>
+          <option value="500" {% if current_limit == '500' %}selected{% endif %}>{{ _('filter_last_500') }}</option>
+          <option value="1000" {% if current_limit == '1000' %}selected{% endif %}>{{ _('filter_last_1000') }}</option>
+          <option value="all" {% if current_limit == 'all' %}selected{% endif %}>{{ _('filter_all') }}</option>
+        </select>
+      </div>
+
+      <!-- Date/Time Range Filter -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label for="start-date" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">{{ _('from_label') }}:</label>
+        <input
+          type="datetime-local"
+          id="start-date"
+          name="start_date"
+          value="{{ current_start_date }}"
+          class="form-input"
+          style="padding: 5px 8px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-secondary);"
+        >
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label for="end-date" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">{{ _('to_label') }}:</label>
+        <input
+          type="datetime-local"
+          id="end-date"
+          name="end_date"
+          value="{{ current_end_date }}"
+          class="form-input"
+          style="padding: 5px 8px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-secondary);"
+        >
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          {{ _('filter_label') }}
+        </button>
+
+        {% if current_start_date or current_end_date or current_limit != '100' %}
+        <a href="/logs" class="btn btn-secondary btn-sm" style="padding: 6px 12px; font-size: 0.82rem;" title="{{ _('reset_label') }}">
+          {{ _('reset_label') }}
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table audit-logs-table" id="table-audit-logs">
+      <thead>
+        <tr>
+          <th class="col-shrink col-hide-md">{{ _('col_id') }}</th>
+          <th class="col-shrink">{{ _('col_timestamp') }}</th>
+          <th class="col-shrink">{{ _('col_action') }}</th>
+          <th class="col-shrink">{{ _('col_entity') }}</th>
+          <th class="col-shrink col-hide-lg">{{ _('col_entity_id') }}</th>
+          <th class="col-shrink col-hide-sm">{{ _('col_ip') }}</th>
+          <th class="col-details">{{ _('col_details') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if logs %}
+          {% for log in logs %}
+          {% set raw_details = (log.details|tojson) if log.details else '' %}
+          <tr class="audit-row" style="cursor: pointer;"
+              data-id="{{ log.id }}"
+              data-ts="{{ log.ts|user_dt('%d/%m/%Y %H:%M:%S') if log.ts else 'N/A' }}"
+              data-utc="{{ log.ts|utc_iso }}"
+              data-action="{{ log.action }}"
+              data-entity-type="{{ log.entity_type }}"
+              data-entity-id="{{ log.entity_id or '—' }}"
+              data-actor-id="{{ log.actor_user_id or '—' }}"
+              data-ip="{{ log.ip or 'internal' }}"
+              data-details='{{ raw_details }}'
+              title="{{ _('logs_click_to_view_details') }}">
+            <td class="col-shrink col-hide-md"><code>{{ log.id }}</code></td>
+            <td class="col-shrink">
+              <span class="user-datetime" data-utc="{{ log.ts|utc_iso }}" data-format="full">
+                {{ log.ts|user_dt('%d/%m/%Y %H:%M:%S') if log.ts else 'N/A' }}
+              </span>
+            </td>
+            <td class="col-shrink"><strong>{{ log.action }}</strong></td>
+            <td class="col-shrink"><span class="badge badge-cooldown">{{ log.entity_type }}</span></td>
+            <td class="col-shrink col-hide-lg"><code>{{ log.entity_id or '—' }}</code></td>
+            <td class="col-shrink col-hide-sm" style="font-family: monospace; font-size: 0.85rem;">{{ log.ip or 'internal' }}</td>
+            <td class="col-details">
+              {% if raw_details %}
+                <span class="audit-details-preview" title="{{ raw_details }}">
+                  {{ raw_details }}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 48px;">
+              <div class="empty-state">
+                <div class="empty-state-title">{{ _('logs_empty_title') }}</div>
+                <div class="empty-state-desc">{{ _('logs_empty_desc') }}</div>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Dettagli Evento Audit -->
+<div class="modal-backdrop" id="modal-audit-details">
+  <div class="modal-card" style="max-width: 680px; width: 90%;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        {{ _('logs_modal_title') }} #<span id="modal-log-id"></span>
+      </h3>
+      <button type="button" class="btn-icon" id="btn-close-audit-modal" aria-label="{{ _('btn_close') }}" style="font-size: 1.4rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px; gap: 16px;">
+      <!-- Grid with main metadata -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: rgba(255, 255, 255, 0.02); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Timestamp</div>
+          <div id="modal-log-ts" style="font-size: 0.9rem; font-weight: 500; margin-top: 2px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">{{ _('col_action') }}</div>
+          <div id="modal-log-action" style="font-size: 0.9rem; font-weight: 600; color: var(--color-brand); margin-top: 2px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">{{ _('logs_modal_entity_type') }}</div>
+          <div id="modal-log-entity-type" style="font-size: 0.9rem; font-weight: 500; margin-top: 2px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Entity ID</div>
+          <div id="modal-log-entity-id" style="font-size: 0.85rem; font-family: monospace; margin-top: 2px; word-break: break-all;"></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Actor User ID</div>
+          <div id="modal-log-actor-id" style="font-size: 0.85rem; font-family: monospace; margin-top: 2px; word-break: break-all;"></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">{{ _('logs_modal_source_ip') }}</div>
+          <div id="modal-log-ip" style="font-size: 0.85rem; font-family: monospace; margin-top: 2px;"></div>
+        </div>
+      </div>
+
+      <!-- JSON Details block (scrollable) -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px;">{{ _('logs_modal_full_details_json') }}</span>
+          <button type="button" id="btn-copy-log-json" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="copy-json-label">{{ _('logs_copy_json') }}</span>
+          </button>
+        </div>
+        <pre id="modal-log-details" style="font-size: 0.82rem; font-family: Consolas, Monaco, monospace; max-height: 280px; overflow-y: auto; overflow-x: auto; padding: 14px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 6px; white-space: pre-wrap; word-break: break-word; color: #38bdf8;"></pre>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-secondary" id="btn-modal-close-footer">{{ _('btn_close') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+  // Modal elements
+  const modal = document.getElementById('modal-audit-details');
+  const btnClose = document.getElementById('btn-close-audit-modal');
+  const btnCloseFooter = document.getElementById('btn-modal-close-footer');
+  const modalLogId = document.getElementById('modal-log-id');
+  const modalLogTs = document.getElementById('modal-log-ts');
+  const modalLogAction = document.getElementById('modal-log-action');
+  const modalLogEntityType = document.getElementById('modal-log-entity-type');
+  const modalLogEntityId = document.getElementById('modal-log-entity-id');
+  const modalLogActorId = document.getElementById('modal-log-actor-id');
+  const modalLogIp = document.getElementById('modal-log-ip');
+  const modalLogDetails = document.getElementById('modal-log-details');
+  const btnCopyJson = document.getElementById('btn-copy-log-json');
+  const copyJsonLabel = document.getElementById('copy-json-label');
+
+  let currentRawJson = '';
+
+  const closeModal = () => {
+    if (modal) modal.classList.remove('active');
+  };
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCloseFooter) btnCloseFooter.addEventListener('click', closeModal);
+
+  // Row click to open modal
+  document.querySelectorAll('.audit-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const logId = row.dataset.id;
+      const utcTs = row.dataset.utc;
+      const ts = (utcTs && window.formatUserDateTime) ? window.formatUserDateTime(utcTs, 'full') : row.dataset.ts;
+      const action = row.dataset.action;
+      const entityType = row.dataset.entityType;
+      const entityId = row.dataset.entityId;
+      const actorId = row.dataset.actorId;
+      const ip = row.dataset.ip;
+      const rawDetails = row.dataset.details || '';
+
+      modalLogId.textContent = logId;
+      modalLogTs.textContent = ts;
+      modalLogAction.textContent = action;
+      modalLogEntityType.textContent = entityType;
+      modalLogEntityId.textContent = entityId;
+      modalLogActorId.textContent = actorId;
+      modalLogIp.textContent = ip;
+
+      currentRawJson = rawDetails;
+      if (rawDetails) {
+        try {
+          const parsed = JSON.parse(rawDetails);
+          modalLogDetails.textContent = JSON.stringify(parsed, null, 2);
+        } catch {
+          modalLogDetails.textContent = rawDetails;
+        }
+      } else {
+        modalLogDetails.textContent = {{ _('logs_no_additional_details') | tojson }};
+      }
+
+      modal.classList.add('active');
+    });
+  });
+
+  // Copy JSON button
+  if (btnCopyJson) {
+    btnCopyJson.addEventListener('click', () => {
+      const textToCopy = modalLogDetails.textContent;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        copyJsonLabel.textContent = {{ _('btn_copied') | tojson }};
+        setTimeout(() => {
+          copyJsonLabel.textContent = {{ _('logs_copy_json') | tojson }};
+        }, 2000);
+      });
+    });
+  }
+
+  // Export to XLSX with current filters
+  const btnExport = document.getElementById('btn-export-xlsx');
+  if (btnExport) {
+    btnExport.addEventListener('click', () => {
+      const limitVal = document.getElementById('limit-select').value;
+      const startDateVal = document.getElementById('start-date').value;
+      const endDateVal = document.getElementById('end-date').value;
+
+      const params = new URLSearchParams();
+      if (limitVal) params.set('limit', limitVal);
+      if (startDateVal) params.set('start_date', startDateVal);
+      if (endDateVal) params.set('end_date', endDateVal);
+
+      window.location.href = `/logs/export?${params.toString()}`;
+    });
+  }
+});
+</script>
+{% endblock %}

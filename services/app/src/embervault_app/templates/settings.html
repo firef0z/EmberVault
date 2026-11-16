@@ -1,0 +1,3315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('settings_page_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('settings_page_title') }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* Macrocategorie & Categorie Styles */
+  .settings-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .settings-page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+  }
+  .settings-page-header p {
+    margin: 4px 0 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .macro-section {
+    margin-bottom: 32px;
+  }
+
+  .macro-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .macro-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .macro-badge {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--ember-primary);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    font-weight: 600;
+  }
+
+  /* Collapsible Category Cards */
+  .collapsible-card {
+    margin-bottom: 18px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .collapsible-card:hover {
+    border-color: rgba(255, 122, 0, 0.25);
+  }
+
+  .collapsible-card .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .collapsible-card:not(.is-collapsed) .card-header {
+    border-bottom-color: var(--border-color);
+    background-color: var(--bg-tertiary);
+  }
+
+  .collapsible-card .card-header:hover {
+    background-color: var(--bg-tertiary);
+  }
+
+  .collapsible-card.is-collapsed .card-body,
+  .collapsible-card.is-collapsed .table-responsive {
+    display: none !important;
+  }
+
+  .chevron-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .collapsible-card.is-collapsed .chevron-icon {
+    transform: rotate(-90deg);
+  }
+
+  .collapsible-card:not(.is-collapsed) .chevron-icon {
+    transform: rotate(0deg);
+  }
+
+  .category-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .form-group-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+
+  .form-group-card label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+  }
+
+  .form-group-card small {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .card-action-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page-header">
+  <div>
+    <h1>{{ _('settings_page_title') }}</h1>
+    <p>
+      {{ _('settings_page_subtitle') }}
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-expand-all" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      {{ _('settings_expand_all') }}
+    </button>
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-collapse-all" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+      {{ _('settings_collapse_all') }}
+    </button>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     MACRO 1: SICUREZZA, ACCESSO E RETE WEB
+     ============================================================================== -->
+<div class="macro-section" id="macro-security-network">
+  <div class="macro-header">
+    <div class="macro-title">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ember-primary)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>{{ _('settings_macro1_title') }}</span>
+    </div>
+    <span class="macro-badge">5 {{ _('settings_categories_unit') }}</span>
+  </div>
+
+  <!-- Categoria 1.1: Aspetto, Localizzazione e Logging -->
+  <div class="collapsible-card is-collapsed" id="card-appearance">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        <span>{{ _('settings_cat_appearance_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-neutral">{{ settings.default_locale | upper }} | {{ settings.log_level }}</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="appearance-alert-container"></div>
+      <form id="form-appearance">
+        <div class="form-grid-2">
+          <!-- Livello di Log -->
+          <div class="form-group-card">
+            <label for="general_log_level">{{ _('settings_log_level_label') }}</label>
+            <select id="general_log_level" name="log_level" class="form-input" style="width: 100%; padding: 8px 12px;">
+              <option value="DEBUG" {% if settings.log_level == 'DEBUG' %}selected{% endif %}>{{ _('settings_log_level_debug') }}</option>
+              <option value="INFO" {% if settings.log_level == 'INFO' or not settings.log_level %}selected{% endif %}>{{ _('settings_log_level_info') }}</option>
+              <option value="WARNING" {% if settings.log_level == 'WARNING' %}selected{% endif %}>{{ _('settings_log_level_warning') }}</option>
+              <option value="ERROR" {% if settings.log_level == 'ERROR' %}selected{% endif %}>{{ _('settings_log_level_error') }}</option>
+              <option value="CRITICAL" {% if settings.log_level == 'CRITICAL' %}selected{% endif %}>{{ _('settings_log_level_critical') }}</option>
+            </select>
+            <small>{{ _('settings_log_level_hint') }}</small>
+          </div>
+
+          <!-- Formato dei Log -->
+          <div class="form-group-card">
+            <label for="general_log_format">{{ _('settings_log_format_label') }}</label>
+            <select id="general_log_format" name="log_format" class="form-input" style="width: 100%; padding: 8px 12px;">
+              <option value="console" {% if settings.log_format == 'console' or not settings.log_format %}selected{% endif %}>{{ _('settings_log_format_console') }}</option>
+              <option value="json" {% if settings.log_format == 'json' %}selected{% endif %}>{{ _('settings_log_format_json') }}</option>
+            </select>
+            <small>{{ _('settings_log_format_hint') }}</small>
+          </div>
+
+          <!-- Lingua Predefinita -->
+          <div class="form-group-card">
+            <label for="general_default_locale">{{ _('settings_default_locale_label') }}</label>
+            <select id="general_default_locale" name="default_locale" class="form-input" style="width: 100%; padding: 8px 12px;">
+              <option value="en" {% if settings.default_locale == 'en' or not settings.default_locale %}selected{% endif %}>English (en)</option>
+              <option value="it" {% if settings.default_locale == 'it' %}selected{% endif %}>Italiano (it)</option>
+              <option value="de" {% if settings.default_locale == 'de' %}selected{% endif %}>Deutsch (de)</option>
+              <option value="es" {% if settings.default_locale == 'es' %}selected{% endif %}>Español (es)</option>
+              <option value="fr" {% if settings.default_locale == 'fr' %}selected{% endif %}>Français (fr)</option>
+              <option value="zh" {% if settings.default_locale == 'zh' %}selected{% endif %}>中文 (zh)</option>
+              <option value="ja" {% if settings.default_locale == 'ja' %}selected{% endif %}>日本語 (ja)</option>
+              <option value="ko" {% if settings.default_locale == 'ko' %}selected{% endif %}>한국어 (ko)</option>
+              <option value="ar" {% if settings.default_locale == 'ar' %}selected{% endif %}>العربية (ar)</option>
+            </select>
+            <small>{{ _('settings_default_locale_hint') }}</small>
+          </div>
+
+          <!-- URL Pubblico Istanza -->
+          <div class="form-group-card">
+            <label for="general_public_url">{{ _('settings_public_url_label') }}</label>
+            <input type="text" id="general_public_url" name="public_url" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.public_url or '' }}" placeholder="https://embervault.azienda.local">
+            <small>{{ _('settings_public_url_hint') }}</small>
+          </div>
+        </div>
+
+        <!-- Session Cookie Secure -->
+        <div style="margin-bottom: 20px; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="general_session_cookie_secure" name="session_cookie_secure" style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;" {% if settings.session_cookie_secure %}checked{% endif %}>
+            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+              {{ _('settings_session_cookie_secure_label') }}
+            </span>
+          </label>
+          <small style="display: block; margin-top: 4px; margin-left: 28px; color: var(--text-muted); font-size: 0.78rem;">
+            {{ _('settings_session_cookie_secure_hint') }}
+          </small>
+        </div>
+
+        <!-- Personalizzazione Sfondo Schermata di Accesso -->
+        <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ _('settings_login_bg_title') }}</strong>
+            <span class="badge {% if has_custom_login_bg %}badge-online{% else %}badge-neutral{% endif %}" id="bg-status-badge">
+              {% if has_custom_login_bg %}{{ _('settings_login_bg_custom') }}{% else %}{{ _('settings_login_bg_default') }}{% endif %}
+            </span>
+          </div>
+          <div id="login-bg-alert-container"></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+            <div style="width: 260px; height: 140px; border-radius: var(--radius-md); border: 2px dashed var(--border-color); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); flex-shrink: 0;" id="bg-preview-box">
+              <div id="bg-preview-container" style="width: 100%; height: 100%; {% if has_custom_login_bg %}background-image: url('/api/ui/settings/login-background'); background-size: cover; background-position: center;{% else %}background: radial-gradient(ellipse 90% 65% at 50% -15%, rgba(255, 84, 0, 0.35) 0%, rgba(255, 122, 0, 0.18) 35%, rgba(13, 17, 23, 0) 75%), linear-gradient(160deg, #0d1117 0%, #161b22 40%, #1f110c 70%, #0d1117 100%);{% endif %} display: flex; align-items: center; justify-content: center;">
+                <div style="background: rgba(22, 27, 34, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.75rem; font-weight: 600; color: #f0f6fc;" id="bg-preview-label">
+                  {% if has_custom_login_bg %}{{ _('settings_login_bg_preview_custom') }}{% else %}{{ _('settings_login_bg_preview_default') }}{% endif %}
+                </div>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 240px;">
+              {% if has_permission('settings.write') %}
+              <div>
+                <label for="input-login-bg-file" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_login_bg_upload_label') }}</label>
+                <input type="file" id="input-login-bg-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-input" style="padding: 6px 10px; font-size: 0.82rem; width: 100%; max-width: 360px;">
+                <small style="display: block; color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">PNG, JPG/JPEG, WebP, SVG. Max 5MB.</small>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-upload-login-bg" disabled style="display: inline-flex; align-items: center; gap: 6px;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                  <span id="btn-upload-bg-text">{{ _('settings_login_bg_upload_btn') }}</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-login-bg" {% if not has_custom_login_bg %}style="display: none;"{% endif %}>
+                  {{ _('settings_login_bg_reset_btn') }}
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-appearance" style="font-weight: 700;">
+            {{ _('settings_save_appearance_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 1.2: Whitelabel & Personalizzazione Marchio -->
+  <div class="collapsible-card is-collapsed" id="card-whitelabel">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>{{ _('settings_cat_whitelabel_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if custom_app_name or has_custom_logo %}badge-online{% else %}badge-neutral{% endif %}" id="whitelabel-status-badge">
+          {% if custom_app_name or has_custom_logo %}{{ _('whitelabel_logo_custom') }}{% else %}{{ _('whitelabel_logo_default') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <p style="margin-top: 0; margin-bottom: 20px; color: var(--text-muted); font-size: 0.88rem;">
+        {{ _('whitelabel_section_desc') }}
+      </p>
+
+      <!-- Personalizzazione Nome Applicazione -->
+      <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div id="whitelabel-appname-alert-container"></div>
+        <div class="form-group-card" style="margin-bottom: 12px;">
+          <label for="input-custom-app-name" style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 6px; display: block;">
+            {{ _('whitelabel_app_name_label') }}
+          </label>
+          <input type="text" id="input-custom-app-name" maxlength="64" class="form-input" style="width: 100%; max-width: 480px; padding: 8px 12px;" value="{{ custom_app_name or '' }}" placeholder="{{ _('whitelabel_app_name_placeholder') }}">
+          <small style="display: block; color: var(--text-muted); margin-top: 6px; font-size: 0.78rem;">
+            {{ _('whitelabel_app_name_hint') }}
+          </small>
+        </div>
+        {% if has_permission('settings.write') %}
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 12px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-app-name" {% if not custom_app_name %}style="display: none;"{% endif %}>
+            {{ _('whitelabel_reset_app_name_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Personalizzazione Logo Applicazione -->
+      <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ _('whitelabel_logo_title') }}</strong>
+          <span class="badge {% if has_custom_logo %}badge-online{% else %}badge-neutral{% endif %}" id="logo-status-badge">
+            {% if has_custom_logo %}{{ _('whitelabel_logo_custom') }}{% else %}{{ _('whitelabel_logo_default') }}{% endif %}
+          </span>
+        </div>
+        <p style="margin-top: 0; margin-bottom: 14px; color: var(--text-muted); font-size: 0.82rem;">
+          {{ _('whitelabel_logo_desc') }}
+        </p>
+        <div id="whitelabel-logo-alert-container"></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+          <div style="width: 140px; height: 140px; border-radius: var(--radius-md); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); padding: 12px; flex-shrink: 0;" id="logo-preview-box">
+            <img id="logo-preview-img" src="{{ app_logo_url }}" alt="{{ app_name }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          </div>
+          <div style="flex: 1; min-width: 240px;">
+            {% if has_permission('settings.write') %}
+            <div>
+              <label for="input-logo-file" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('whitelabel_logo_upload_label') }}</label>
+              <input type="file" id="input-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-input" style="padding: 6px 10px; font-size: 0.82rem; width: 100%; max-width: 360px;">
+              <small style="display: block; color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">{{ _('whitelabel_logo_hint') }}</small>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-logo" {% if not has_custom_logo %}style="display: none;"{% endif %}>
+                {{ _('whitelabel_logo_reset_btn') }}
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div id="whitelabel-alert-container"></div>
+
+      {% if has_permission('settings.write') %}
+      <div class="card-action-bar">
+        <button type="button" class="btn btn-primary" id="btn-save-whitelabel" style="font-weight: 700;">
+          {{ _('btn_save') }}
+        </button>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+  <!-- Categoria 1.3: Portale pubblico -->
+  <div class="collapsible-card is-collapsed" id="card-public-portal">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <span>{{ _('settings_cat_portal_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if public_portal_enabled %}badge-online{% else %}badge-offline{% endif %}" id="portal-global-status-badge">
+          {% if public_portal_enabled %}{{ _('portal_status_active') }}{% else %}{{ _('portal_status_disabled') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <p style="margin-top: 0; margin-bottom: 20px; color: var(--text-muted); font-size: 0.88rem;">
+        {{ _('settings_cat_portal_desc') }}
+      </p>
+
+      <div id="portal-settings-alert-container"></div>
+
+      <!-- Stato globale del portale -->
+      <div style="margin-bottom: 24px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div>
+            <strong style="color: var(--text-primary); font-size: 0.95rem; display: block; margin-bottom: 4px;">
+              {{ _('portal_enable_toggle_label') }}
+            </strong>
+            <small style="color: var(--text-muted); font-size: 0.82rem; display: block;">
+              {{ _('portal_enable_toggle_desc') }}
+            </small>
+          </div>
+          {% if has_permission('settings.write') %}
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="form-check-label" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; user-select: none;">
+              <input type="checkbox" id="checkbox-public-portal-enabled" {% if public_portal_enabled %}checked{% endif %} class="form-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
+              <span id="label-public-portal-status">{% if public_portal_enabled %}{{ _('portal_status_active') }}{% else %}{{ _('portal_status_disabled') }}{% endif %}</span>
+            </label>
+          </div>
+          {% else %}
+          <span class="badge {% if public_portal_enabled %}badge-online{% else %}badge-offline{% endif %}">
+            {% if public_portal_enabled %}{{ _('portal_status_active') }}{% else %}{{ _('portal_status_disabled') }}{% endif %}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Lingua Portale Pubblico -->
+      <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div id="portal-language-alert-container"></div>
+        <div class="form-group-card" style="margin-bottom: 12px;">
+          <label for="select-portal-language" style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 6px; display: block;">
+            {{ _('portal_language_label') }}
+          </label>
+          <select id="select-portal-language" class="form-input" style="width: 100%; max-width: 480px; padding: 8px 12px;">
+            <option value="en" {% if portal_language == 'en' or not portal_language %}selected{% endif %}>English (English)</option>
+            <option value="it" {% if portal_language == 'it' %}selected{% endif %}>Italiano (Italian)</option>
+            <option value="de" {% if portal_language == 'de' %}selected{% endif %}>Deutsch (German)</option>
+            <option value="es" {% if portal_language == 'es' %}selected{% endif %}>Español (Spanish)</option>
+            <option value="fr" {% if portal_language == 'fr' %}selected{% endif %}>Français (French)</option>
+            <option value="zh" {% if portal_language == 'zh' %}selected{% endif %}>简体中文 (Chinese)</option>
+            <option value="ja" {% if portal_language == 'ja' %}selected{% endif %}>日本語 (Japanese)</option>
+            <option value="ko" {% if portal_language == 'ko' %}selected{% endif %}>한국어 (Korean)</option>
+            <option value="ar" {% if portal_language == 'ar' %}selected{% endif %}>العربية (Arabic)</option>
+          </select>
+          <small style="display: block; color: var(--text-muted); margin-top: 6px; font-size: 0.78rem;">
+            {{ _('portal_language_hint') }}
+          </small>
+        </div>
+      </div>
+
+      <!-- Nome Portale Pubblico -->
+      <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div id="portal-whitelabel-appname-alert-container"></div>
+        <div class="form-group-card" style="margin-bottom: 12px;">
+          <label for="input-portal-custom-app-name" style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 6px; display: block;">
+            {{ _('whitelabel_portal_app_name_label') }}
+          </label>
+          <input type="text" id="input-portal-custom-app-name" maxlength="64" class="form-input" style="width: 100%; max-width: 480px; padding: 8px 12px;" value="{{ portal_custom_app_name or '' }}" placeholder="EmberVault public portal">
+          <small style="display: block; color: var(--text-muted); margin-top: 6px; font-size: 0.78rem;">
+            {{ _('whitelabel_portal_app_name_hint') }}
+          </small>
+        </div>
+        {% if has_permission('settings.write') %}
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 12px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-portal-app-name" {% if not portal_custom_app_name %}style="display: none;"{% endif %}>
+            {{ _('whitelabel_reset_app_name_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Logo Portale Pubblico -->
+      <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ _('whitelabel_portal_logo_title') }}</strong>
+          <span class="badge {% if has_portal_custom_logo %}badge-online{% else %}badge-neutral{% endif %}" id="portal-logo-status-badge">
+            {% if has_portal_custom_logo %}{{ _('whitelabel_logo_custom') }}{% else %}{{ _('whitelabel_logo_default') }}{% endif %}
+          </span>
+        </div>
+        <p style="margin-top: 0; margin-bottom: 14px; color: var(--text-muted); font-size: 0.82rem;">
+          {{ _('whitelabel_portal_logo_desc') }}
+        </p>
+        <div id="portal-whitelabel-logo-alert-container"></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+          <div style="width: 140px; height: 140px; border-radius: var(--radius-md); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); padding: 12px; flex-shrink: 0;" id="portal-logo-preview-box">
+            <img id="portal-logo-preview-img" src="{{ portal_logo_url }}" alt="{{ portal_app_name }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          </div>
+          <div style="flex: 1; min-width: 240px;">
+            {% if has_permission('settings.write') %}
+            <div>
+              <label for="input-portal-logo-file" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('whitelabel_logo_upload_label') }}</label>
+              <input type="file" id="input-portal-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-input" style="padding: 6px 10px; font-size: 0.82rem; width: 100%; max-width: 360px;">
+              <small style="display: block; color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">{{ _('whitelabel_logo_hint') }}</small>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-portal-logo" {% if not has_portal_custom_logo %}style="display: none;"{% endif %}>
+                {{ _('whitelabel_logo_reset_btn') }}
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if has_permission('settings.write') %}
+      <div class="card-action-bar">
+        <button type="button" class="btn btn-primary" id="btn-save-public-portal" style="font-weight: 700;">
+          {{ _('btn_save') }}
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+    <!-- Categoria 1.2: Rete e Reverse Proxy -->
+  <div class="collapsible-card is-collapsed" id="card-network">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><polyline points="8 16 12 12 16 16"/><line x1="12" x2="12" y1="12" y2="21"/></svg>
+        <span>{{ _('settings_cat_network_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if trusted_proxies %}badge-online{% else %}badge-neutral{% endif %}" id="trusted-proxies-status-badge">
+          {% if trusted_proxies %}{{ trusted_proxies.split(',')|length }} {{ _('settings_proxies_defined_unit') }}{% else %}{{ _('settings_no_proxy_badge') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="trusted-proxies-alert-container"></div>
+      <form id="form-network-settings">
+        <div class="form-grid-2">
+          <!-- Proxy Affidabili -->
+          <div class="form-group-card">
+            <label for="trusted_proxies_input">{{ _('settings_trusted_proxies_label') }}</label>
+            <input type="text" id="trusted_proxies_input" name="trusted_proxies" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ trusted_proxies }}" placeholder="192.168.1.1, 10.0.0.0/8, 127.0.0.1">
+            <small>{{ _('settings_trusted_proxies_hint_html') | safe }}</small>
+          </div>
+
+          <!-- Conteggio Proxy a Monte -->
+          <div class="form-group-card">
+            <label for="general_trusted_proxy_count">{{ _('settings_trusted_proxy_count_label') }}</label>
+            <input type="number" id="general_trusted_proxy_count" name="trusted_proxy_count" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.trusted_proxy_count if settings.trusted_proxy_count is not none else 1 }}" min="0" max="10">
+            <small>{{ _('settings_trusted_proxy_count_hint') }}</small>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-secondary" id="btn-clear-trusted-proxies">
+            {{ _('settings_clear_proxies_btn') }}
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-save-trusted-proxies" style="font-weight: 700;">
+            {{ _('settings_save_network_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 1.3: Integrazione LDAP / Active Directory -->
+  <div class="collapsible-card is-collapsed" id="card-ldap">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+        <span>{{ _('settings_cat_ldap_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if ldap_enabled %}badge-online{% else %}badge-offline{% endif %}" id="ldap-status-badge">
+          {% if ldap_enabled %}{{ _('status_enabled_m') }}{% else %}{{ _('status_disabled_m') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="ldap-alert-container"></div>
+      <form id="ldap-config-form">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="ldap_enabled" name="ldap_enabled" {% if ldap_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="ldap_enabled" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.95rem;">
+            {{ _('settings_ldap_enable_checkbox') }}
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label for="ldap_server_url" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_server_url_label') }}</label>
+            <input type="text" id="ldap_server_url" name="ldap_server_url" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.server_url }}" placeholder="ldaps://dc.azienda.local:636">
+            <small style="color: var(--text-muted); font-size: 0.75rem;">{{ _('settings_ldap_server_url_hint') }}</small>
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_base_dn" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_base_dn_label') }}</label>
+            <input type="text" id="ldap_base_dn" name="ldap_base_dn" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.base_dn }}" placeholder="DC=azienda,DC=local">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_bind_dn" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_bind_dn_label') }}</label>
+            <input type="text" id="ldap_bind_dn" name="ldap_bind_dn" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.bind_dn }}" placeholder="CN=svc_ember,OU=Services,DC=azienda,DC=local">
+            <small style="color: var(--text-muted); font-size: 0.75rem;">{{ _('settings_ldap_bind_dn_hint') }}</small>
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_bind_password" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_bind_password_label') }}</label>
+            <input type="password" id="ldap_bind_password" name="ldap_bind_password" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="{% if ldap_config.bind_password %}••••••••{% else %}{{ _('settings_ldap_bind_password_placeholder') }}{% endif %}">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_user_filter" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_user_filter_label') }}</label>
+            <input type="text" id="ldap_user_filter" name="ldap_user_filter" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ ldap_config.user_filter }}" placeholder="(&(objectClass=person)(|(sAMAccountName={username})(uid={username})))">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_group_attribute" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_group_attr_label') }}</label>
+            <input type="text" id="ldap_group_attribute" name="ldap_group_attribute" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.group_attribute }}" placeholder="memberOf">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_admin_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_admin_label') }}</label>
+            <input type="text" id="ldap_admin_group" name="ldap_admin_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.admin_group }}" placeholder="CN=EmberAdmins,OU=Groups,DC=azienda,DC=local">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_operator_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_operator_label') }}</label>
+            <input type="text" id="ldap_operator_group" name="ldap_operator_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.operator_group }}" placeholder="CN=EmberOperators,OU=Groups,DC=azienda,DC=local">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_viewer_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_viewer_label') }}</label>
+            <input type="text" id="ldap_viewer_group" name="ldap_viewer_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.viewer_group }}" placeholder="CN=EmberViewers,OU=Groups,DC=azienda,DC=local">
+          </div>
+
+          <div class="form-group">
+            <label for="ldap_connect_timeout_s" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_ldap_timeout_label') }}</label>
+            <input type="number" id="ldap_connect_timeout_s" name="ldap_connect_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ ldap_config.connect_timeout_s }}" min="1" max="60">
+          </div>
+
+          <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 26px;">
+            <input type="checkbox" id="ldap_require_tls" name="ldap_require_tls" {% if ldap_config.require_tls %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0; flex-shrink: 0;">
+            <label for="ldap_require_tls" style="margin: 0; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none;">{{ _('settings_ldap_require_tls_label') }}</label>
+          </div>
+
+          <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 26px;">
+            <input type="checkbox" id="ldap_validate_cert" name="ldap_validate_cert" {% if ldap_config.validate_cert %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0; flex-shrink: 0;">
+            <label for="ldap_validate_cert" style="margin: 0; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none;">{{ _('settings_ldap_validate_cert_label') }}</label>
+          </div>
+        </div>
+
+        <!-- Certificato CA del Dominio PEM -->
+        <div style="margin-bottom: 20px; padding: 14px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <label for="ldap_ca_cert_pem" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">
+            {{ _('settings_ldap_ca_cert_label') }}
+          </label>
+          <textarea id="ldap_ca_cert_pem" name="ldap_ca_cert_pem" rows="4" class="form-input" style="width: 100%; font-family: monospace; font-size: 0.8rem; resize: vertical;" placeholder="-----BEGIN CERTIFICATE-----&#10;MIID...&#10;-----END CERTIFICATE-----">{{ ldap_config.ca_cert_pem }}</textarea>
+          <small style="display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.75rem; line-height: 1.4;">
+            {{ _('settings_ldap_ca_cert_hint') }}
+          </small>
+        </div>
+
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-secondary" id="btn-test-ldap" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <span id="btn-test-ldap-text">{{ _('settings_test_ldap_btn') }}</span>
+          </button>
+          {% if has_permission('settings.write') %}
+          <button type="button" class="btn btn-primary" id="btn-save-ldap" style="font-weight: 700;">
+            {{ _('settings_save_ldap_btn') }}
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 1.4: Integrazione OIDC / Single Sign-On -->
+  <div class="collapsible-card is-collapsed" id="card-oidc">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>{{ _('settings_cat_oidc_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if oidc_enabled %}badge-online{% else %}badge-offline{% endif %}" id="oidc-status-badge">
+          {% if oidc_enabled %}{{ _('status_enabled_m') }}{% else %}{{ _('status_disabled_m') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="oidc-alert-container"></div>
+      <form id="oidc-config-form">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="oidc_enabled" name="oidc_enabled" {% if oidc_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="oidc_enabled" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.95rem;">
+            {{ _('settings_oidc_enable_checkbox') }}
+          </label>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: var(--radius-md); font-size: 0.85rem;">
+          <strong style="color: #93c5fd; display: block; margin-bottom: 4px;">{{ _('settings_oidc_callback_url_label') }}</strong>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="text" readonly id="oidc-redirect-uri-display" value="{{ request.host_url }}auth/oidc/callback" style="flex: 1; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: monospace; font-size: 0.85rem; color: var(--text-primary);">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-oidc-redirect" style="padding: 6px 12px; font-size: 0.8rem;">{{ _('btn_copy') }}</button>
+          </div>
+          <small style="display: block; margin-top: 6px; color: var(--text-secondary);">{{ _('settings_oidc_callback_url_hint') }}</small>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label for="oidc_provider_name" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_oidc_provider_name_label') }}</label>
+            <input type="text" id="oidc_provider_name" name="oidc_provider_name" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.provider_name }}" placeholder="PocketID">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_issuer_url" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_oidc_issuer_url_label') }}</label>
+            <input type="text" id="oidc_issuer_url" name="oidc_issuer_url" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.issuer_url }}" placeholder="https://pocketid.azienda.local">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_client_id" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">Client ID:</label>
+            <input type="text" id="oidc_client_id" name="oidc_client_id" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.client_id }}" placeholder="embervault">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_client_secret" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">Client Secret:</label>
+            <input type="password" id="oidc_client_secret" name="oidc_client_secret" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="{% if oidc_config.client_secret %}••••••••{% else %}{{ _('settings_oidc_client_secret_placeholder') }}{% endif %}">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_scopes" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_oidc_scopes_label') }}</label>
+            <input type="text" id="oidc_scopes" name="oidc_scopes" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.scopes }}" placeholder="openid profile email groups">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_username_claim" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_oidc_username_claim_label') }}</label>
+            <input type="text" id="oidc_username_claim" name="oidc_username_claim" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.username_claim }}" placeholder="preferred_username">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_groups_claim" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_oidc_groups_claim_label') }}</label>
+            <input type="text" id="oidc_groups_claim" name="oidc_groups_claim" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.groups_claim }}" placeholder="groups">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_admin_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_admin_label') }}</label>
+            <input type="text" id="oidc_admin_group" name="oidc_admin_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.admin_group }}" placeholder="admin">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_operator_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_operator_label') }}</label>
+            <input type="text" id="oidc_operator_group" name="oidc_operator_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.operator_group }}" placeholder="operator">
+          </div>
+
+          <div class="form-group">
+            <label for="oidc_viewer_group" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_group_mapped_viewer_label') }}</label>
+            <input type="text" id="oidc_viewer_group" name="oidc_viewer_group" class="form-input" style="width: 100%; padding: 8px 12px;" value="{{ oidc_config.viewer_group }}" placeholder="viewer">
+          </div>
+
+          <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 26px;">
+            <input type="checkbox" id="oidc_validate_cert" name="oidc_validate_cert" {% if oidc_config.validate_cert %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0; flex-shrink: 0;">
+            <label for="oidc_validate_cert" style="margin: 0; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none;">{{ _('settings_oidc_validate_cert_label') }}</label>
+          </div>
+
+          <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 20px;">
+            <input type="checkbox" id="oidc_enforce_mfa" name="oidc_enforce_mfa" {% if oidc_config.enforce_mfa %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0; flex-shrink: 0;">
+            <div>
+              <label for="oidc_enforce_mfa" style="margin: 0; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none; display: block;">{{ _('settings_oidc_enforce_mfa_label') }}</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 14px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <label for="oidc_ca_cert_pem" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">
+            {{ _('settings_oidc_ca_cert_label') }}
+          </label>
+          <textarea id="oidc_ca_cert_pem" name="oidc_ca_cert_pem" rows="4" class="form-input" style="width: 100%; font-family: monospace; font-size: 0.8rem; resize: vertical;" placeholder="-----BEGIN CERTIFICATE-----&#10;MIID...&#10;-----END CERTIFICATE-----">{{ oidc_config.ca_cert_pem }}</textarea>
+        </div>
+
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-secondary" id="btn-test-oidc" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <span id="btn-test-oidc-text">{{ _('settings_test_oidc_btn') }}</span>
+          </button>
+          {% if has_permission('settings.write') %}
+          <button type="button" class="btn btn-primary" id="btn-save-oidc" style="font-weight: 700;">
+            {{ _('settings_save_oidc_btn') }}
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     MACRO 2: ORCHESTRAZIONE ED ESECUZIONE TASK
+     ============================================================================== -->
+<div class="macro-section" id="macro-orchestration">
+  <div class="macro-header">
+    <div class="macro-title">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ember-primary)" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><path d="M2 12h20"/><path d="m5 7-3 5 3 5"/><path d="m19 7 3 5-3 5"/></svg>
+      <span>{{ _('settings_macro2_title') }}</span>
+    </div>
+    <span class="macro-badge">6 {{ _('settings_categories_unit') }}</span>
+  </div>
+
+  <!-- Categoria 2.1: Parametri RClone ed Esecuzione Predefiniti -->
+  <div class="collapsible-card is-collapsed" id="card-rclone">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>{{ _('settings_cat_rclone_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-online">Transfers: {{ task_retries }} retries, {{ rclone_transfers }} transfers</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="rclone-settings-alert-container"></div>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 0; margin-bottom: 20px;">
+        {{ _('settings_rclone_intro') }}
+      </p>
+      <form id="rclone-settings-form">
+        <div class="form-grid-2">
+          <div class="form-group-card">
+            <label for="global_task_retries">{{ _('settings_rclone_task_retries_label') }}</label>
+            <input type="number" id="global_task_retries" name="task_retries" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ task_retries }}" min="0" max="10" required>
+            <small>{{ _('settings_rclone_task_retries_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="global_rclone_checkers">{{ _('settings_rclone_checkers_label') }}</label>
+            <input type="number" id="global_rclone_checkers" name="rclone_checkers" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ rclone_checkers }}" min="1" max="128" required>
+            <small>{{ _('settings_rclone_checkers_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="global_rclone_transfers">{{ _('settings_rclone_transfers_label') }}</label>
+            <input type="number" id="global_rclone_transfers" name="rclone_transfers" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ rclone_transfers }}" min="1" max="64" required>
+            <small>{{ _('settings_rclone_transfers_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="global_rclone_order_by">{{ _('settings_rclone_order_by_label') }}</label>
+            <input type="text" id="global_rclone_order_by" name="rclone_order_by" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ rclone_order_by }}" placeholder="{{ _('job_order_by_placeholder') }}">
+            <small>{{ _('settings_rclone_order_by_hint_html') | safe }}</small>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="global_rclone_check_first" name="rclone_check_first" style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;" {% if rclone_check_first %}checked{% endif %}>
+              <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
+                {{ _('job_check_first_label') }}
+              </span>
+            </label>
+            <small style="display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.78rem;">
+              {{ _('settings_rclone_check_first_hint') }}
+            </small>
+          </div>
+
+          <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="global_rclone_recurse" name="rclone_recurse" style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;" {% if rclone_recurse %}checked{% endif %}>
+              <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
+                {{ _('job_recurse_label') }}
+              </span>
+            </label>
+            <small style="display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.78rem;">
+              {{ _('settings_rclone_recurse_hint_html') | safe }}
+            </small>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div>
+            <label for="global_rclone_first_level_filters" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.88rem; color: var(--text-primary);">
+              {{ _('settings_rclone_first_filters_label') }}
+            </label>
+            <textarea id="global_rclone_first_level_filters" name="rclone_first_level_filters" class="form-input" rows="4" style="width: 100%; font-family: monospace; font-size: 0.82rem; line-height: 1.4; resize: vertical;" placeholder="+ *.pdf&#10;- *.tmp&#10;+ */**">{% for f in rclone_first_level_filters %}{{ f }}&#10;{% endfor %}</textarea>
+            <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.76rem;">
+              {{ _('settings_rclone_first_filters_hint') }}
+            </small>
+          </div>
+
+          <div>
+            <label for="global_rclone_second_level_filters" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.88rem; color: var(--text-primary);">
+              {{ _('settings_rclone_second_filters_label') }}
+            </label>
+            <textarea id="global_rclone_second_level_filters" name="rclone_second_level_filters" class="form-input" rows="4" style="width: 100%; font-family: monospace; font-size: 0.82rem; line-height: 1.4; resize: vertical;" placeholder="- *.txt&#10;- File*&#10;+ */**">{% for f in rclone_second_level_filters %}{{ f }}&#10;{% endfor %}</textarea>
+            <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.76rem;">
+              {{ _('settings_rclone_second_filters_hint') }}
+            </small>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-rclone-settings" style="font-weight: 700;">
+            {{ _('settings_save_rclone_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 2.2: Concorrenza e Limiti di Carico -->
+  <div class="collapsible-card is-collapsed" id="card-concurrency">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>{{ _('settings_cat_concurrency_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-neutral">{{ _('settings_global_short') }}: {{ settings.global_concurrency or 10 }} | Proxy: {{ settings.per_proxy_concurrency or 4 }}</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="concurrency-alert-container"></div>
+      <form id="form-concurrency">
+        <div class="form-grid-3">
+          <div class="form-group-card">
+            <label for="general_global_concurrency">{{ _('settings_global_concurrency_label') }}</label>
+            <input type="number" id="general_global_concurrency" name="global_concurrency" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.global_concurrency or 10 }}" min="1" max="1000" required>
+            <small>{{ _('settings_global_concurrency_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_per_proxy_concurrency">{{ _('settings_per_proxy_concurrency_label') }}</label>
+            <input type="number" id="general_per_proxy_concurrency" name="per_proxy_concurrency" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.per_proxy_concurrency or 4 }}" min="1" max="128" required>
+            <small>{{ _('settings_per_proxy_concurrency_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_per_job_concurrency">{{ _('settings_per_job_concurrency_label') }}</label>
+            <input type="number" id="general_per_job_concurrency" name="per_job_concurrency" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.per_job_concurrency or 4 }}" min="1" max="128" required>
+            <small>{{ _('settings_per_job_concurrency_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_parallel_warn_threshold">{{ _('settings_parallel_warn_threshold_label') }}</label>
+            <input type="number" id="general_parallel_warn_threshold" name="parallel_warn_threshold" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.parallel_warn_threshold or 50 }}" min="1" max="10000" required>
+            <small>{{ _('settings_parallel_warn_threshold_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_parallel_hard_limit">{{ _('settings_parallel_hard_limit_label') }}</label>
+            <input type="number" id="general_parallel_hard_limit" name="parallel_hard_limit" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.parallel_hard_limit or 500 }}" min="1" max="50000" required>
+            <small>{{ _('settings_parallel_hard_limit_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_discovery_timeout_s">{{ _('settings_discovery_timeout_label') }}</label>
+            <input type="number" id="general_discovery_timeout_s" name="discovery_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.discovery_timeout_s or 30 }}" min="1" max="600" required>
+            <small>{{ _('settings_discovery_timeout_hint') }}</small>
+          </div>
+        </div>
+
+        <div class="settings-subsection" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+          <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; color: var(--color-text-primary);">
+            {{ _('settings_default_run_policies_subtitle') }}
+          </h3>
+          <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-top: 0; margin-bottom: 16px;">
+            {{ _('settings_default_run_policies_desc') }}
+          </p>
+          <div class="form-grid-3">
+            <div class="form-group-card">
+              <label for="general_default_missed_run_policy">{{ _('settings_default_missed_run_policy_label') }}</label>
+              <select id="general_default_missed_run_policy" name="default_missed_run_policy" class="form-input" style="width: 100%; padding: 8px 12px;">
+                <option value="run_once" {% if (settings.default_missed_run_policy or 'run_once') == 'run_once' %}selected{% endif %}>
+                  {{ _('job_missed_policy_run_once') }}
+                </option>
+                <option value="fail" {% if settings.default_missed_run_policy == 'fail' %}selected{% endif %}>
+                  {{ _('job_missed_policy_fail') }}
+                </option>
+                <option value="skip" {% if settings.default_missed_run_policy == 'skip' %}selected{% endif %}>
+                  {{ _('job_missed_policy_skip_option') }}
+                </option>
+              </select>
+              <small>{{ _('settings_default_missed_run_policy_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="general_default_overlap_policy">{{ _('settings_default_overlap_policy_label') }}</label>
+              <select id="general_default_overlap_policy" name="default_overlap_policy" class="form-input" style="width: 100%; padding: 8px 12px;">
+                <option value="skip" {% if (settings.default_overlap_policy or 'skip') == 'skip' %}selected{% endif %}>
+                  {{ _('job_overlap_policy_skip') }}
+                </option>
+                <option value="allow" {% if settings.default_overlap_policy == 'allow' %}selected{% endif %}>
+                  {{ _('job_overlap_policy_allow') }}
+                </option>
+                <option value="cancel_previous" {% if settings.default_overlap_policy == 'cancel_previous' %}selected{% endif %}>
+                  {{ _('job_overlap_policy_cancel_previous') }}
+                </option>
+              </select>
+              <small>{{ _('settings_default_overlap_policy_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="general_default_pending_policy">{{ _('settings_default_pending_policy_label') }}</label>
+              <select id="general_default_pending_policy" name="default_pending_policy" class="form-input" style="width: 100%; padding: 8px 12px;">
+                <option value="fail" {% if (settings.default_pending_policy or 'fail') == 'fail' %}selected{% endif %}>
+                  {{ _('job_pending_policy_fail') }}
+                </option>
+                <option value="retry" {% if settings.default_pending_policy == 'retry' %}selected{% endif %}>
+                  {{ _('job_pending_policy_retry') }}
+                </option>
+              </select>
+              <small>{{ _('settings_default_pending_policy_hint') }}</small>
+            </div>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-concurrency" style="font-weight: 700;">
+            {{ _('settings_save_concurrency_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 2.3: Ciclo di Vita Task e Scheduler -->
+  <div class="collapsible-card is-collapsed" id="card-lifecycle">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>{{ _('settings_cat_lifecycle_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-neutral">Scheduler: {{ settings.scheduler_tick_s or 5 }}s | Retries: {{ settings.task_max_attempts or 3 }}</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="lifecycle-alert-container"></div>
+      <form id="form-lifecycle">
+        <div class="form-grid-3">
+          <div class="form-group-card">
+            <label for="general_scheduler_tick_s">{{ _('settings_scheduler_tick_label') }}</label>
+            <input type="number" id="general_scheduler_tick_s" name="scheduler_tick_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.scheduler_tick_s or 5 }}" min="1" max="3600" required>
+            <small>{{ _('settings_scheduler_tick_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_dispatch_tick_s">{{ _('settings_dispatch_tick_label') }}</label>
+            <input type="number" id="general_dispatch_tick_s" name="dispatch_tick_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.dispatch_tick_s or 2 }}" min="1" max="300" required>
+            <small>{{ _('settings_dispatch_tick_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_task_max_attempts">{{ _('settings_task_max_attempts_label') }}</label>
+            <input type="number" id="general_task_max_attempts" name="task_max_attempts" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.task_max_attempts or 3 }}" min="1" max="20" required>
+            <small>{{ _('settings_task_max_attempts_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_retry_base_s">{{ _('settings_retry_base_label') }}</label>
+            <input type="number" id="general_retry_base_s" name="retry_base_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.retry_base_s or 5 }}" min="1" max="600" required>
+            <small>{{ _('settings_retry_base_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_retry_max_s">{{ _('settings_retry_max_label') }}</label>
+            <input type="number" id="general_retry_max_s" name="retry_max_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.retry_max_s or 300 }}" min="5" max="86400" required>
+            <small>{{ _('settings_retry_max_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_assignment_timeout_s">{{ _('settings_assignment_timeout_label') }}</label>
+            <input type="number" id="general_assignment_timeout_s" name="assignment_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.assignment_timeout_s or 30 }}" min="5" max="600" required>
+            <small>{{ _('settings_assignment_timeout_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_lost_after_s">{{ _('settings_lost_after_label') }}</label>
+            <input type="number" id="general_lost_after_s" name="lost_after_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.lost_after_s or 120 }}" min="10" max="3600" required>
+            <small>{{ _('settings_lost_after_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_proxy_cooldown_s">{{ _('settings_proxy_cooldown_label') }}</label>
+            <input type="number" id="general_proxy_cooldown_s" name="proxy_cooldown_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.proxy_cooldown_s or 30 }}" min="1" max="1800" required>
+            <small>{{ _('settings_proxy_cooldown_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_log_retention_days">{{ _('settings_log_retention_label') }}</label>
+            <input type="number" id="general_log_retention_days" name="log_retention_days" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.log_retention_days or 30 }}" min="1" max="3650" required>
+            <small>{{ _('settings_log_retention_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_throughput_retention_days">{{ _('settings_throughput_retention_label') }}</label>
+            <input type="number" id="general_throughput_retention_days" name="throughput_retention_days" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.throughput_retention_days or 7 }}" min="1" max="3650" required>
+            <small>{{ _('settings_throughput_retention_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_http_connect_timeout_s">{{ _('settings_http_connect_timeout_label') }}</label>
+            <input type="number" id="general_http_connect_timeout_s" name="http_connect_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.http_connect_timeout_s or 5 }}" min="1" max="60" required>
+            <small>{{ _('settings_http_connect_timeout_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_http_read_timeout_s">{{ _('settings_http_read_timeout_label') }}</label>
+            <input type="number" id="general_http_read_timeout_s" name="http_read_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.http_read_timeout_s or 30 }}" min="1" max="300" required>
+            <small>{{ _('settings_http_read_timeout_hint') }}</small>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-lifecycle" style="font-weight: 700;">
+            {{ _('settings_save_lifecycle_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 2.4: Monitoraggio Proxy e Nodi Worker -->
+  <div class="collapsible-card is-collapsed" id="card-proxy-mon">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span>{{ _('settings_cat_proxy_mon_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-neutral">Heartbeat: {{ settings.heartbeat_interval_s or 10 }}s</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="proxy-mon-alert-container"></div>
+      <form id="form-proxy-mon">
+        <div class="form-grid-3">
+          <div class="form-group-card">
+            <label for="general_heartbeat_interval_s">{{ _('settings_heartbeat_interval_label') }}</label>
+            <input type="number" id="general_heartbeat_interval_s" name="heartbeat_interval_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.heartbeat_interval_s or 10 }}" min="1" max="300" required>
+            <small>{{ _('settings_heartbeat_interval_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_offline_after_failures">{{ _('settings_offline_after_failures_label') }}</label>
+            <input type="number" id="general_offline_after_failures" name="offline_after_failures" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.offline_after_failures or 3 }}" min="1" max="50" required>
+            <small>{{ _('settings_offline_after_failures_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_online_after_successes">{{ _('settings_online_after_successes_label') }}</label>
+            <input type="number" id="general_online_after_successes" name="online_after_successes" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.online_after_successes or 2 }}" min="1" max="50" required>
+            <small>{{ _('settings_online_after_successes_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_proxy_max_concurrent_tasks">{{ _('settings_proxy_max_concurrent_label') }}</label>
+            <input type="number" id="general_proxy_max_concurrent_tasks" name="proxy_max_concurrent_tasks" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.proxy_max_concurrent_tasks or 4 }}" min="1" max="128" required>
+            <small>{{ _('settings_proxy_max_concurrent_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_proxy_result_retention_s">{{ _('settings_proxy_result_retention_label') }}</label>
+            <input type="number" id="general_proxy_result_retention_s" name="proxy_result_retention_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.proxy_result_retention_s or 3600 }}" min="60" max="86400" required>
+            <small>{{ _('settings_proxy_result_retention_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="general_proxy_orphan_timeout_s">{{ _('settings_proxy_orphan_timeout_label') }}</label>
+            <input type="number" id="general_proxy_orphan_timeout_s" name="proxy_orphan_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ settings.proxy_orphan_timeout_s or 300 }}" min="30" max="7200" required>
+            <small>{{ _('settings_proxy_orphan_timeout_hint') }}</small>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="general_proxy_tls_auto_self_signed" name="proxy_tls_auto_self_signed" style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;" {% if settings.proxy_tls_auto_self_signed or settings.proxy_tls_auto_self_signed is none %}checked{% endif %}>
+            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+              {{ _('settings_proxy_tls_auto_self_signed_label') }}
+            </span>
+          </label>
+          <small style="display: block; margin-top: 4px; margin-left: 28px; color: var(--text-muted); font-size: 0.78rem;">
+            {{ _('settings_proxy_tls_auto_self_signed_hint') }}
+          </small>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-proxy-mon" style="font-weight: 700;">
+            {{ _('settings_save_proxy_mon_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 2.5: Hook Bash (Pre/Post Esecuzione) -->
+  <div class="collapsible-card is-collapsed" id="card-hooks">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <span>{{ _('settings_cat_hooks_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if hooks_enabled %}badge-online{% else %}badge-offline{% endif %}" id="hooks-status-badge">
+          {% if hooks_enabled %}{{ _('status_enabled_mp') }}{% else %}{{ _('settings_hooks_disabled_default') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="hooks-alert-container"></div>
+      <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#eab308" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            {{ _('settings_hooks_security_warning_html') | safe }}
+          </div>
+        </div>
+      </div>
+
+      <form id="hooks-settings-form">
+        <div class="form-grid-2">
+          <div class="form-group-card">
+            <label class="form-label">{{ _('settings_hooks_enabled_label') }}</label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding-top: 4px;">
+              <input type="checkbox" id="hooks_enabled_input" name="hooks_enabled" style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;" {% if hooks_enabled %}checked{% endif %}>
+              <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary);">
+                {{ _('settings_hooks_allow_checkbox') }}
+              </span>
+            </label>
+            <small>{{ _('settings_hooks_enabled_hint') }}</small>
+          </div>
+
+          <div class="form-group-card">
+            <label for="hooks_timeout_input">{{ _('settings_hooks_timeout_label') }}</label>
+            <input type="number" id="hooks_timeout_input" name="hooks_timeout_s" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ hooks_timeout_s }}" min="5" max="3600" required>
+            <small>{{ _('settings_hooks_timeout_hint') }}</small>
+          </div>
+
+          <div class="form-group-card" style="grid-column: 1 / -1;">
+            <label for="hook_runner_url_input">{{ _('settings_hook_runner_url_label') }}</label>
+            <input type="text" id="hook_runner_url_input" name="hook_runner_url" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ hook_runner_url or '' }}" placeholder="{{ _('settings_hook_runner_url_placeholder') }}">
+            <small>{{ _('settings_hook_runner_url_hint') }}</small>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-hooks" style="font-weight: 700;">
+            {{ _('settings_save_hooks_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 2.6: Integrazione IA (Intelligenza Artificiale) -->
+  <div class="collapsible-card is-collapsed" id="card-ai">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a3 3 0 0 0-3 3v1H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3V5a3 3 0 0 0-3-3Z"/>
+          <path d="M9 13v2"/><path d="M15 13v2"/><path d="M10 9h4"/>
+        </svg>
+        <span>{{ _('settings_cat_ai_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if ai_enabled %}badge-online{% else %}badge-offline{% endif %}" id="ai-status-badge">
+          {% if ai_enabled %}{{ _('status_enabled_f') }} ({{ ai_provider_type }}){% else %}{{ _('status_disabled_f') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="ai-settings-alert-container"></div>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 0; margin-bottom: 20px;">
+        {{ _('settings_ai_intro') }}
+      </p>
+
+      <form id="ai-settings-form">
+        <!-- Master Switch Abilitazione IA -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="ai_enabled_input" name="ai_enabled" {% if ai_enabled %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer;">
+          <div>
+            <label for="ai_enabled_input" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.95rem; display: block;">
+              {{ _('settings_ai_enable_label') }}
+            </label>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">{{ _('settings_ai_enable_hint') }}</small>
+          </div>
+        </div>
+
+        <!-- Sezione Parametri Generali Endpoint -->
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; margin-bottom: 14px; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            {{ _('settings_ai_endpoint_section_title') }}
+          </h3>
+
+          <div class="form-grid-2">
+            <div class="form-group-card">
+              <label for="ai_provider_type_input">{{ _('settings_ai_provider_type_label') }}</label>
+              <select id="ai_provider_type_input" name="ai_provider_type" class="form-input" style="width: 100%; padding: 8px 12px;">
+                <option value="openai_compatible" {% if ai_provider_type == 'openai_compatible' %}selected{% endif %}>{{ _('settings_ai_provider_openai') }}</option>
+                <option value="ollama" {% if ai_provider_type == 'ollama' %}selected{% endif %}>{{ _('settings_ai_provider_ollama') }}</option>
+              </select>
+              <small>{{ _('settings_ai_provider_type_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="ai_endpoint_url_input">{{ _('settings_ai_endpoint_url_label') }}</label>
+              <input type="text" id="ai_endpoint_url_input" name="ai_endpoint_url" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ ai_endpoint_url }}" placeholder="{{ _('settings_ai_endpoint_url_placeholder') }}" required>
+              <small>{{ _('settings_ai_endpoint_url_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="ai_model_input">{{ _('settings_ai_model_label') }}</label>
+              <input type="text" id="ai_model_input" name="ai_model" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ ai_model }}" placeholder="llama3.2, gpt-4o-mini, mistral" required>
+              <small>{{ _('settings_ai_model_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="ai_api_key_input">API Key (AI_API_KEY):</label>
+              <input type="password" id="ai_api_key_input" name="ai_api_key" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="{% if ai_has_api_key %}{{ _('settings_ai_api_key_configured_placeholder') }}{% else %}{{ _('settings_ai_api_key_optional_placeholder') }}{% endif %}">
+              <small>{{ _('settings_ai_api_key_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="ai_timeout_seconds_input">{{ _('settings_ai_timeout_label') }}</label>
+              <input type="number" id="ai_timeout_seconds_input" name="ai_timeout_seconds" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace;" value="{{ ai_timeout_seconds }}" min="1" max="300" required>
+              <small>{{ _('settings_ai_timeout_hint') }}</small>
+            </div>
+
+            <div class="form-group-card">
+              <label for="ai_language_input">{{ _('settings_ai_language_label') }}</label>
+              <select id="ai_language_input" name="ai_language" class="form-input" style="width: 100%; padding: 8px 12px;">
+                <option value="en" {% if ai_language == 'en' %}selected{% endif %}>English (Default)</option>
+                <option value="it" {% if ai_language == 'it' %}selected{% endif %}>Italiano (Italian)</option>
+                <option value="de" {% if ai_language == 'de' %}selected{% endif %}>Deutsch (German)</option>
+                <option value="es" {% if ai_language == 'es' %}selected{% endif %}>Español (Spanish)</option>
+                <option value="fr" {% if ai_language == 'fr' %}selected{% endif %}>Français (French)</option>
+                <option value="zh" {% if ai_language == 'zh' %}selected{% endif %}>简体中文 (Chinese)</option>
+                <option value="ja" {% if ai_language == 'ja' %}selected{% endif %}>日本語 (Japanese)</option>
+                <option value="ko" {% if ai_language == 'ko' %}selected{% endif %}>한국어 (Korean)</option>
+                <option value="ar" {% if ai_language == 'ar' %}selected{% endif %}>العربية (Arabic)</option>
+              </select>
+              <small>{{ _('settings_ai_language_hint') }}</small>
+            </div>
+
+            <div class="form-group-card" style="display: flex; flex-direction: column; justify-content: center;">
+              <label style="margin-bottom: 6px;">{{ _('settings_ai_verify_conn_label') }}</label>
+              <button type="button" class="btn btn-secondary" id="btn-test-ai-connection" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 16px; font-weight: 600;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                <span id="btn-test-ai-text">{{ _('settings_test_ai_btn') }}</span>
+              </button>
+              <small style="margin-top: 4px;">{{ _('settings_test_ai_hint') }}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione Personalizzazione System Prompt -->
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; margin-bottom: 14px; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            {{ _('settings_ai_prompts_section_title') }}
+          </h3>
+
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="ai_system_prompt_input" style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+                {{ _('settings_ai_system_prompt_label') }}
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-ai-system-prompt" style="font-size: 0.75rem; padding: 2px 8px;">
+                {{ _('settings_ai_reset_default_prompt') }}
+              </button>
+            </div>
+            <textarea id="ai_system_prompt_input" name="ai_system_prompt" class="form-input" rows="6" style="width: 100%; font-family: monospace; font-size: 0.82rem; padding: 10px 12px; line-height: 1.45;" placeholder="{{ _('settings_ai_system_prompt_placeholder') }}">{{ ai_system_prompt }}</textarea>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">{{ _('settings_ai_system_prompt_hint') }}</small>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="ai_reporting_system_prompt_input" style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+                {{ _('settings_ai_reporting_system_prompt_label') }}
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-ai-reporting-prompt" style="font-size: 0.75rem; padding: 2px 8px;">
+                {{ _('settings_ai_reset_default_prompt') }}
+              </button>
+            </div>
+            <textarea id="ai_reporting_system_prompt_input" name="ai_reporting_system_prompt" class="form-input" rows="6" style="width: 100%; font-family: monospace; font-size: 0.82rem; padding: 10px 12px; line-height: 1.45;" placeholder="{{ _('settings_ai_reporting_system_prompt_placeholder') }}">{{ ai_reporting_system_prompt }}</textarea>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">{{ _('settings_ai_reporting_system_prompt_hint') }}</small>
+          </div>
+        </div>
+
+        <!-- Sezione Opzioni IA -->
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; margin-bottom: 14px; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            {{ _('settings_ai_features_section_title') }}
+          </h3>
+
+          <!-- Opzione 1: Decision-making per gestione errori -->
+          <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--bg-secondary); margin-bottom: 14px;">
+            <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+              <input type="checkbox" id="ai_error_handling_enabled_input" name="ai_error_handling_enabled" {% if ai_error_handling_enabled %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer; margin-top: 2px;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.92rem; display: block;">
+                  {{ _('settings_ai_error_handling_title') }}
+                </strong>
+                <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 4px; line-height: 1.45;">
+                  {{ _('settings_ai_error_handling_desc') }}
+                </div>
+              </div>
+            </label>
+
+            <!-- Sotto-opzione: Non censurare dati sensibili -->
+            <div style="margin-top: 14px; margin-left: 30px; padding: 12px 14px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: var(--radius-sm);">
+              <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="ai_error_handling_uncensored_input" name="ai_error_handling_uncensored" {% if ai_error_handling_uncensored %}checked{% endif %} style="width: 17px; height: 17px; accent-color: var(--color-brand); cursor: pointer; margin-top: 2px;">
+                <div>
+                  <strong style="color: #eab308; font-size: 0.86rem; display: block;">
+                    {{ _('settings_ai_uncensored_title') }}
+                  </strong>
+                  <div style="color: var(--text-secondary); font-size: 0.78rem; margin-top: 3px; line-height: 1.4;">
+                    {{ _('settings_ai_uncensored_desc_html') | safe }}
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Opzione 2: Analisi e riassunto AI-Driven per la reportistica -->
+          <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--bg-secondary);">
+            <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+              <input type="checkbox" id="ai_reporting_analysis_enabled_input" name="ai_reporting_analysis_enabled" {% if ai_reporting_analysis_enabled %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--color-brand); cursor: pointer; margin-top: 2px;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.92rem; display: block;">
+                  {{ _('settings_ai_reporting_title') }}
+                </strong>
+                <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 4px; line-height: 1.45;">
+                  {{ _('settings_ai_reporting_desc') }}
+                </div>
+              </div>
+            </label>
+
+            <!-- Disclaimer Privacy & Riservatezza -->
+            <div style="margin-top: 14px; margin-left: 30px; padding: 12px 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm);">
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <strong style="color: #ef4444; font-size: 0.86rem; display: block;">
+                    {{ _('settings_ai_privacy_warning_title') }}
+                  </strong>
+                  <div style="color: var(--text-secondary); font-size: 0.78rem; margin-top: 3px; line-height: 1.4;">
+                    {{ _('settings_ai_privacy_warning_desc_html') | safe }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-ai" style="font-weight: 700;">
+            {{ _('settings_save_ai_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     MACRO 3: NOTIFICHE E CANALI DI ALLERTA
+     ============================================================================== -->
+<div class="macro-section" id="macro-notifications">
+  <div class="macro-header">
+    <div class="macro-title">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ember-primary)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>{{ _('settings_macro3_title') }}</span>
+    </div>
+    <span class="macro-badge">2 {{ _('settings_categories_unit') }}</span>
+  </div>
+
+  <!-- Categoria 3.1: Politiche di Notifica Generali -->
+  <div class="collapsible-card is-collapsed" id="card-notif-policies">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>{{ _('settings_cat_notif_policies_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge {% if notifications_enabled %}badge-online{% else %}badge-offline{% endif %}" id="notif-status-badge">
+          {% if notifications_enabled %}{{ _('settings_notif_active_badge') }}{% else %}{{ _('status_disabled_fp') }}{% endif %}
+        </span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="notif-settings-alert-container"></div>
+      <form id="notif-settings-form">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="notif_global_enabled" name="notifications_enabled" {% if notifications_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+          <div>
+            <label for="notif_global_enabled" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.95rem; display: block;">
+              {{ _('settings_notif_enable_label') }}
+            </label>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">{{ _('settings_notif_enable_hint') }}</small>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <label class="form-label" style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-primary);">
+            {{ _('settings_notif_job_policy_label') }}
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              <input type="radio" name="notification_job_policy" id="policy_only_errors" value="only_errors" {% if notification_job_policy == 'only_errors' %}checked{% endif %} style="margin-top: 3px;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.9rem;">{{ _('settings_notif_policy_only_errors_title') }}</strong>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">
+                  {{ _('settings_notif_policy_only_errors_desc') }}
+                </div>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              <input type="radio" name="notification_job_policy" id="policy_always" value="always" {% if notification_job_policy == 'always' %}checked{% endif %} style="margin-top: 3px;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.9rem;">{{ _('settings_notif_policy_always_title') }}</strong>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">
+                  {{ _('settings_notif_policy_always_desc') }}
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="notif_proxy_offline" name="notification_proxy_offline_enabled" {% if notification_proxy_offline_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+          <div>
+            <label for="notif_proxy_offline" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.88rem; display: block;">
+              {{ _('settings_notif_proxy_offline_label') }}
+            </label>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">{{ _('settings_notif_proxy_offline_hint') }}</small>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <input type="checkbox" id="notif_rclone_update" name="notification_rclone_update_enabled" {% if notification_rclone_update_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+          <div>
+            <label for="notif_rclone_update" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.88rem; display: block;">
+              {{ _('settings_notif_rclone_update_label') }}
+            </label>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">{{ _('settings_notif_rclone_update_hint') }}</small>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <input type="checkbox" id="rclone_auto_update_check" name="rclone_auto_update_check_enabled" {% if rclone_auto_update_check_enabled %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="rclone_auto_update_check" style="font-weight: 600; cursor: pointer; color: var(--text-primary); font-size: 0.88rem;">
+              {{ _('settings_rclone_auto_check_label') }}
+            </label>
+          </div>
+          <div style="margin-left: 28px; display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+            <label for="rclone_auto_update_interval" style="font-size: 0.82rem; color: var(--text-secondary);">{{ _('settings_rclone_check_interval_label') }}:</label>
+            <input type="number" id="rclone_auto_update_interval" name="rclone_auto_update_check_interval_hours" min="1" max="720" value="{{ rclone_auto_update_check_interval_hours }}" class="form-input" style="width: 80px; height: 32px; font-size: 0.85rem;">
+            <span style="font-size: 0.82rem; color: var(--text-muted);">{{ _('hours') }}</span>
+          </div>
+          <small style="margin-left: 28px; color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">{{ _('settings_rclone_auto_check_hint') }}</small>
+        </div>
+
+        {% if has_permission('settings.write') %}
+        <div class="card-action-bar">
+          <button type="button" class="btn btn-primary" id="btn-save-notif-settings" style="font-weight: 700;">
+            {{ _('settings_save_notif_policies_btn') }}
+          </button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Categoria 3.2: Canali di Notifica (Apprise API) -->
+  <div class="collapsible-card is-collapsed" id="card-notif-channels">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>{{ _('settings_cat_notif_channels_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-neutral">{{ notification_channels|length }} {{ _('settings_notif_channels_configured_badge') }}</span>
+        {% if has_permission('settings.write') %}
+        <button type="button" class="btn btn-primary btn-sm" id="btn-open-channel-modal" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          {{ _('settings_add_channel_btn') }}
+        </button>
+        {% endif %}
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="channel-list-alert-container"></div>
+      <div class="table-responsive">
+        <table class="data-table" id="table-notification-channels">
+          <thead>
+            <tr>
+              <th>{{ _('settings_col_channel_name') }}</th>
+              <th>{{ _('col_type') }}</th>
+              <th>{{ _('settings_col_channel_target') }}</th>
+              <th>{{ _('settings_col_telegram_syntax') }}</th>
+              <th>Rate Limit</th>
+              <th>{{ _('col_status') }}</th>
+              {% if has_permission('settings.write') %}
+              <th style="text-align: right;">{{ _('col_actions') }}</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody id="channels-table-body">
+            {% for ch in notification_channels %}
+            <tr id="channel-row-{{ ch.id }}">
+              <td><strong>{{ ch.name }}</strong></td>
+              <td>
+                {% if ch.channel_type == 'telegram' %}
+                <span class="badge" style="background: rgba(36, 161, 222, 0.15); color: #24a1de; border: 1px solid rgba(36, 161, 222, 0.3);">✈️ Telegram</span>
+                {% elif ch.channel_type == 'email' %}
+                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);">✉️ Email</span>
+                {% else %}
+                <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);">⚙️ Apprise URL</span>
+                {% endif %}
+              </td>
+              <td><code style="font-size: 0.8rem; color: var(--text-secondary);">{{ ch.url }}</code></td>
+              <td>
+                {% if ch.channel_type == 'telegram' %}
+                  {% if ch.telegram_format == 'html' %}<span class="badge badge-online">HTML</span>
+                  {% elif ch.telegram_format == 'markdown' %}<span class="badge badge-cooldown">Markdown</span>
+                  {% else %}<span class="badge badge-neutral">{{ _('settings_telegram_format_plain_short') }}</span>{% endif %}
+                {% else %}<span style="color: var(--text-muted); font-size: 0.8rem;">-</span>{% endif %}
+              </td>
+              <td>
+                {% if ch.rate_limit_interval_s > 0 %}<span class="badge badge-neutral">{{ ch.rate_limit_interval_s }}s</span>
+                {% else %}<span style="color: var(--text-muted); font-size: 0.8rem;">{{ _('none_m') }}</span>{% endif %}
+              </td>
+              <td>
+                {% if ch.enabled %}<span class="badge badge-online">{{ _('active') }}</span>
+                {% else %}<span class="badge badge-offline">{{ _('disabled') }}</span>{% endif %}
+              </td>
+              {% if has_permission('settings.write') %}
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary btn-sm btn-test-channel" data-id="{{ ch.id }}" data-name="{{ ch.name }}">Test</button>
+                  <button type="button" class="btn btn-secondary btn-sm btn-edit-channel" data-channel='{{ ch | tojson }}'>{{ _('btn_edit') }}</button>
+                  <button type="button" class="btn btn-secondary btn-sm btn-delete-channel" data-id="{{ ch.id }}" data-name="{{ ch.name }}" style="color: #ef4444;">{{ _('btn_delete') }}</button>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr id="no-channels-row">
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                {{ _('settings_no_channels_empty') }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Aggiungi / Modifica Canale -->
+<div id="channel-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+      <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary);" id="channel-modal-title">{{ _('settings_modal_add_channel_title') }}</h3>
+      <button type="button" id="btn-modal-close-x" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <div id="modal-alert-container"></div>
+
+    <form id="channel-form">
+      <input type="hidden" id="modal-channel-id" value="">
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="modal-channel-name" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_modal_channel_name_label') }}</label>
+        <input type="text" id="modal-channel-name" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="{{ _('settings_modal_channel_name_placeholder') }}" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="modal-channel-type" class="form-label" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem;">{{ _('settings_modal_channel_type_label') }}</label>
+        <select id="modal-channel-type" class="form-input" style="width: 100%; padding: 8px 12px;">
+          <option value="telegram">Telegram (Bot & Chat)</option>
+          <option value="email">Email (SMTP)</option>
+          <option value="custom">{{ _('settings_modal_channel_type_custom') }}</option>
+        </select>
+      </div>
+
+      <!-- Telegram Fields -->
+      <div id="section-telegram" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; background: var(--bg-secondary);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label for="modal-telegram-bot-token" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">Bot Token Telegram:</label>
+            <input type="password" id="modal-telegram-bot-token" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+          </div>
+          <div class="form-group">
+            <label for="modal-telegram-chat-id" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_telegram_chat_id_label') }}</label>
+            <input type="text" id="modal-telegram-chat-id" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="{{ _('settings_modal_telegram_chat_id_placeholder') }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="modal-telegram-format" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_telegram_format_label') }}</label>
+          <select id="modal-telegram-format" class="form-input" style="width: 100%; padding: 8px 12px;">
+            <option value="html" selected>{{ _('settings_modal_telegram_format_html') }}</option>
+            <option value="markdown">Markdown</option>
+            <option value="text">{{ _('settings_modal_telegram_format_text') }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Email Fields -->
+      <div id="section-email" style="display: none; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; background: var(--bg-secondary);">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label for="modal-smtp-host" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_smtp_host_label') }}</label>
+            <input type="text" id="modal-smtp-host" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="smtp.azienda.local">
+          </div>
+          <div class="form-group">
+            <label for="modal-smtp-port" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('col_port') }}:</label>
+            <input type="number" id="modal-smtp-port" class="form-input" style="width: 100%; padding: 8px 12px;" value="587">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label for="modal-smtp-user" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_smtp_user_label') }}</label>
+            <input type="text" id="modal-smtp-user" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="alerts@azienda.local">
+          </div>
+          <div class="form-group">
+            <label for="modal-smtp-password" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_smtp_password_label') }}</label>
+            <input type="password" id="modal-smtp-password" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="••••••••">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label for="modal-smtp-from" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_smtp_from_label') }}</label>
+            <input type="text" id="modal-smtp-from" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="EmberVault Alerts <alerts@azienda.local>">
+          </div>
+          <div class="form-group">
+            <label for="modal-smtp-targets" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_smtp_targets_label') }}</label>
+            <input type="text" id="modal-smtp-targets" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="admin@azienda.local, oncall@azienda.local">
+          </div>
+        </div>
+        <div style="display: flex; gap: 16px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer;">
+            <input type="checkbox" id="modal-smtp-starttls" checked style="width: 16px; height: 16px;"> STARTTLS
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer;">
+            <input type="checkbox" id="modal-smtp-ssl" style="width: 16px; height: 16px;"> {{ _('settings_modal_smtp_ssl_label') }}
+          </label>
+        </div>
+      </div>
+
+      <!-- Custom Apprise URL -->
+      <div id="section-custom" style="display: none; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; background: var(--bg-secondary);">
+        <div class="form-group">
+          <label for="modal-custom-url" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_custom_url_label') }}</label>
+          <input type="text" id="modal-custom-url" class="form-input" style="width: 100%; padding: 8px 12px; font-family: monospace; font-size: 0.85rem;" placeholder="discord://webhook_id/webhook_token">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+        <div class="form-group">
+          <label for="modal-rate-limit" class="form-label" style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem;">{{ _('settings_modal_rate_limit_label') }}</label>
+          <input type="number" id="modal-rate-limit" class="form-input" style="width: 100%; padding: 8px 12px;" value="0" min="0" max="86400">
+          <small style="color: var(--text-muted); font-size: 0.72rem;">{{ _('settings_modal_rate_limit_hint') }}</small>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; padding-top: 24px;">
+          <input type="checkbox" id="modal-channel-enabled" checked style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;">
+          <label for="modal-channel-enabled" style="font-weight: 600; font-size: 0.85rem; cursor: pointer;">{{ _('settings_modal_channel_enabled_label') }}</label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 18px;">
+        <button type="button" class="btn btn-secondary" id="btn-modal-test-channel" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          <span id="btn-modal-test-text">{{ _('settings_modal_test_live_btn') }}</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-modal-close-channel">{{ _('btn_cancel') }}</button>
+        <button type="button" class="btn btn-primary" id="btn-modal-save-channel" style="font-weight: 700;">{{ _('settings_modal_save_channel_btn') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     MACRO 4: PARAMETRI BOOTSTRAP & AMBIENTE (SOLO VARIABILI DI AMBIENTE)
+     ============================================================================== -->
+<div class="macro-section" id="macro-bootstrap">
+  <div class="macro-header">
+    <div class="macro-title">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ember-primary)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>{{ _('settings_macro4_title') }}</span>
+    </div>
+    <span class="macro-badge">{{ settings_list|length }} {{ _('settings_bootstrap_params_unit') }}</span>
+  </div>
+
+  <div class="collapsible-card is-collapsed" id="card-bootstrap-registry">
+    <div class="card-header">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>{{ _('settings_cat_bootstrap_title') }}</span>
+      </h2>
+      <div class="category-meta">
+        <span class="badge badge-offline">{{ _('settings_bootstrap_env_only_badge') }}</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="banner banner-info" id="banner-settings-phase0" style="margin-bottom: 20px;">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <div>
+          <strong>{{ _('settings_config_reference_prefix') }}</strong> {{ _('settings_phase0_note') }}
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="table-settings">
+          <thead>
+            <tr>
+              <th>{{ _('setting_key') }}</th>
+              <th>{{ _('setting_service') }}</th>
+              <th>{{ _('setting_resolved') }}</th>
+              <th>{{ _('setting_default') }}</th>
+              <th>{{ _('setting_overridable') }}</th>
+              <th>{{ _('setting_restart') }}</th>
+              <th>{{ _('setting_desc') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in settings_list %}
+            <tr>
+              <td>
+                <strong>{{ s.def.name }}</strong>
+                <br>
+                <code style="font-size: 0.75rem; color: var(--text-muted);">{{ s.def.env_var }}</code>
+              </td>
+              <td><span class="badge badge-cooldown">{{ s.def.service }}</span></td>
+              <td>
+                <code style="color: var(--ember-primary); font-weight: 600;">{{ s.resolved_value }}</code>
+              </td>
+              <td>
+                <code style="color: var(--text-secondary);">{{ s.def.default if s.def.default is not none else 'None' }}</code>
+              </td>
+              <td>
+                {% if s.def.overridable_from_gui %}
+                  <span class="badge badge-online">{{ _('yes') }}</span>
+                {% else %}
+                  <span class="badge badge-unknown">{{ _('no') }} ({{ _('settings_env_only_short') }})</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if s.def.requires_restart %}
+                  <span class="badge badge-offline">{{ _('yes') }}</span>
+                {% else %}
+                  <span class="badge badge-unknown">{{ _('no') }}</span>
+                {% endif %}
+              </td>
+              <td style="max-width: 320px; font-size: 0.85rem; color: var(--text-secondary);">
+                {{ _(s.def.description) }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.addEventListener("DOMContentLoaded", () => {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+  // --- Collapsible Cards Accordion Logic ---
+  document.querySelectorAll(".collapsible-card .card-header").forEach(header => {
+    header.addEventListener("click", (e) => {
+      // Don't toggle if user clicked an inner button, input, link, or badge action
+      if (e.target.closest("button, input, select, textarea, a, .badge-action-btn")) {
+        return;
+      }
+      const card = header.closest(".collapsible-card");
+      if (card) {
+        card.classList.toggle("is-collapsed");
+      }
+    });
+  });
+
+  const btnExpandAll = document.getElementById("btn-expand-all");
+  const btnCollapseAll = document.getElementById("btn-collapse-all");
+
+  if (btnExpandAll) {
+    btnExpandAll.addEventListener("click", () => {
+      document.querySelectorAll(".collapsible-card").forEach(c => c.classList.remove("is-collapsed"));
+    });
+  }
+
+  if (btnCollapseAll) {
+    btnCollapseAll.addEventListener("click", () => {
+      document.querySelectorAll(".collapsible-card").forEach(c => c.classList.add("is-collapsed"));
+    });
+  }
+
+  // Sostituisce il testo di conferma a comparsa nella pagina con la notifica toast in basso a destra
+  function renderAlert(containerId, message, type = "success") {
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = "";
+    const normalizedType = (type === "danger" || type === "error" || type === "fail") ? "error" : "success";
+    showToast(message, normalizedType);
+  }
+
+  // Generic Settings Save Helper
+  async function submitGeneralSettings(payload, btnElement, alertContainerId, successMessage) {
+    const origText = btnElement.textContent;
+    btnElement.disabled = true;
+    btnElement.textContent = {{ _('status_saving_in_progress') | tojson }};
+
+    try {
+      const res = await fetch("/api/ui/settings/general", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        renderAlert(alertContainerId, successMessage || data.message || {{ _('settings_saved_generic') | tojson }}, "success");
+      } else {
+        renderAlert(alertContainerId, data.message || {{ _('err_saving_generic') | tojson }}, "danger");
+      }
+    } catch (err) {
+      renderAlert(alertContainerId, {{ _('err_network_server_comm') | tojson }}, "danger");
+    } finally {
+      btnElement.disabled = false;
+      btnElement.textContent = origText;
+    }
+  }
+
+  // --- Save Handlers for New General Settings ---
+
+  // 1. Appearance & Logging
+  const btnSaveAppearance = document.getElementById("btn-save-appearance");
+  if (btnSaveAppearance) {
+    btnSaveAppearance.addEventListener("click", () => {
+      const payload = {
+        log_level: document.getElementById("general_log_level").value,
+        log_format: document.getElementById("general_log_format").value,
+        default_locale: document.getElementById("general_default_locale").value,
+        public_url: document.getElementById("general_public_url").value.trim(),
+        session_cookie_secure: document.getElementById("general_session_cookie_secure").checked,
+      };
+      submitGeneralSettings(payload, btnSaveAppearance, "appearance-alert-container", {{ _('settings_appearance_saved_msg') | tojson }});
+    });
+  }
+
+  // 2. Network & Reverse Proxy
+  const btnSaveTrustedProxies = document.getElementById("btn-save-trusted-proxies");
+  const btnClearTrustedProxies = document.getElementById("btn-clear-trusted-proxies");
+  const inputTrustedProxies = document.getElementById("trusted_proxies_input");
+  const inputTrustedProxyCount = document.getElementById("general_trusted_proxy_count");
+
+  if (btnSaveTrustedProxies) {
+    btnSaveTrustedProxies.addEventListener("click", () => {
+      const payload = {
+        trusted_proxies: inputTrustedProxies.value.trim(),
+        trusted_proxy_count: parseInt(inputTrustedProxyCount.value, 10) || 0,
+      };
+      submitGeneralSettings(payload, btnSaveTrustedProxies, "trusted-proxies-alert-container", {{ _('settings_network_saved_msg') | tojson }});
+    });
+  }
+
+  if (btnClearTrustedProxies) {
+    btnClearTrustedProxies.addEventListener("click", () => {
+      if (inputTrustedProxies) inputTrustedProxies.value = "";
+      if (inputTrustedProxyCount) inputTrustedProxyCount.value = "0";
+      const payload = {
+        trusted_proxies: "",
+        trusted_proxy_count: 0,
+      };
+      submitGeneralSettings(payload, btnClearTrustedProxies, "trusted-proxies-alert-container", {{ _('settings_trusted_proxies_cleared_msg') | tojson }});
+    });
+  }
+
+  // 3. Concurrency & Limits
+  const btnSaveConcurrency = document.getElementById("btn-save-concurrency");
+  if (btnSaveConcurrency) {
+    btnSaveConcurrency.addEventListener("click", () => {
+      const payload = {
+        global_concurrency: parseInt(document.getElementById("general_global_concurrency").value, 10) || 10,
+        per_proxy_concurrency: parseInt(document.getElementById("general_per_proxy_concurrency").value, 10) || 4,
+        per_job_concurrency: parseInt(document.getElementById("general_per_job_concurrency").value, 10) || 4,
+        parallel_warn_threshold: parseInt(document.getElementById("general_parallel_warn_threshold").value, 10) || 100,
+        parallel_hard_limit: parseInt(document.getElementById("general_parallel_hard_limit").value, 10) || 500,
+        discovery_timeout_s: parseInt(document.getElementById("general_discovery_timeout_s").value, 10) || 30,
+        default_missed_run_policy: document.getElementById("general_default_missed_run_policy").value,
+        default_overlap_policy: document.getElementById("general_default_overlap_policy").value,
+        default_pending_policy: document.getElementById("general_default_pending_policy").value,
+      };
+      submitGeneralSettings(payload, btnSaveConcurrency, "concurrency-alert-container", {{ _('settings_concurrency_saved_msg') | tojson }});
+    });
+  }
+
+  // 4. Task Lifecycle & Scheduler
+  const btnSaveLifecycle = document.getElementById("btn-save-lifecycle");
+  if (btnSaveLifecycle) {
+    btnSaveLifecycle.addEventListener("click", () => {
+      const payload = {
+        scheduler_tick_s: parseInt(document.getElementById("general_scheduler_tick_s").value, 10) || 5,
+        dispatch_tick_s: parseInt(document.getElementById("general_dispatch_tick_s").value, 10) || 2,
+        task_max_attempts: parseInt(document.getElementById("general_task_max_attempts").value, 10) || 3,
+        retry_base_s: parseInt(document.getElementById("general_retry_base_s").value, 10) || 5,
+        retry_max_s: parseInt(document.getElementById("general_retry_max_s").value, 10) || 300,
+        assignment_timeout_s: parseInt(document.getElementById("general_assignment_timeout_s").value, 10) || 30,
+        lost_after_s: parseInt(document.getElementById("general_lost_after_s").value, 10) || 120,
+        proxy_cooldown_s: parseInt(document.getElementById("general_proxy_cooldown_s").value, 10) || 30,
+        log_retention_days: parseInt(document.getElementById("general_log_retention_days").value, 10) || 30,
+        throughput_retention_days: parseInt(document.getElementById("general_throughput_retention_days").value, 10) || 7,
+        http_connect_timeout_s: parseInt(document.getElementById("general_http_connect_timeout_s").value, 10) || 5,
+        http_read_timeout_s: parseInt(document.getElementById("general_http_read_timeout_s").value, 10) || 30,
+      };
+      submitGeneralSettings(payload, btnSaveLifecycle, "lifecycle-alert-container", {{ _('settings_lifecycle_saved_msg') | tojson }});
+    });
+  }
+
+  // 5. Proxy Monitoring
+  const btnSaveProxyMon = document.getElementById("btn-save-proxy-mon");
+  if (btnSaveProxyMon) {
+    btnSaveProxyMon.addEventListener("click", () => {
+      const payload = {
+        heartbeat_interval_s: parseInt(document.getElementById("general_heartbeat_interval_s").value, 10) || 10,
+        offline_after_failures: parseInt(document.getElementById("general_offline_after_failures").value, 10) || 3,
+        online_after_successes: parseInt(document.getElementById("general_online_after_successes").value, 10) || 2,
+        proxy_max_concurrent_tasks: parseInt(document.getElementById("general_proxy_max_concurrent_tasks").value, 10) || 4,
+        proxy_result_retention_s: parseInt(document.getElementById("general_proxy_result_retention_s").value, 10) || 3600,
+        proxy_orphan_timeout_s: parseInt(document.getElementById("general_proxy_orphan_timeout_s").value, 10) || 300,
+        proxy_tls_auto_self_signed: document.getElementById("general_proxy_tls_auto_self_signed").checked,
+      };
+      submitGeneralSettings(payload, btnSaveProxyMon, "proxy-mon-alert-container", {{ _('settings_proxy_mon_saved_msg') | tojson }});
+    });
+  }
+
+  // --- LDAP Handlers ---
+  const btnTestLdap = document.getElementById("btn-test-ldap");
+  const btnSaveLdap = document.getElementById("btn-save-ldap");
+  const alertContainerLdap = document.getElementById("ldap-alert-container");
+
+  function getLdapFormData() {
+    return {
+      ldap_enabled: document.getElementById("ldap_enabled").checked,
+      ldap_server_url: document.getElementById("ldap_server_url").value.trim(),
+      ldap_require_tls: document.getElementById("ldap_require_tls").checked,
+      ldap_base_dn: document.getElementById("ldap_base_dn").value.trim(),
+      ldap_bind_dn: document.getElementById("ldap_bind_dn").value.trim(),
+      ldap_bind_password: document.getElementById("ldap_bind_password").value,
+      ldap_user_filter: document.getElementById("ldap_user_filter").value.trim(),
+      ldap_group_attribute: document.getElementById("ldap_group_attribute").value.trim(),
+      ldap_admin_group: document.getElementById("ldap_admin_group").value.trim(),
+      ldap_operator_group: document.getElementById("ldap_operator_group").value.trim(),
+      ldap_viewer_group: document.getElementById("ldap_viewer_group").value.trim(),
+      ldap_connect_timeout_s: parseInt(document.getElementById("ldap_connect_timeout_s").value, 10) || 5,
+      ldap_validate_cert: document.getElementById("ldap_validate_cert").checked,
+      ldap_ca_cert_pem: document.getElementById("ldap_ca_cert_pem").value.trim(),
+    };
+  }
+
+  if (btnTestLdap) {
+    btnTestLdap.addEventListener("click", async () => {
+      alertContainerLdap.innerHTML = "";
+      btnTestLdap.disabled = true;
+      document.getElementById("btn-test-ldap-text").textContent = {{ _('status_testing_ellipsis') | tojson }};
+
+      try {
+        const payload = getLdapFormData();
+        const res = await fetch("/api/ui/ldap/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("ldap-alert-container", data.message || {{ _('settings_ldap_test_ok') | tojson }}, "success");
+        } else {
+          renderAlert("ldap-alert-container", data.message || {{ _('settings_conn_test_failed') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("ldap-alert-container", {{ _('settings_ldap_test_net_err') | tojson }}, "danger");
+      } finally {
+        btnTestLdap.disabled = false;
+        document.getElementById("btn-test-ldap-text").textContent = {{ _('settings_test_ldap_btn') | tojson }};
+      }
+    });
+  }
+
+  if (btnSaveLdap) {
+    btnSaveLdap.addEventListener("click", async () => {
+      alertContainerLdap.innerHTML = "";
+      btnSaveLdap.disabled = true;
+      btnSaveLdap.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      try {
+        const payload = getLdapFormData();
+        const res = await fetch("/api/ui/ldap/config", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("ldap-alert-container", data.message || {{ _('settings_ldap_saved_msg') | tojson }}, "success");
+          const badge = document.getElementById("ldap-status-badge");
+          if (badge) {
+            badge.className = payload.ldap_enabled ? "badge badge-online" : "badge badge-offline";
+            badge.textContent = payload.ldap_enabled ? {{ _('status_enabled_m') | tojson }} : {{ _('status_disabled_m') | tojson }};
+          }
+        } else {
+          renderAlert("ldap-alert-container", data.message || {{ _('err_saving_generic') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("ldap-alert-container", {{ _('err_network_saving') | tojson }}, "danger");
+      } finally {
+        btnSaveLdap.disabled = false;
+        btnSaveLdap.textContent = {{ _('settings_save_ldap_btn') | tojson }};
+      }
+    });
+  }
+
+  // --- OIDC Handlers ---
+  const btnTestOidc = document.getElementById("btn-test-oidc");
+  const btnSaveOidc = document.getElementById("btn-save-oidc");
+  const btnCopyOidcRedirect = document.getElementById("btn-copy-oidc-redirect");
+
+  if (btnCopyOidcRedirect) {
+    btnCopyOidcRedirect.addEventListener("click", () => {
+      const field = document.getElementById("oidc-redirect-uri-display");
+      if (field) {
+        navigator.clipboard.writeText(field.value);
+        btnCopyOidcRedirect.textContent = {{ _('btn_copied_excl') | tojson }};
+        setTimeout(() => { btnCopyOidcRedirect.textContent = {{ _('btn_copy') | tojson }}; }, 2000);
+      }
+    });
+  }
+
+  function getOidcFormData() {
+    return {
+      oidc_enabled: document.getElementById("oidc_enabled").checked,
+      oidc_provider_name: document.getElementById("oidc_provider_name").value.trim(),
+      oidc_issuer_url: document.getElementById("oidc_issuer_url").value.trim(),
+      oidc_client_id: document.getElementById("oidc_client_id").value.trim(),
+      oidc_client_secret: document.getElementById("oidc_client_secret").value,
+      oidc_scopes: document.getElementById("oidc_scopes").value.trim(),
+      oidc_username_claim: document.getElementById("oidc_username_claim").value.trim(),
+      oidc_groups_claim: document.getElementById("oidc_groups_claim").value.trim(),
+      oidc_admin_group: document.getElementById("oidc_admin_group").value.trim(),
+      oidc_operator_group: document.getElementById("oidc_operator_group").value.trim(),
+      oidc_viewer_group: document.getElementById("oidc_viewer_group").value.trim(),
+      oidc_validate_cert: document.getElementById("oidc_validate_cert").checked,
+      oidc_enforce_mfa: document.getElementById("oidc_enforce_mfa").checked,
+      oidc_ca_cert_pem: document.getElementById("oidc_ca_cert_pem").value.trim(),
+    };
+  }
+
+  if (btnTestOidc) {
+    btnTestOidc.addEventListener("click", async () => {
+      btnTestOidc.disabled = true;
+      document.getElementById("btn-test-oidc-text").textContent = {{ _('status_testing_ellipsis') | tojson }};
+
+      try {
+        const payload = getOidcFormData();
+        const res = await fetch("/api/ui/oidc/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("oidc-alert-container", data.message || {{ _('settings_oidc_test_ok') | tojson }}, "success");
+        } else {
+          renderAlert("oidc-alert-container", data.message || {{ _('settings_oidc_test_failed') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("oidc-alert-container", {{ _('settings_oidc_test_net_err') | tojson }}, "danger");
+      } finally {
+        btnTestOidc.disabled = false;
+        document.getElementById("btn-test-oidc-text").textContent = {{ _('settings_test_oidc_btn') | tojson }};
+      }
+    });
+  }
+
+  if (btnSaveOidc) {
+    btnSaveOidc.addEventListener("click", async () => {
+      btnSaveOidc.disabled = true;
+      btnSaveOidc.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      try {
+        const payload = getOidcFormData();
+        const res = await fetch("/api/ui/oidc/config", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("oidc-alert-container", data.message || {{ _('settings_oidc_saved_msg') | tojson }}, "success");
+          const badge = document.getElementById("oidc-status-badge");
+          if (badge) {
+            badge.className = payload.oidc_enabled ? "badge badge-online" : "badge badge-offline";
+            badge.textContent = payload.oidc_enabled ? {{ _('status_enabled_m') | tojson }} : {{ _('status_disabled_m') | tojson }};
+          }
+        } else {
+          renderAlert("oidc-alert-container", data.message || {{ _('err_saving_generic') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("oidc-alert-container", {{ _('err_network_saving') | tojson }}, "danger");
+      } finally {
+        btnSaveOidc.disabled = false;
+        btnSaveOidc.textContent = {{ _('settings_save_oidc_btn') | tojson }};
+      }
+    });
+  }
+
+  // --- Background Upload Handlers ---
+  const inputBgFile = document.getElementById("input-login-bg-file");
+  const btnUploadBg = document.getElementById("btn-upload-login-bg");
+  const btnResetBg = document.getElementById("btn-reset-login-bg");
+  const bgPreviewContainer = document.getElementById("bg-preview-container");
+  const bgPreviewLabel = document.getElementById("bg-preview-label");
+  const badgeBgStatus = document.getElementById("bg-status-badge");
+
+  if (inputBgFile && btnUploadBg) {
+    inputBgFile.addEventListener("change", () => {
+      btnUploadBg.disabled = !inputBgFile.files || inputBgFile.files.length === 0;
+    });
+
+    btnUploadBg.addEventListener("click", async () => {
+      if (!inputBgFile.files || inputBgFile.files.length === 0) return;
+      const file = inputBgFile.files[0];
+      btnUploadBg.disabled = true;
+      document.getElementById("btn-upload-bg-text").textContent = {{ _('status_uploading_ellipsis') | tojson }};
+
+      const formData = new FormData();
+      formData.append("background", file);
+
+      try {
+        const res = await fetch("/api/ui/settings/login-background", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("login-bg-alert-container", data.message || {{ _('settings_login_bg_uploaded_msg') | tojson }}, "success");
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            bgPreviewContainer.style.backgroundImage = `url('${e.target.result}')`;
+            bgPreviewContainer.style.backgroundSize = "cover";
+            bgPreviewContainer.style.backgroundPosition = "center";
+            bgPreviewLabel.textContent = {{ _('settings_login_bg_preview_custom') | tojson }};
+          };
+          reader.readAsDataURL(file);
+          if (btnResetBg) btnResetBg.style.display = "inline-block";
+          if (badgeBgStatus) {
+            badgeBgStatus.className = "badge badge-online";
+            badgeBgStatus.textContent = {{ _('settings_login_bg_custom') | tojson }};
+          }
+        } else {
+          renderAlert("login-bg-alert-container", data.message || {{ _('err_uploading_generic') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("login-bg-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btnUploadBg.disabled = false;
+        document.getElementById("btn-upload-bg-text").textContent = {{ _('settings_login_bg_upload_btn') | tojson }};
+      }
+    });
+  }
+
+  if (btnResetBg) {
+    btnResetBg.addEventListener("click", () => {
+      window.confirmAction({
+        title: {{ _('settings_reset_bg_modal_title') | tojson }},
+        message: {{ _('settings_reset_bg_modal_msg') | tojson }},
+        confirmText: {{ _('btn_restore_short') | tojson }},
+        confirmClass: "btn-danger",
+        onConfirm: async () => {
+          btnResetBg.disabled = true;
+          try {
+            const res = await fetch("/api/ui/settings/login-background", {
+              method: "DELETE",
+              headers: { "X-CSRFToken": csrfToken },
+            });
+            const data = await res.json();
+            if (res.ok) {
+              renderAlert("login-bg-alert-container", data.message || {{ _('settings_login_bg_restored_msg') | tojson }}, "success");
+              showToast({{ _('settings_login_bg_restored_toast') | tojson }}, "success");
+              bgPreviewContainer.style.backgroundImage = "none";
+              bgPreviewContainer.style.background = "radial-gradient(ellipse 90% 65% at 50% -15%, rgba(255, 84, 0, 0.35) 0%, rgba(255, 122, 0, 0.18) 35%, rgba(13, 17, 23, 0) 75%), linear-gradient(160deg, #0d1117 0%, #161b22 40%, #1f110c 70%, #0d1117 100%)";
+              bgPreviewLabel.textContent = {{ _('settings_login_bg_preview_default') | tojson }};
+              btnResetBg.style.display = "none";
+              if (badgeBgStatus) {
+                badgeBgStatus.className = "badge badge-neutral";
+                badgeBgStatus.textContent = {{ _('settings_login_bg_default') | tojson }};
+              }
+            } else {
+              renderAlert("login-bg-alert-container", data.message || {{ _('err_restoring_generic') | tojson }}, "danger");
+              showToast(data.message || {{ _('err_restoring_generic') | tojson }}, "error");
+              btnResetBg.disabled = false;
+            }
+          } catch (err) {
+            renderAlert("login-bg-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+            showToast({{ _('err_network_generic') | tojson }}, "error");
+            btnResetBg.disabled = false;
+          }
+        }
+      });
+    });
+  }
+
+
+  // ==========================================
+  // Whitelabel & Branding Handlers
+  // ==========================================
+  const inputCustomAppName = document.getElementById("input-custom-app-name");
+  const btnResetAppName = document.getElementById("btn-reset-app-name");
+  const inputLogoFile = document.getElementById("input-logo-file");
+  const btnResetLogo = document.getElementById("btn-reset-logo");
+  const logoPreviewImg = document.getElementById("logo-preview-img");
+  const logoStatusBadge = document.getElementById("logo-status-badge");
+  const btnSaveWhitelabel = document.getElementById("btn-save-whitelabel");
+
+  // Anteprima immediata del logo selezionato
+  if (inputLogoFile && logoPreviewImg) {
+    inputLogoFile.addEventListener("change", () => {
+      if (inputLogoFile.files && inputLogoFile.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          logoPreviewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(inputLogoFile.files[0]);
+      }
+    });
+  }
+
+  // Pulsante unico Salva Whitelabel
+  if (btnSaveWhitelabel) {
+    btnSaveWhitelabel.addEventListener("click", async () => {
+      const origText = btnSaveWhitelabel.textContent;
+      btnSaveWhitelabel.disabled = true;
+      btnSaveWhitelabel.textContent = {{ _('status_saving_in_progress') | tojson }};
+
+      try {
+        let lastMessage = "";
+
+        // 1. Salva Nome Applicazione
+        if (inputCustomAppName) {
+          const newName = inputCustomAppName.value.trim();
+          const res = await fetch("/api/ui/settings/whitelabel/app-name", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ custom_app_name: newName }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.message || {{ _('err_saving_generic') | tojson }});
+          }
+          lastMessage = data.message;
+          if (btnResetAppName) {
+            btnResetAppName.style.display = newName ? "inline-block" : "none";
+          }
+          document.querySelectorAll(".brand-name").forEach(el => {
+            el.textContent = data.app_name;
+          });
+          document.title = document.title.replace(/\| .*$/, `| ${data.app_name}`);
+        }
+
+        // 2. Carica Logo se selezionato
+        if (inputLogoFile && inputLogoFile.files && inputLogoFile.files.length > 0) {
+          const file = inputLogoFile.files[0];
+          const formData = new FormData();
+          formData.append("logo", file);
+
+          const resLogo = await fetch("/api/ui/settings/whitelabel/logo", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: formData,
+          });
+          const dataLogo = await resLogo.json();
+          if (!resLogo.ok) {
+            throw new Error(dataLogo.message || {{ _('err_uploading_generic') | tojson }});
+          }
+          lastMessage = dataLogo.message;
+          const timestamp = new Date().getTime();
+          const newLogoUrl = `/app-logo?t=${timestamp}`;
+          if (logoPreviewImg) logoPreviewImg.src = newLogoUrl;
+          document.querySelectorAll("img.brand-logo, .brand-header img, img[alt='EmberVault Logo'], img[alt='{{ app_name }} Logo'], img[alt='User Avatar']").forEach(img => {
+            img.src = newLogoUrl;
+          });
+          const favicon = document.querySelector("link[rel*='icon']");
+          if (favicon) favicon.href = newLogoUrl;
+
+          if (btnResetLogo) btnResetLogo.style.display = "inline-block";
+          if (logoStatusBadge) {
+            logoStatusBadge.className = "badge badge-online";
+            logoStatusBadge.textContent = {{ _('whitelabel_logo_custom') | tojson }};
+          }
+          inputLogoFile.value = "";
+        }
+
+        // Aggiorna badge whitelabel globale
+        const whBadge = document.getElementById("whitelabel-status-badge");
+        if (whBadge) {
+          const hasCustom = Boolean(inputCustomAppName && inputCustomAppName.value.trim()) || (btnResetLogo && btnResetLogo.style.display !== "none");
+          whBadge.className = hasCustom ? "badge badge-online" : "badge badge-neutral";
+          whBadge.textContent = hasCustom ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+        }
+
+        showToast(lastMessage || {{ _('settings_saved_generic') | tojson }}, "success");
+      } catch (err) {
+        showToast(err.message || {{ _('err_saving_generic') | tojson }}, "error");
+      } finally {
+        btnSaveWhitelabel.disabled = false;
+        btnSaveWhitelabel.textContent = origText;
+      }
+    });
+  }
+
+  if (btnResetAppName && inputCustomAppName) {
+    btnResetAppName.addEventListener("click", async () => {
+      btnResetAppName.disabled = true;
+      try {
+        const res = await fetch("/api/ui/settings/whitelabel/app-name", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({ reset: true }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          inputCustomAppName.value = "";
+          showToast(data.message, "success");
+          btnResetAppName.style.display = "none";
+          document.querySelectorAll(".brand-name").forEach(el => {
+            el.textContent = "EmberVault";
+          });
+          document.title = document.title.replace(/\| .*$/, "| EmberVault");
+          const whBadge = document.getElementById("whitelabel-status-badge");
+          if (whBadge) {
+            const hasCustom = btnResetLogo && btnResetLogo.style.display !== "none";
+            whBadge.className = hasCustom ? "badge badge-online" : "badge badge-neutral";
+            whBadge.textContent = hasCustom ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+          }
+        } else {
+          showToast(data.message || {{ _('err_saving_generic') | tojson }}, "error");
+        }
+      } catch (err) {
+        showToast({{ _('err_network_generic') | tojson }}, "error");
+      } finally {
+        btnResetAppName.disabled = false;
+      }
+    });
+  }
+
+  if (btnResetLogo) {
+    btnResetLogo.addEventListener("click", () => {
+      btnResetLogo.disabled = true;
+      fetch("/api/ui/settings/whitelabel/logo", {
+        method: "DELETE",
+        headers: { "X-CSRFToken": csrfToken },
+      })
+      .then(res => res.json())
+      .then(data => {
+        showToast(data.message, "success");
+        const timestamp = new Date().getTime();
+        const defaultLogoUrl = `/app-logo?t=${timestamp}`;
+        if (logoPreviewImg) logoPreviewImg.src = defaultLogoUrl;
+        document.querySelectorAll("img.brand-logo, .brand-header img, img[alt='EmberVault Logo'], img[alt='{{ app_name }} Logo'], img[alt='User Avatar']").forEach(img => {
+          img.src = defaultLogoUrl;
+        });
+        const favicon = document.querySelector("link[rel*='icon']");
+        if (favicon) favicon.href = defaultLogoUrl;
+        btnResetLogo.style.display = "none";
+        if (logoStatusBadge) {
+          logoStatusBadge.className = "badge badge-neutral";
+          logoStatusBadge.textContent = {{ _('whitelabel_logo_default') | tojson }};
+        }
+        const whBadge = document.getElementById("whitelabel-status-badge");
+        if (whBadge) {
+          const hasCustomName = Boolean(inputCustomAppName && inputCustomAppName.value.trim());
+          whBadge.className = hasCustomName ? "badge badge-online" : "badge badge-neutral";
+          whBadge.textContent = hasCustomName ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+        }
+      })
+      .catch(() => {
+        showToast({{ _('err_network_generic') | tojson }}, "error");
+      })
+      .finally(() => {
+        btnResetLogo.disabled = false;
+      });
+    });
+  }
+
+  // ==========================================
+  // Public Portal Handlers
+  // ==========================================
+  const checkboxPortalEnabled = document.getElementById("checkbox-public-portal-enabled");
+  const labelPortalStatus = document.getElementById("label-public-portal-status");
+  const badgePortalGlobal = document.getElementById("portal-global-status-badge");
+  const selectPortalLanguage = document.getElementById("select-portal-language");
+  const inputPortalCustomAppName = document.getElementById("input-portal-custom-app-name");
+  const btnResetPortalAppName = document.getElementById("btn-reset-portal-app-name");
+  const inputPortalLogoFile = document.getElementById("input-portal-logo-file");
+  const btnResetPortalLogo = document.getElementById("btn-reset-portal-logo");
+  const portalLogoPreviewImg = document.getElementById("portal-logo-preview-img");
+  const portalLogoStatusBadge = document.getElementById("portal-logo-status-badge");
+  const btnSavePublicPortal = document.getElementById("btn-save-public-portal");
+
+  if (checkboxPortalEnabled && labelPortalStatus) {
+    checkboxPortalEnabled.addEventListener("change", () => {
+      labelPortalStatus.textContent = checkboxPortalEnabled.checked
+        ? {{ _('portal_status_active') | tojson }}
+        : {{ _('portal_status_disabled') | tojson }};
+    });
+  }
+
+  // Anteprima immediata del logo portale selezionato
+  if (inputPortalLogoFile && portalLogoPreviewImg) {
+    inputPortalLogoFile.addEventListener("change", () => {
+      if (inputPortalLogoFile.files && inputPortalLogoFile.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          portalLogoPreviewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(inputPortalLogoFile.files[0]);
+      }
+    });
+  }
+
+  // Pulsante unico Salva Portale Pubblico
+  if (btnSavePublicPortal) {
+    btnSavePublicPortal.addEventListener("click", async () => {
+      const origText = btnSavePublicPortal.textContent;
+      btnSavePublicPortal.disabled = true;
+      btnSavePublicPortal.textContent = {{ _('status_saving_in_progress') | tojson }};
+
+      try {
+        let lastMessage = "";
+
+        // 1. Stato globale del portale
+        if (checkboxPortalEnabled) {
+          const isEnabled = checkboxPortalEnabled.checked;
+          const res = await fetch("/api/ui/settings/portal/status", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ enabled: isEnabled }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.message || {{ _('err_saving_generic') | tojson }});
+          }
+          lastMessage = data.message;
+          if (badgePortalGlobal) {
+            badgePortalGlobal.className = isEnabled ? "badge badge-online" : "badge badge-offline";
+            badgePortalGlobal.textContent = isEnabled
+              ? {{ _('portal_status_active') | tojson }}
+              : {{ _('portal_status_disabled') | tojson }};
+          }
+        }
+
+        // 2. Lingua del Portale Pubblico
+        if (selectPortalLanguage) {
+          const lang = selectPortalLanguage.value;
+          const resLang = await fetch("/api/ui/settings/portal/language", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ language: lang }),
+          });
+          const dataLang = await resLang.json();
+          if (!resLang.ok) {
+            throw new Error(dataLang.message || {{ _('err_saving_generic') | tojson }});
+          }
+          lastMessage = dataLang.message;
+        }
+
+        // 3. Nome Portale Pubblico
+        if (inputPortalCustomAppName) {
+          const newName = inputPortalCustomAppName.value.trim();
+          const resName = await fetch("/api/ui/settings/whitelabel/portal/app-name", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ custom_app_name: newName }),
+          });
+          const dataName = await resName.json();
+          if (!resName.ok) {
+            throw new Error(dataName.message || {{ _('err_saving_generic') | tojson }});
+          }
+          lastMessage = dataName.message;
+          if (btnResetPortalAppName) {
+            btnResetPortalAppName.style.display = newName ? "inline-block" : "none";
+          }
+        }
+
+        // 4. Logo Portale Pubblico se selezionato
+        if (inputPortalLogoFile && inputPortalLogoFile.files && inputPortalLogoFile.files.length > 0) {
+          const file = inputPortalLogoFile.files[0];
+          const formData = new FormData();
+          formData.append("logo", file);
+
+          const resLogo = await fetch("/api/ui/settings/whitelabel/portal/logo", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: formData,
+          });
+          const dataLogo = await resLogo.json();
+          if (!resLogo.ok) {
+            throw new Error(dataLogo.message || {{ _('err_uploading_generic') | tojson }});
+          }
+          lastMessage = dataLogo.message;
+          const timestamp = new Date().getTime();
+          const newLogoUrl = `/portal-logo?t=${timestamp}`;
+          if (portalLogoPreviewImg) portalLogoPreviewImg.src = newLogoUrl;
+          if (btnResetPortalLogo) btnResetPortalLogo.style.display = "inline-block";
+          if (portalLogoStatusBadge) {
+            portalLogoStatusBadge.className = "badge badge-online";
+            portalLogoStatusBadge.textContent = {{ _('whitelabel_logo_custom') | tojson }};
+          }
+          inputPortalLogoFile.value = "";
+        }
+
+        // Aggiorna badge status whitelabel portale
+        const portalWhBadge = document.getElementById("portal-whitelabel-status-badge");
+        if (portalWhBadge) {
+          const hasCustom = (inputPortalCustomAppName && Boolean(inputPortalCustomAppName.value.trim())) || (btnResetPortalLogo && btnResetPortalLogo.style.display !== "none");
+          portalWhBadge.className = hasCustom ? "badge badge-online" : "badge badge-neutral";
+          portalWhBadge.textContent = hasCustom ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+        }
+
+        showToast(lastMessage || {{ _('settings_saved_generic') | tojson }}, "success");
+      } catch (err) {
+        showToast(err.message || {{ _('err_saving_generic') | tojson }}, "error");
+      } finally {
+        btnSavePublicPortal.disabled = false;
+        btnSavePublicPortal.textContent = origText;
+      }
+    });
+  }
+
+  if (btnResetPortalAppName && inputPortalCustomAppName) {
+    btnResetPortalAppName.addEventListener("click", async () => {
+      btnResetPortalAppName.disabled = true;
+      try {
+        const res = await fetch("/api/ui/settings/whitelabel/portal/app-name", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({ reset: true }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          inputPortalCustomAppName.value = "";
+          showToast(data.message, "success");
+          btnResetPortalAppName.style.display = "none";
+          const badge = document.getElementById("portal-whitelabel-status-badge");
+          if (badge) {
+            const hasCustom = btnResetPortalLogo && btnResetPortalLogo.style.display !== "none";
+            badge.className = hasCustom ? "badge badge-online" : "badge badge-neutral";
+            badge.textContent = hasCustom ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+          }
+        } else {
+          showToast(data.message || {{ _('err_saving_generic') | tojson }}, "error");
+        }
+      } catch (err) {
+        showToast({{ _('err_network_generic') | tojson }}, "error");
+      } finally {
+        btnResetPortalAppName.disabled = false;
+      }
+    });
+  }
+
+  if (btnResetPortalLogo) {
+    btnResetPortalLogo.addEventListener("click", () => {
+      btnResetPortalLogo.disabled = true;
+      fetch("/api/ui/settings/whitelabel/portal/logo", {
+        method: "DELETE",
+        headers: { "X-CSRFToken": csrfToken },
+      })
+      .then(res => res.json())
+      .then(data => {
+        showToast(data.message, "success");
+        const timestamp = new Date().getTime();
+        const defaultLogoUrl = `/portal-logo?t=${timestamp}`;
+        if (portalLogoPreviewImg) portalLogoPreviewImg.src = defaultLogoUrl;
+        btnResetPortalLogo.style.display = "none";
+        if (portalLogoStatusBadge) {
+          portalLogoStatusBadge.className = "badge badge-neutral";
+          portalLogoStatusBadge.textContent = {{ _('whitelabel_logo_default') | tojson }};
+        }
+        const badge = document.getElementById("portal-whitelabel-status-badge");
+        if (badge) {
+          const hasCustom = inputPortalCustomAppName && Boolean(inputPortalCustomAppName.value.trim());
+          badge.className = hasCustom ? "badge badge-online" : "badge badge-neutral";
+          badge.textContent = hasCustom ? {{ _('whitelabel_logo_custom') | tojson }} : {{ _('whitelabel_logo_default') | tojson }};
+        }
+      })
+      .catch(() => {
+        showToast({{ _('err_network_generic') | tojson }}, "error");
+      })
+      .finally(() => {
+        btnResetPortalLogo.disabled = false;
+      });
+    });
+  }
+
+
+  // --- RClone Save Handler ---
+  const btnSaveRclone = document.getElementById("btn-save-rclone-settings");
+  if (btnSaveRclone) {
+    btnSaveRclone.addEventListener("click", async () => {
+      const origText = btnSaveRclone.textContent;
+      btnSaveRclone.disabled = true;
+      btnSaveRclone.textContent = {{ _('status_saving_in_progress') | tojson }};
+
+      const f1Raw = document.getElementById("global_rclone_first_level_filters").value;
+      const f1 = f1Raw.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+      const f2Raw = document.getElementById("global_rclone_second_level_filters").value;
+      const f2 = f2Raw.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+      try {
+        const res = await fetch("/api/ui/settings/rclone", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({
+            task_retries: parseInt(document.getElementById("global_task_retries").value, 10) || 0,
+            rclone_checkers: parseInt(document.getElementById("global_rclone_checkers").value, 10) || 8,
+            rclone_transfers: parseInt(document.getElementById("global_rclone_transfers").value, 10) || 4,
+            rclone_check_first: document.getElementById("global_rclone_check_first").checked,
+            rclone_recurse: document.getElementById("global_rclone_recurse").checked,
+            rclone_order_by: document.getElementById("global_rclone_order_by").value.trim(),
+            rclone_first_level_filters: f1,
+            rclone_second_level_filters: f2,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("rclone-settings-alert-container", data.message || {{ _('settings_rclone_saved_msg') | tojson }}, "success");
+        } else {
+          renderAlert("rclone-settings-alert-container", data.message || {{ _('settings_rclone_save_err') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("rclone-settings-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btnSaveRclone.disabled = false;
+        btnSaveRclone.textContent = origText;
+      }
+    });
+  }
+
+  // --- Hooks Save Handler ---
+  const btnSaveHooks = document.getElementById("btn-save-hooks");
+  const inputHooksEnabled = document.getElementById("hooks_enabled_input");
+  const inputHooksTimeout = document.getElementById("hooks_timeout_input");
+  const inputHookRunnerUrl = document.getElementById("hook_runner_url_input");
+  const badgeHooksStatus = document.getElementById("hooks-status-badge");
+
+  if (btnSaveHooks) {
+    btnSaveHooks.addEventListener("click", async () => {
+      const origText = btnSaveHooks.textContent;
+      btnSaveHooks.disabled = true;
+      btnSaveHooks.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      try {
+        const res = await fetch("/api/ui/settings/hooks", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({
+            hooks_enabled: inputHooksEnabled.checked,
+            hooks_timeout_s: parseInt(inputHooksTimeout.value, 10) || 60,
+            hook_runner_url: inputHookRunnerUrl ? inputHookRunnerUrl.value.trim() : "",
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("hooks-alert-container", data.message || {{ _('settings_hooks_saved_msg') | tojson }}, "success");
+          if (badgeHooksStatus) {
+            badgeHooksStatus.className = data.hooks_enabled ? "badge badge-online" : "badge badge-offline";
+            badgeHooksStatus.textContent = data.hooks_enabled ? {{ _('status_enabled_mp') | tojson }} : {{ _('settings_hooks_disabled_default') | tojson }};
+          }
+        } else {
+          renderAlert("hooks-alert-container", data.message || {{ _('err_saving_generic') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("hooks-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btnSaveHooks.disabled = false;
+        btnSaveHooks.textContent = origText;
+      }
+    });
+  }
+
+  // --- AI Integration Handlers ---
+  const btnTestAi = document.getElementById("btn-test-ai-connection");
+  const btnSaveAi = document.getElementById("btn-save-ai");
+  const badgeAiStatus = document.getElementById("ai-status-badge");
+
+  function getAiFormData() {
+    return {
+      ai_enabled: document.getElementById("ai_enabled_input").checked,
+      ai_provider_type: document.getElementById("ai_provider_type_input").value,
+      ai_endpoint_url: document.getElementById("ai_endpoint_url_input").value.trim(),
+      ai_model: document.getElementById("ai_model_input").value.trim(),
+      ai_api_key: document.getElementById("ai_api_key_input").value,
+      ai_timeout_seconds: parseInt(document.getElementById("ai_timeout_seconds_input").value, 10) || 15,
+      ai_language: document.getElementById("ai_language_input") ? document.getElementById("ai_language_input").value : "en",
+      ai_system_prompt: document.getElementById("ai_system_prompt_input") ? document.getElementById("ai_system_prompt_input").value.trim() : "",
+      ai_reporting_system_prompt: document.getElementById("ai_reporting_system_prompt_input") ? document.getElementById("ai_reporting_system_prompt_input").value.trim() : "",
+      ai_error_handling_enabled: document.getElementById("ai_error_handling_enabled_input").checked,
+      ai_error_handling_uncensored: document.getElementById("ai_error_handling_uncensored_input").checked,
+      ai_reporting_analysis_enabled: document.getElementById("ai_reporting_analysis_enabled_input").checked,
+    };
+  }
+
+  if (btnTestAi) {
+    btnTestAi.addEventListener("click", async () => {
+      const origText = document.getElementById("btn-test-ai-text").textContent;
+      btnTestAi.disabled = true;
+      document.getElementById("btn-test-ai-text").textContent = {{ _('settings_ai_testing_ellipsis') | tojson }};
+
+      try {
+        const payload = getAiFormData();
+        const res = await fetch("/api/ui/settings/ai/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          renderAlert("ai-settings-alert-container", data.message || {{ _('settings_ai_test_ok') | tojson }}, "success");
+        } else {
+          renderAlert("ai-settings-alert-container", data.message || {{ _('settings_ai_test_err') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("ai-settings-alert-container", {{ _('settings_ai_test_net_err') | tojson }}, "danger");
+      } finally {
+        btnTestAi.disabled = false;
+        document.getElementById("btn-test-ai-text").textContent = origText;
+      }
+    });
+  }
+
+  const defaultErrorPrompt = {{ default_error_system_prompt | tojson }};
+  const defaultReportingPrompt = {{ default_reporting_system_prompt | tojson }};
+
+  const btnResetSysPrompt = document.getElementById("btn-reset-ai-system-prompt");
+  if (btnResetSysPrompt) {
+    btnResetSysPrompt.addEventListener("click", () => {
+      const textarea = document.getElementById("ai_system_prompt_input");
+      if (textarea) textarea.value = defaultErrorPrompt;
+    });
+  }
+
+  const btnResetRepPrompt = document.getElementById("btn-reset-ai-reporting-prompt");
+  if (btnResetRepPrompt) {
+    btnResetRepPrompt.addEventListener("click", () => {
+      const textarea = document.getElementById("ai_reporting_system_prompt_input");
+      if (textarea) textarea.value = defaultReportingPrompt;
+    });
+  }
+
+  if (btnSaveAi) {
+    btnSaveAi.addEventListener("click", async () => {
+      const origText = btnSaveAi.textContent;
+      btnSaveAi.disabled = true;
+      btnSaveAi.textContent = {{ _('status_saving_in_progress') | tojson }};
+
+      try {
+        const payload = getAiFormData();
+        const res = await fetch("/api/ui/settings/ai", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("ai-settings-alert-container", data.message || {{ _('settings_ai_saved_msg') | tojson }}, "success");
+          if (badgeAiStatus) {
+            badgeAiStatus.className = payload.ai_enabled ? "badge badge-online" : "badge badge-offline";
+            badgeAiStatus.textContent = payload.ai_enabled ? `${ {{ _('status_enabled_f') | tojson }} } (${payload.ai_provider_type})` : {{ _('status_disabled_f') | tojson }};
+          }
+        } else {
+          renderAlert("ai-settings-alert-container", data.message || {{ _('settings_ai_save_err') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("ai-settings-alert-container", {{ _('settings_ai_save_net_err') | tojson }}, "danger");
+      } finally {
+        btnSaveAi.disabled = false;
+        btnSaveAi.textContent = origText;
+      }
+    });
+  }
+
+  // --- Notifications General Policies ---
+  const btnSaveNotifSettings = document.getElementById("btn-save-notif-settings");
+  const notifStatusBadge = document.getElementById("notif-status-badge");
+
+  if (btnSaveNotifSettings) {
+    btnSaveNotifSettings.addEventListener("click", async () => {
+      const origText = btnSaveNotifSettings.textContent;
+      btnSaveNotifSettings.disabled = true;
+      btnSaveNotifSettings.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      const enabled = document.getElementById("notif_global_enabled").checked;
+      const policyEl = document.querySelector('input[name="notification_job_policy"]:checked');
+      const policy = policyEl ? policyEl.value : "only_errors";
+      const proxyOffline = document.getElementById("notif_proxy_offline") ? document.getElementById("notif_proxy_offline").checked : true;
+      const rcloneUpdateNotif = document.getElementById("notif_rclone_update") ? document.getElementById("notif_rclone_update").checked : true;
+      const rcloneAutoCheck = document.getElementById("rclone_auto_update_check") ? document.getElementById("rclone_auto_update_check").checked : true;
+      const rcloneInterval = document.getElementById("rclone_auto_update_interval") ? parseInt(document.getElementById("rclone_auto_update_interval").value, 10) : 24;
+
+      try {
+        const res = await fetch("/api/ui/settings/notifications/general", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({
+            notifications_enabled: enabled,
+            notification_job_policy: policy,
+            notification_proxy_offline_enabled: proxyOffline,
+            notification_rclone_update_enabled: rcloneUpdateNotif,
+            rclone_auto_update_check_enabled: rcloneAutoCheck,
+            rclone_auto_update_check_interval_hours: rcloneInterval,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("notif-settings-alert-container", data.message || {{ _('settings_notif_policies_saved_msg') | tojson }}, "success");
+          if (notifStatusBadge) {
+            notifStatusBadge.className = data.notifications_enabled ? "badge badge-online" : "badge badge-offline";
+            notifStatusBadge.textContent = data.notifications_enabled ? {{ _('settings_notif_active_badge') | tojson }} : {{ _('status_disabled_fp') | tojson }};
+          }
+        } else {
+          renderAlert("notif-settings-alert-container", data.message || {{ _('error_default_title') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("notif-settings-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btnSaveNotifSettings.disabled = false;
+        btnSaveNotifSettings.textContent = origText;
+      }
+    });
+  }
+
+  // --- Notification Channel Modal & CRUD ---
+  const channelModal = document.getElementById("channel-modal");
+  const btnOpenChannelModal = document.getElementById("btn-open-channel-modal");
+  const btnModalClose = document.getElementById("btn-modal-close-channel");
+  const btnModalX = document.getElementById("btn-modal-close-x");
+  const channelTypeSelect = document.getElementById("modal-channel-type");
+  const btnModalSave = document.getElementById("btn-modal-save-channel");
+  const btnModalTest = document.getElementById("btn-modal-test-channel");
+
+  function updateTypeSections() {
+    const val = channelTypeSelect.value;
+    document.getElementById("section-telegram").style.display = (val === "telegram") ? "block" : "none";
+    document.getElementById("section-email").style.display = (val === "email") ? "block" : "none";
+    document.getElementById("section-custom").style.display = (val === "custom") ? "block" : "none";
+  }
+
+  if (channelTypeSelect) {
+    channelTypeSelect.addEventListener("change", updateTypeSections);
+  }
+
+  function openChannelModal(isEdit = false, data = null) {
+    document.getElementById("modal-alert-container").innerHTML = "";
+    document.getElementById("channel-form").reset();
+    document.getElementById("modal-channel-id").value = "";
+
+    if (isEdit && data) {
+      document.getElementById("channel-modal-title").textContent = {{ _('settings_modal_edit_channel_title') | tojson }};
+      document.getElementById("modal-channel-id").value = data.id;
+      document.getElementById("modal-channel-name").value = data.name || "";
+      channelTypeSelect.value = data.channel_type || "telegram";
+      document.getElementById("modal-rate-limit").value = data.rate_limit_interval_s || 0;
+      document.getElementById("modal-channel-enabled").checked = Boolean(data.enabled);
+
+      if (data.channel_type === "telegram") {
+        document.getElementById("modal-telegram-chat-id").value = data.telegram_chat_id || "";
+        document.getElementById("modal-telegram-format").value = data.telegram_format || "html";
+      } else if (data.channel_type === "email") {
+        document.getElementById("modal-smtp-host").value = data.smtp_host || "";
+        document.getElementById("modal-smtp-port").value = data.smtp_port || 587;
+        document.getElementById("modal-smtp-user").value = data.smtp_user || "";
+        document.getElementById("modal-smtp-from").value = data.smtp_from || "";
+        document.getElementById("modal-smtp-targets").value = (data.smtp_targets || []).join(", ");
+        document.getElementById("modal-smtp-starttls").checked = Boolean(data.smtp_starttls);
+        document.getElementById("modal-smtp-ssl").checked = Boolean(data.smtp_ssl);
+      } else {
+        document.getElementById("modal-custom-url").value = data.url || "";
+      }
+    } else {
+      document.getElementById("channel-modal-title").textContent = {{ _('settings_modal_add_channel_title') | tojson }};
+      channelTypeSelect.value = "telegram";
+      document.getElementById("modal-rate-limit").value = 0;
+      document.getElementById("modal-channel-enabled").checked = true;
+    }
+
+    updateTypeSections();
+    channelModal.style.display = "flex";
+  }
+
+  function closeChannelModal() {
+    channelModal.style.display = "none";
+  }
+
+  if (btnOpenChannelModal) btnOpenChannelModal.addEventListener("click", () => openChannelModal(false));
+  if (btnModalClose) btnModalClose.addEventListener("click", closeChannelModal);
+  if (btnModalX) btnModalX.addEventListener("click", closeChannelModal);
+
+  function getModalFormData() {
+    const channelId = document.getElementById("modal-channel-id").value.trim();
+    const type = channelTypeSelect.value;
+    const name = document.getElementById("modal-channel-name").value.trim();
+    const rateLimit = parseInt(document.getElementById("modal-rate-limit").value, 10) || 0;
+    const enabled = document.getElementById("modal-channel-enabled").checked;
+
+    const payload = {
+      name: name,
+      channel_type: type,
+      rate_limit_interval_s: rateLimit,
+      enabled: enabled,
+    };
+
+    if (type === "telegram") {
+      const botToken = document.getElementById("modal-telegram-bot-token").value.trim();
+      const chatId = document.getElementById("modal-telegram-chat-id").value.trim();
+      const format = document.getElementById("modal-telegram-format").value;
+      if (botToken) payload.telegram_bot_token = botToken;
+      payload.telegram_chat_id = chatId;
+      payload.telegram_format = format;
+    } else if (type === "email") {
+      payload.smtp_host = document.getElementById("modal-smtp-host").value.trim();
+      payload.smtp_port = parseInt(document.getElementById("modal-smtp-port").value, 10) || 587;
+      payload.smtp_user = document.getElementById("modal-smtp-user").value.trim();
+      const pwd = document.getElementById("modal-smtp-password").value;
+      if (pwd) payload.smtp_password = pwd;
+      payload.smtp_from = document.getElementById("modal-smtp-from").value.trim();
+      const targetsRaw = document.getElementById("modal-smtp-targets").value;
+      payload.smtp_targets = targetsRaw.split(",").map(s => s.trim()).filter(s => s.length > 0);
+      payload.smtp_starttls = document.getElementById("modal-smtp-starttls").checked;
+      payload.smtp_ssl = document.getElementById("modal-smtp-ssl").checked;
+    } else {
+      payload.url = document.getElementById("modal-custom-url").value.trim();
+    }
+
+    return { channelId, payload };
+  }
+
+  if (btnModalSave) {
+    btnModalSave.addEventListener("click", async () => {
+      const { channelId, payload } = getModalFormData();
+      btnModalSave.disabled = true;
+      btnModalSave.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      const isEdit = Boolean(channelId);
+      const url = isEdit ? `/api/ui/settings/notifications/channels/${channelId}` : "/api/ui/settings/notifications/channels";
+      const method = isEdit ? "PUT" : "POST";
+
+      try {
+        const res = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          closeChannelModal();
+          renderAlert("channel-list-alert-container", data.message || {{ _('settings_channel_saved_msg') | tojson }}, "success");
+          setTimeout(() => window.location.reload(), 4500);
+        } else {
+          renderAlert("modal-alert-container", data.message || {{ _('err_saving_generic') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("modal-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btnModalSave.disabled = false;
+        btnModalSave.textContent = {{ _('settings_modal_save_channel_btn') | tojson }};
+      }
+    });
+  }
+
+  if (btnModalTest) {
+    btnModalTest.addEventListener("click", async () => {
+      const { payload } = getModalFormData();
+      btnModalTest.disabled = true;
+      document.getElementById("btn-modal-test-text").textContent = {{ _('status_testing_ellipsis') | tojson }};
+
+      try {
+        const res = await fetch("/api/ui/settings/notifications/channels/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("modal-alert-container", data.message || {{ _('settings_channel_test_ok') | tojson }}, "success");
+        } else {
+          renderAlert("modal-alert-container", data.message || {{ _('settings_channel_test_failed') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("modal-alert-container", {{ _('settings_test_net_err') | tojson }}, "danger");
+      } finally {
+        btnModalTest.disabled = false;
+        document.getElementById("btn-modal-test-text").textContent = {{ _('settings_modal_test_live_btn') | tojson }};
+      }
+    });
+  }
+
+  // Row Action buttons: Test, Edit, Delete
+  document.querySelectorAll(".btn-test-channel").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      const name = btn.getAttribute("data-name");
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = {{ _('status_sending_ellipsis') | tojson }};
+
+      try {
+        const res = await fetch(`/api/ui/settings/notifications/channels/${id}/test`, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          renderAlert("channel-list-alert-container", `${ {{ _('settings_channel_test_sent_to_prefix') | tojson }} } "${name}"!`, "success");
+        } else {
+          renderAlert("channel-list-alert-container", data.message || {{ _('err_send_failed') | tojson }}, "danger");
+        }
+      } catch (err) {
+        renderAlert("channel-list-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    });
+  });
+
+  document.querySelectorAll(".btn-edit-channel").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      try {
+        const data = JSON.parse(btn.getAttribute("data-channel"));
+        openChannelModal(true, data);
+      } catch (err) {
+        console.error("Failed to parse channel JSON", err);
+      }
+    });
+  });
+
+  document.querySelectorAll(".btn-delete-channel").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      const name = btn.getAttribute("data-name");
+
+      window.confirmAction({
+        title: {{ _('settings_delete_channel_modal_title') | tojson }},
+        message: {{ _('settings_delete_channel_modal_msg_tpl') | tojson }}.replace("{name}", name),
+        subtext: {{ _('settings_delete_channel_modal_subtext') | tojson }},
+        confirmText: {{ _('btn_delete') | tojson }},
+        confirmClass: "btn-danger",
+        onConfirm: async () => {
+          try {
+            const res = await fetch(`/api/ui/settings/notifications/channels/${id}`, {
+              method: "DELETE",
+              headers: { "X-CSRFToken": csrfToken },
+            });
+            const data = await res.json();
+            if (res.ok) {
+              const row = document.getElementById(`channel-row-${id}`);
+              if (row) row.remove();
+              renderAlert("channel-list-alert-container", data.message || {{ _('settings_channel_deleted_msg_tpl') | tojson }}.replace("{name}", name), "success");
+              showToast({{ _('settings_channel_deleted_toast_tpl') | tojson }}.replace("{name}", name), "success");
+            } else {
+              const errMsg = data.message || {{ _('err_deleting_generic') | tojson }};
+              renderAlert("channel-list-alert-container", errMsg, "danger");
+              showToast(errMsg, "error");
+            }
+          } catch (err) {
+            renderAlert("channel-list-alert-container", {{ _('err_network_generic') | tojson }}, "danger");
+            showToast({{ _('err_network_generic') | tojson }}, "error");
+          }
+        }
+      });
+    });
+  });
+});
+</script>
+{% endblock %}

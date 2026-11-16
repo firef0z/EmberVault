@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('nav_public_shares') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('nav_public_shares') }}{% endblock %}
+
+{% block content %}
+<style nonce="{{ csp_nonce }}">
+#shares-table td .btn-action-text,
+html[data-color-theme] #shares-table td .btn-action-text {
+  width: auto !important;
+  height: auto !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+  line-height: 1.3 !important;
+  box-sizing: border-box !important;
+}
+</style>
+<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+  <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.95rem;">
+    {{ _('share_page_subtitle') }}
+  </p>
+  <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-shares" style="display: inline-flex; align-items: center; gap: 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <polyline points="1 20 1 14 7 14"></polyline>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+    <span>{{ _('btn_refresh') }}</span>
+  </button>
+</div>
+
+<div class="content-card" id="shares-card">
+  <div class="card-body" style="padding: 0;">
+    <div id="shares-loading" style="padding: 48px; text-align: center; color: var(--color-text-muted);">
+      <span class="btn-spinner" style="margin-bottom: 8px; display: inline-block;"></span>
+      <div>{{ _('share_loading') }}</div>
+    </div>
+
+    <div id="shares-empty" style="display: none; padding: 48px; text-align: center; color: var(--color-text-secondary);">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      </svg>
+      <div style="font-size: 1rem; font-weight: 500;">{{ _('share_empty_list') }}</div>
+      <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 6px;">
+        {{ _('share_empty_hint') }}
+      </p>
+    </div>
+
+    <div class="table-responsive" id="shares-table-container" style="display: none;">
+      <table class="data-table" id="shares-table">
+        <thead>
+          <tr>
+            <th>{{ _('share_col_remote') }}</th>
+            <th>{{ _('share_col_path') }}</th>
+            <th>{{ _('share_col_url') }}</th>
+            <th>{{ _('share_col_username') }}</th>
+            <th>{{ _('share_col_note') }}</th>
+            <th>{{ _('share_col_expires') }}</th>
+            <th>{{ _('share_col_status') }}</th>
+            <th>{{ _('share_col_first_accessed') }}</th>
+            <th>{{ _('share_col_created') }}</th>
+            <th style="text-align: right;">{{ _('share_col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody id="shares-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Modifica Scadenza -->
+<div class="modal-backdrop" id="modal-edit-expiration">
+  <div class="modal-card" style="max-width: 480px; width: 100%;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('share_btn_edit_expiration') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-edit-expiration" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px;">
+      <div style="margin-bottom: 16px;">
+        <label for="edit-share-expires-at" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">{{ _('share_expiration_date_label') }}</label>
+        <input type="datetime-local" id="edit-share-expires-at" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px;" />
+      </div>
+      <div id="edit-share-error" style="display: none; padding: 10px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.85rem;"></div>
+      <input type="hidden" id="edit-share-id" />
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-edit-expiration">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-primary" id="btn-save-expiration">{{ _('share_save_expiration_btn') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Disattivazione Share -->
+<div class="modal-backdrop" id="modal-deactivate-share">
+  <div class="modal-card" style="max-width: 480px; width: 100%;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #f59e0b;">{{ _('share_btn_deactivate') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-deactivate-share" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px;">
+      <p style="margin-top: 0; color: var(--color-text-primary); font-size: 0.95rem;">
+        {{ _('share_deactivate_confirm') }}
+      </p>
+      <div style="background: var(--color-bg-base); border: 1px solid var(--color-border); color: var(--color-text-primary); padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px;">
+        <div><strong>Remote:</strong> <span id="deact-share-remote"></span></div>
+        <div><strong>{{ _('share_col_path') }}:</strong> <span id="deact-share-path"></span></div>
+        <div><strong>{{ _('share_col_username') }}:</strong> <code id="deact-share-user"></code></div>
+      </div>
+      <div style="padding: 8px 12px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #d97706; font-size: 0.85rem; margin-bottom: 12px;">
+        {{ _('share_deactivate_warning') }}
+      </div>
+      <div id="deactivate-share-error" style="display: none; padding: 10px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.85rem;"></div>
+      <input type="hidden" id="deactivate-share-id" />
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-deactivate-share">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn" id="btn-confirm-deactivate-share" style="background: #f59e0b; color: #ffffff; border: 1px solid #d97706; font-weight: 500;">{{ _('share_btn_deactivate') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminazione Share -->
+<div class="modal-backdrop" id="modal-delete-share">
+  <div class="modal-card" style="max-width: 480px; width: 100%;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--color-danger, #ef4444);">{{ _('share_btn_delete') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-delete-share" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px;">
+      <p style="margin-top: 0; color: var(--color-text-primary); font-size: 0.95rem;">
+        {{ _('share_delete_confirm') }}
+      </p>
+      <div style="background: var(--color-bg-base); border: 1px solid var(--color-border); color: var(--color-text-primary); padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px;">
+        <div><strong>Remote:</strong> <span id="del-share-remote"></span></div>
+        <div><strong>Percorso:</strong> <span id="del-share-path"></span></div>
+        <div><strong>Username:</strong> <code id="del-share-user"></code></div>
+      </div>
+      <div id="delete-share-error" style="display: none; padding: 10px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.85rem;"></div>
+      <input type="hidden" id="delete-share-id" />
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-delete-share">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-danger" id="btn-confirm-delete-share" style="background: var(--color-danger, #ef4444); color: white;">{{ _('btn_delete_confirm') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+const I18N = {
+  active: "{{ _('share_status_active') }}",
+  expired: "{{ _('share_status_expired') }}",
+  deactivated: "{{ _('share_status_deactivated') }}",
+  copy: "{{ _('btn_copy') }}",
+  copied: "{{ _('btn_copied') }}",
+  editExpiration: "{{ _('share_btn_edit_expiration') }}",
+  deactivate: "{{ _('share_btn_deactivate') }}",
+  delete: "{{ _('share_btn_delete') }}",
+};
+
+function copyText(btn, text) {
+  const origHtml = btn.innerHTML;
+  const doFeedback = () => {
+    btn.innerHTML = `<span style="font-size: 0.72rem; font-weight: 600;">${I18N.copied}</span>`;
+    setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      doFeedback();
+    }).catch(() => fallbackCopy(btn, text, doFeedback));
+  } else {
+    fallbackCopy(btn, text, doFeedback);
+  }
+}
+
+function fallbackCopy(btn, text, callback) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    if (callback) callback();
+  } catch (_) {}
+  document.body.removeChild(ta);
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return "-";
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    const pad = n => String(n).padStart(2, "0");
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = String(d.getFullYear()).slice(-2);
+    const hours = pad(d.getHours());
+    const mins = pad(d.getMinutes());
+    return `${day}/${month}/${year} ${hours}:${mins}`;
+  } catch (e) {
+    return isoStr;
+  }
+}
+
+let sharesMap = {};
+
+async function loadShares() {
+  const loading = document.getElementById("shares-loading");
+  const empty = document.getElementById("shares-empty");
+  const tableContainer = document.getElementById("shares-table-container");
+  const tbody = document.getElementById("shares-tbody");
+
+  loading.style.display = "block";
+  empty.style.display = "none";
+  tableContainer.style.display = "none";
+  tbody.innerHTML = "";
+
+  try {
+    const res = await fetch("/api/ui/public-shares");
+    if (!res.ok) throw new Error("Errore durante il caricamento dei link.");
+    const data = await res.json();
+    loading.style.display = "none";
+
+    if (!data.shares || data.shares.length === 0) {
+      empty.style.display = "block";
+      return;
+    }
+
+    sharesMap = {};
+    tableContainer.style.display = "block";
+    data.shares.forEach(s => {
+      sharesMap[s.id] = s;
+      const tr = document.createElement("tr");
+      tr.id = `share-row-${s.id}`;
+
+      let statusBadge = "";
+      if (!s.is_active) {
+        statusBadge = `<span class="badge" style="padding: 2px 6px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">${I18N.deactivated}</span>`;
+      } else if (s.is_expired) {
+        statusBadge = `<span class="badge badge-offline" style="padding: 2px 6px; font-size: 0.75rem;">${I18N.expired}</span>`;
+      } else {
+        statusBadge = `<span class="badge badge-online" style="padding: 2px 6px; font-size: 0.75rem;">${I18N.active}</span>`;
+      }
+
+      const pathDisplay = s.base_path ? `/${s.base_path}` : "/";
+      const noteHtml = s.note
+        ? `<span title="${escapeHtml(s.note)}" style="max-width: 120px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; color: var(--color-text-secondary); vertical-align: middle;">${escapeHtml(s.note)}</span>`
+        : `<span style="color: var(--color-text-muted); font-style: italic; font-size: 0.8rem;">-</span>`;
+
+      const firstAccessedHtml = s.first_accessed_at
+        ? `<span style="font-size: 0.82rem; white-space: nowrap; color: #16a34a; font-weight: 600;" title="${formatDate(s.first_accessed_at)}">${formatDate(s.first_accessed_at)}</span>`
+        : `<span style="font-size: 0.82rem; white-space: nowrap; color: var(--color-text-muted); font-style: italic;">-</span>`;
+
+      const editBtn = s.is_active
+        ? `<button type="button" class="btn btn-secondary btn-sm" style="padding: 4px 6px; display: inline-flex; align-items: center; justify-content: center;" data-action="edit-expiration" data-share-id="${s.id}" title="${I18N.editExpiration}" aria-label="${I18N.editExpiration}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none; flex-shrink: 0;">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>`
+        : '';
+
+      const deactBtn = s.is_active
+        ? `<button type="button" class="btn btn-sm" style="margin-left: 4px; padding: 4px 6px; background: #f59e0b !important; color: #ffffff !important; border: 1px solid #d97706 !important; display: inline-flex; align-items: center; justify-content: center;" data-action="deactivate-share" data-share-id="${s.id}" title="${I18N.deactivate}" aria-label="${I18N.deactivate}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none; flex-shrink: 0;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+          </button>`
+        : '';
+
+      tr.innerHTML = `
+        <td style="font-weight: 600; white-space: nowrap;">${escapeHtml(s.remote_name)}</td>
+        <td>
+          <code title="${escapeHtml(pathDisplay)}" style="display: inline-block; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; font-size: 0.82rem; background: var(--color-bg-base); border: 1px solid var(--color-border); color: var(--color-text-primary); padding: 2px 6px; border-radius: 4px;">${escapeHtml(pathDisplay)}</code>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input type="text" readonly value="${escapeHtml(s.url)}" class="form-input" style="width: 130px; font-family: monospace; font-size: 0.78rem; padding: 3px 6px; background: var(--color-bg-base); color: var(--color-text-primary); border: 1px solid var(--color-border);" />
+            <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 6px; font-size: 0.75rem; display: inline-flex; align-items: center;" data-action="copy" data-copy="${escapeHtml(s.url)}" title="${I18N.copy}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <code style="font-size: 0.82rem; font-weight: 600;">${escapeHtml(s.username)}</code>
+            <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 5px; font-size: 0.72rem; display: inline-flex; align-items: center;" data-action="copy" data-copy="${escapeHtml(s.username)}" title="${I18N.copy}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+        </td>
+        <td>${noteHtml}</td>
+        <td style="font-size: 0.82rem; white-space: nowrap;">${formatDate(s.expires_at)}</td>
+        <td style="white-space: nowrap;">${statusBadge}</td>
+        <td>${firstAccessedHtml}</td>
+        <td style="font-size: 0.82rem; white-space: nowrap; color: var(--color-text-muted);">${formatDate(s.created_at)}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          {% if has_permission('share.update') or has_permission('share.write') %}
+          ${editBtn}
+          {% endif %}
+          {% if has_permission('share.deactivate') or has_permission('share.write') %}
+          ${deactBtn}
+          {% endif %}
+          {% if has_permission('share.delete') or has_permission('share.write') %}
+          <button type="button" class="btn btn-danger btn-sm" style="margin-left: 4px; padding: 4px 6px; display: inline-flex; align-items: center; justify-content: center;" data-action="delete-share" data-share-id="${s.id}" title="${I18N.delete}" aria-label="${I18N.delete}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none; flex-shrink: 0;">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+          {% endif %}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    loading.style.display = "none";
+    empty.style.display = "block";
+    empty.innerHTML = `<div style="color: #ef4444; font-weight: 600;">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function openEditExpiration(shareId) {
+  const s = sharesMap[shareId];
+  document.getElementById("edit-share-id").value = shareId;
+  const dtInput = document.getElementById("edit-share-expires-at");
+  if (s && s.expires_at) {
+    const d = new Date(s.expires_at);
+    const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    dtInput.value = localIso;
+  } else {
+    dtInput.value = "";
+  }
+  document.getElementById("edit-share-error").style.display = "none";
+  if (typeof window.openModal === "function") {
+    window.openModal("modal-edit-expiration");
+  } else {
+    document.getElementById("modal-edit-expiration").classList.add("active");
+  }
+}
+
+function openDeactivateShare(shareId) {
+  const s = sharesMap[shareId];
+  if (!s) return;
+  const pathDisplay = s.base_path ? `/${s.base_path}` : "/";
+  document.getElementById("deactivate-share-id").value = shareId;
+  document.getElementById("deact-share-remote").textContent = s.remote_name || "Remote";
+  document.getElementById("deact-share-path").textContent = pathDisplay;
+  document.getElementById("deact-share-user").textContent = s.username || "";
+  document.getElementById("deactivate-share-error").style.display = "none";
+  if (typeof window.openModal === "function") {
+    window.openModal("modal-deactivate-share");
+  } else {
+    document.getElementById("modal-deactivate-share").classList.add("active");
+  }
+}
+
+function openDeleteShare(shareId) {
+  const s = sharesMap[shareId];
+  if (!s) return;
+  const pathDisplay = s.base_path ? `/${s.base_path}` : "/";
+  document.getElementById("delete-share-id").value = shareId;
+  document.getElementById("del-share-remote").textContent = s.remote_name || "Remote";
+  document.getElementById("del-share-path").textContent = pathDisplay;
+  document.getElementById("del-share-user").textContent = s.username || "";
+  document.getElementById("delete-share-error").style.display = "none";
+  if (typeof window.openModal === "function") {
+    window.openModal("modal-delete-share");
+  } else {
+    document.getElementById("modal-delete-share").classList.add("active");
+  }
+}
+
+// Modal closing helpers
+document.querySelectorAll("[data-close-modal]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.getAttribute("data-close-modal");
+    if (typeof window.closeModal === "function") {
+      window.closeModal(targetId);
+    } else {
+      const modal = document.getElementById(targetId);
+      if (modal) modal.classList.remove("active");
+    }
+  });
+});
+
+document.getElementById("btn-refresh-shares").addEventListener("click", loadShares);
+
+document.getElementById("btn-save-expiration").addEventListener("click", async () => {
+  const shareId = document.getElementById("edit-share-id").value;
+  const rawExpiresAt = document.getElementById("edit-share-expires-at").value;
+  const errDiv = document.getElementById("edit-share-error");
+  errDiv.style.display = "none";
+
+  if (!rawExpiresAt) {
+    errDiv.textContent = "Data di scadenza obbligatoria.";
+    errDiv.style.display = "block";
+    return;
+  }
+
+  const expiresIso = new Date(rawExpiresAt).toISOString();
+  try {
+    const res = await fetch(`/api/ui/public-shares/${shareId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+      body: JSON.stringify({ expires_at: expiresIso })
+    });
+    const data = await res.json();
+    if (!res.ok || data.status !== "ok") {
+      throw new Error(data.message || "Errore durante il salvataggio.");
+    }
+    if (typeof window.closeModal === "function") {
+      window.closeModal("modal-edit-expiration");
+    } else {
+      document.getElementById("modal-edit-expiration").classList.remove("active");
+    }
+    loadShares();
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.style.display = "block";
+  }
+});
+
+document.getElementById("btn-confirm-deactivate-share").addEventListener("click", async () => {
+  const shareId = document.getElementById("deactivate-share-id").value;
+  const errDiv = document.getElementById("deactivate-share-error");
+  errDiv.style.display = "none";
+
+  try {
+    const res = await fetch(`/api/ui/public-shares/${shareId}/deactivate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }
+    });
+    const data = await res.json();
+    if (!res.ok || data.status !== "ok") {
+      throw new Error(data.message || "Errore durante la disattivazione.");
+    }
+    if (typeof window.closeModal === "function") {
+      window.closeModal("modal-deactivate-share");
+    } else {
+      document.getElementById("modal-deactivate-share").classList.remove("active");
+    }
+    loadShares();
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.style.display = "block";
+  }
+});
+
+document.getElementById("btn-confirm-delete-share").addEventListener("click", async () => {
+  const shareId = document.getElementById("delete-share-id").value;
+  const errDiv = document.getElementById("delete-share-error");
+  errDiv.style.display = "none";
+
+  try {
+    const res = await fetch(`/api/ui/public-shares/${shareId}`, {
+      method: "DELETE",
+      headers: { "X-CSRFToken": csrfToken }
+    });
+    const data = await res.json();
+    if (!res.ok || data.status !== "ok") {
+      throw new Error(data.message || "Errore durante l'eliminazione.");
+    }
+    if (typeof window.closeModal === "function") {
+      window.closeModal("modal-delete-share");
+    } else {
+      document.getElementById("modal-delete-share").classList.remove("active");
+    }
+    loadShares();
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.style.display = "block";
+  }
+});
+
+// Delegated event listener for row actions (CSP compliant)
+document.getElementById("shares-tbody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === "edit-expiration") {
+    openEditExpiration(btn.dataset.shareId);
+  } else if (action === "deactivate-share") {
+    openDeactivateShare(btn.dataset.shareId);
+  } else if (action === "delete-share") {
+    openDeleteShare(btn.dataset.shareId);
+  } else if (action === "copy") {
+    copyText(btn, btn.dataset.copy);
+  }
+});
+
+// Initial load
+document.addEventListener("DOMContentLoaded", loadShares);
+</script>
+{% endblock %}
+

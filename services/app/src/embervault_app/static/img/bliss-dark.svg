@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Deep Moonlit Night Sky -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#040814"/>
+      <stop offset="35%" stop-color="#091530"/>
+      <stop offset="70%" stop-color="#112752"/>
+      <stop offset="100%" stop-color="#1c3a6e"/>
+    </linearGradient>
+
+    <radialGradient id="moonGlow" cx="76%" cy="22%" r="32%">
+      <stop offset="0%" stop-color="#6b96d6" stop-opacity="0.28"/>
+      <stop offset="45%" stop-color="#2c508e" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#040814" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="cloudBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7c96bd" stop-opacity="0.52"/>
+      <stop offset="60%" stop-color="#4e678f" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#2c3f61" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <linearGradient id="cloudHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a5bee2" stop-opacity="0.48"/>
+      <stop offset="100%" stop-color="#5d779e" stop-opacity="0.15"/>
+    </linearGradient>
+
+    <!-- Nighttime Rolling Emerald Hills -->
+    <linearGradient id="backHillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#17382b"/>
+      <stop offset="100%" stop-color="#0c2019"/>
+    </linearGradient>
+
+    <linearGradient id="mainHillGrad" x1="20%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#215e35"/>
+      <stop offset="45%" stop-color="#144023"/>
+      <stop offset="100%" stop-color="#092112"/>
+    </linearGradient>
+
+    <linearGradient id="crestHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#46965d" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#246338" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#144023" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="foreHillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#154225"/>
+      <stop offset="100%" stop-color="#081d10"/>
+    </linearGradient>
+
+    <linearGradient id="frontRightHill" x1="0%" y1="0%" x2="30%" y2="100%">
+      <stop offset="0%" stop-color="#11361e"/>
+      <stop offset="100%" stop-color="#06170c"/>
+    </linearGradient>
+
+    <filter id="softCloud" x="-15%" y="-25%" width="130%" height="150%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <!-- Night Sky & Soft Moonlit Glow -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)"/>
+  <rect width="1920" height="1080" fill="url(#moonGlow)"/>
+
+  <!-- Subtle Distant Stars -->
+  <g fill="#dbe8ff" opacity="0.45">
+    <circle cx="190" cy="95" r="1.2"/>
+    <circle cx="340" cy="65" r="1"/>
+    <circle cx="520" cy="110" r="1.4"/>
+    <circle cx="760" cy="70" r="1"/>
+    <circle cx="910" cy="135" r="1.3"/>
+    <circle cx="1180" cy="85" r="1.1"/>
+    <circle cx="1390" cy="58" r="1.5"/>
+    <circle cx="1580" cy="115" r="1.1"/>
+    <circle cx="1760" cy="82" r="1.3"/>
+    <circle cx="280" cy="185" r="0.9"/>
+    <circle cx="840" cy="175" r="0.9"/>
+    <circle cx="1690" cy="160" r="1"/>
+  </g>
+
+  <!-- Wispy Cirrus Clouds -->
+  <g fill="#6b87b0" opacity="0.32" filter="url(#softCloud)">
+    <ellipse cx="450" cy="180" rx="320" ry="45"/>
+    <ellipse cx="620" cy="165" rx="260" ry="38"/>
+    <ellipse cx="1450" cy="220" rx="380" ry="50"/>
+    <ellipse cx="1600" cy="190" rx="280" ry="40"/>
+    <ellipse cx="1050" cy="130" rx="220" ry="32"/>
+  </g>
+
+  <!-- Left Cumulus Cloud Group -->
+  <g filter="url(#softCloud)">
+    <ellipse cx="320" cy="340" rx="140" ry="75" fill="url(#cloudBody)"/>
+    <ellipse cx="230" cy="355" rx="100" ry="60" fill="url(#cloudBody)"/>
+    <ellipse cx="390" cy="330" rx="110" ry="65" fill="url(#cloudBody)"/>
+    <circle cx="340" cy="290" r="65" fill="url(#cloudHighlight)"/>
+    <circle cx="280" cy="310" r="55" fill="url(#cloudHighlight)"/>
+    <circle cx="410" cy="315" r="50" fill="url(#cloudHighlight)"/>
+    <ellipse cx="480" cy="360" rx="90" ry="45" fill="url(#cloudBody)" opacity="0.7"/>
+    <ellipse cx="170" cy="370" rx="75" ry="35" fill="url(#cloudBody)" opacity="0.7"/>
+  </g>
+
+  <!-- Center-Right Cumulus Cloud Group -->
+  <g filter="url(#softCloud)">
+    <ellipse cx="1180" cy="320" rx="220" ry="100" fill="url(#cloudBody)"/>
+    <ellipse cx="1340" cy="310" rx="180" ry="85" fill="url(#cloudBody)"/>
+    <ellipse cx="1040" cy="340" rx="160" ry="75" fill="url(#cloudBody)"/>
+    <circle cx="1120" cy="250" r="95" fill="url(#cloudHighlight)"/>
+    <circle cx="1230" cy="230" r="110" fill="url(#cloudHighlight)"/>
+    <circle cx="1330" cy="245" r="90" fill="url(#cloudHighlight)"/>
+    <circle cx="1410" cy="275" r="75" fill="url(#cloudHighlight)"/>
+    <circle cx="1030" cy="280" r="70" fill="url(#cloudHighlight)"/>
+    <ellipse cx="1220" cy="380" rx="340" ry="50" fill="url(#cloudBody)" opacity="0.65"/>
+    <ellipse cx="940" cy="375" rx="120" ry="40" fill="url(#cloudBody)" opacity="0.65"/>
+    <ellipse cx="1480" cy="360" rx="150" ry="45" fill="url(#cloudBody)" opacity="0.65"/>
+  </g>
+
+  <!-- Horizon Clouds -->
+  <g filter="url(#softCloud)" fill="#4f6b94" opacity="0.35">
+    <ellipse cx="720" cy="450" rx="280" ry="38"/>
+    <ellipse cx="880" cy="465" rx="200" ry="30"/>
+    <ellipse cx="1680" cy="420" rx="240" ry="45"/>
+  </g>
+
+  <!-- Distant Background Hills -->
+  <path d="M -100 560 Q 250 510, 600 540 T 1200 570 Q 1550 540, 2020 590 L 2020 1100 L -100 1100 Z" fill="url(#backHillGrad)"/>
+
+  <!-- Iconic Main Sweeping Hill -->
+  <path d="M -80 620 C 180 570, 380 630, 580 635 C 760 640, 890 530, 1060 460 C 1210 400, 1400 460, 1580 550 C 1740 630, 1880 640, 2020 620 L 2020 1100 L -80 1100 Z" fill="url(#mainHillGrad)"/>
+
+  <!-- Moonlit Crest Highlight -->
+  <path d="M 580 635 C 760 640, 890 530, 1060 460 C 1210 400, 1400 460, 1580 550 Q 1380 480, 1180 470 Q 960 510, 780 620 Z" fill="url(#crestHighlight)"/>
+
+  <!-- Foreground Hill Layers -->
+  <path d="M -50 710 C 180 680, 360 740, 580 730 C 820 720, 1050 640, 1280 670 C 1520 700, 1820 680, 2020 720 L 2020 1100 L -50 1100 Z" fill="url(#foreHillGrad)" opacity="0.88"/>
+  <path d="M 680 1100 C 850 820, 1080 690, 1380 670 C 1620 650, 1860 710, 2020 740 L 2020 1100 Z" fill="url(#frontRightHill)"/>
+  <path d="M -50 800 C 150 760, 320 810, 520 840 C 720 870, 880 940, 1050 1100 L -50 1100 Z" fill="url(#frontRightHill)" opacity="0.8"/>
+</svg>

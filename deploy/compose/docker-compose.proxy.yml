@@ -1,0 +1,53 @@
+# Standalone Remote Execution Proxy Docker Compose
+# Deploy this on remote hosts where backup/replication tasks execute.
+name: embervault-proxy
+
+services:
+  proxy:
+    image: embervault-proxy:latest
+    build:
+      context: ../..
+      dockerfile: deploy/docker/proxy.Dockerfile
+    container_name: embervault-proxy
+    command: ["python3", "-m", "embervault_proxy.main"]
+    restart: unless-stopped
+    ports:
+      - "${EMBERVAULT_PROXY_PORT:-8443}:8443"
+    environment:
+      TOKEN: ${PROXY_TOKEN:-${TOKEN:-proxy_token_secret_min_32_characters_dev_1}}
+      EMBERVAULT_PROXY_PORT: 8443
+      EMBERVAULT_PROXY_BIND: 0.0.0.0
+      EMBERVAULT_PROXY_STATE_DIR: /var/lib/embervault/proxy
+      EMBERVAULT_PROXY_AUTO_SELF_SIGNED: "true"
+      EMBERVAULT_ENV: ${EMBERVAULT_ENV:-prod}
+      EMBERVAULT_LOG_FORMAT: ${EMBERVAULT_LOG_FORMAT:-console}
+      EMBERVAULT_LOG_LEVEL: ${EMBERVAULT_LOG_LEVEL:-INFO}
+    volumes:
+      - proxy_state:/var/lib/embervault/proxy
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python3", "/app/deploy/scripts/healthcheck.py", "--service", "proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  proxy_state:
+    driver: local

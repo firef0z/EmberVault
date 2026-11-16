@@ -1,0 +1,143 @@
+{
+  "additionalProperties": false,
+  "description": "Real-time progress metrics for a running transfer task.",
+  "properties": {
+    "bytes_transferred": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Bytes Transferred",
+      "type": "integer"
+    },
+    "bytes_total": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bytes Total"
+    },
+    "files_transferred": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Files Transferred",
+      "type": "integer"
+    },
+    "files_total": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Files Total"
+    },
+    "files_percentage": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Files Percentage"
+    },
+    "checks_completed": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Checks Completed",
+      "type": "integer"
+    },
+    "checks_total": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checks Total"
+    },
+    "checks_percentage": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checks Percentage"
+    },
+    "speed_bytes_per_sec": {
+      "default": 0.0,
+      "minimum": 0,
+      "title": "Speed Bytes Per Sec",
+      "type": "number"
+    },
+    "speed_str": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speed Str"
+    },
+    "eta_seconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Eta Seconds"
+    },
+    "eta_str": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Eta Str"
+    },
+    "percentage": {
+      "default": 0.0,
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Percentage",
+      "type": "number"
+    }
+  },
+  "title": "TaskProgress",
+  "type": "object"
+}

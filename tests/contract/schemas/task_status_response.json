@@ -1,0 +1,378 @@
+{
+  "$defs": {
+    "DiscoverTaskResultPayload": {
+      "additionalProperties": false,
+      "description": "Result payload produced by a discover task.",
+      "properties": {
+        "subfolders": {
+          "description": "First-level subfolder names discovered in source path",
+          "items": {
+            "type": "string"
+          },
+          "title": "Subfolders",
+          "type": "array"
+        },
+        "root_files": {
+          "description": "Root files discovered directly inside source path",
+          "items": {
+            "type": "string"
+          },
+          "title": "Root Files",
+          "type": "array"
+        },
+        "total_subfolders": {
+          "default": 0,
+          "description": "Total number of first-level subfolders",
+          "minimum": 0,
+          "title": "Total Subfolders",
+          "type": "integer"
+        },
+        "total_root_files": {
+          "default": 0,
+          "description": "Total number of root files",
+          "minimum": 0,
+          "title": "Total Root Files",
+          "type": "integer"
+        },
+        "truncated": {
+          "default": false,
+          "description": "Whether the result was truncated due to exceeding discovery cap",
+          "title": "Truncated",
+          "type": "boolean"
+        },
+        "task_count_estimate": {
+          "default": 0,
+          "description": "Estimated parallel tasks: 1 (root files if present) + total_subfolders",
+          "minimum": 0,
+          "title": "Task Count Estimate",
+          "type": "integer"
+        },
+        "status_level": {
+          "$ref": "#/$defs/DiscoveryStatusLevel",
+          "default": "ok",
+          "description": "Threshold classification: ok, warn, or blocked"
+        }
+      },
+      "title": "DiscoverTaskResultPayload",
+      "type": "object"
+    },
+    "DiscoveryStatusLevel": {
+      "description": "Warning level evaluated against parallel task thresholds.",
+      "enum": [
+        "ok",
+        "warn",
+        "blocked"
+      ],
+      "title": "DiscoveryStatusLevel",
+      "type": "string"
+    },
+    "ErrorClass": {
+      "description": "Classification of errors determining retry vs permanent failure.",
+      "enum": [
+        "temporary",
+        "permanent",
+        "timeout",
+        "lost"
+      ],
+      "title": "ErrorClass",
+      "type": "string"
+    },
+    "ErrorCode": {
+      "description": "Standardized machine-readable error codes.",
+      "enum": [
+        "NO_ONLINE_PROXY",
+        "PROXY_UNREACHABLE",
+        "PROXY_UNAUTHORIZED",
+        "PROXY_CERT_MISMATCH",
+        "PROXY_CAPACITY_FULL",
+        "TASK_TIMEOUT",
+        "TASK_LOST",
+        "RCLONE_TEMPORARY",
+        "RCLONE_FATAL",
+        "SOURCE_NOT_FOUND",
+        "REMOTE_AUTH_FAILED",
+        "DISCOVERY_FAILED",
+        "PARALLEL_TASK_LIMIT_EXCEEDED",
+        "CREDENTIAL_DECRYPT_FAILED",
+        "FILES_EXCLUDED",
+        "PROXY_VERSION_INCOMPATIBLE",
+        "UNKNOWN_ERROR"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "TaskProgress": {
+      "additionalProperties": false,
+      "description": "Real-time progress metrics for a running transfer task.",
+      "properties": {
+        "bytes_transferred": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Bytes Transferred",
+          "type": "integer"
+        },
+        "bytes_total": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bytes Total"
+        },
+        "files_transferred": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Files Transferred",
+          "type": "integer"
+        },
+        "files_total": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Files Total"
+        },
+        "files_percentage": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Files Percentage"
+        },
+        "checks_completed": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Checks Completed",
+          "type": "integer"
+        },
+        "checks_total": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checks Total"
+        },
+        "checks_percentage": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checks Percentage"
+        },
+        "speed_bytes_per_sec": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Speed Bytes Per Sec",
+          "type": "number"
+        },
+        "speed_str": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed Str"
+        },
+        "eta_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eta Seconds"
+        },
+        "eta_str": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eta Str"
+        },
+        "percentage": {
+          "default": 0.0,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Percentage",
+          "type": "number"
+        }
+      },
+      "title": "TaskProgress",
+      "type": "object"
+    },
+    "TaskState": {
+      "description": "Execution state of a task attempt.",
+      "enum": [
+        "pending",
+        "ready",
+        "assigned",
+        "running",
+        "retry_wait",
+        "succeeded",
+        "partially_failed",
+        "failed",
+        "cancelled",
+        "skipped"
+      ],
+      "title": "TaskState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Response returned by GET /v1/tasks/{attempt_id}.",
+  "properties": {
+    "attempt_id": {
+      "description": "Attempt UUID",
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskState",
+      "description": "Current execution state"
+    },
+    "progress": {
+      "$ref": "#/$defs/TaskProgress"
+    },
+    "exit_code": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Subprocess exit code upon completion",
+      "title": "Exit Code"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Standard error code if failed"
+    },
+    "error_class": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorClass"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Error classification"
+    },
+    "error_message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Sanitized error description",
+      "title": "Error Message"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Task start timestamp (UTC)",
+      "title": "Started At"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Task completion timestamp (UTC)",
+      "title": "Completed At"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DiscoverTaskResultPayload"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Discover results if kind was discover"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "status"
+  ],
+  "title": "TaskStatusResponse",
+  "type": "object"
+}

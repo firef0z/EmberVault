@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 14" width="54" height="14">
+  <defs>
+    <!-- Red Gumdrop Gradient -->
+    <radialGradient id="redGel" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffa8a8"/>
+      <stop offset="30%" stop-color="#ff3b30"/>
+      <stop offset="70%" stop-color="#d61414"/>
+      <stop offset="100%" stop-color="#880404"/>
+    </radialGradient>
+    
+    <!-- Yellow Gumdrop Gradient -->
+    <radialGradient id="yellowGel" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fff2a8"/>
+      <stop offset="30%" stop-color="#ffcc00"/>
+      <stop offset="70%" stop-color="#e09900"/>
+      <stop offset="100%" stop-color="#8a5500"/>
+    </radialGradient>
+
+    <!-- Green Gumdrop Gradient -->
+    <radialGradient id="greenGel" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#b2f7bd"/>
+      <stop offset="30%" stop-color="#34c759"/>
+      <stop offset="70%" stop-color="#229b3f"/>
+      <stop offset="100%" stop-color="#0c5920"/>
+    </radialGradient>
+
+    <!-- Specular Highlight Curve -->
+    <linearGradient id="specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Red: Close -->
+  <g>
+    <circle cx="7" cy="7" r="5.75" fill="url(#redGel)" stroke="#820808" stroke-width="0.75"/>
+    <ellipse cx="7" cy="4.5" rx="3.5" ry="1.75" fill="url(#specular)"/>
+  </g>
+
+  <!-- Yellow: Minimize -->
+  <g>
+    <circle cx="25" cy="7" r="5.75" fill="url(#yellowGel)" stroke="#875600" stroke-width="0.75"/>
+    <ellipse cx="25" cy="4.5" rx="3.5" ry="1.75" fill="url(#specular)"/>
+  </g>
+
+  <!-- Green: Zoom -->
+  <g>
+    <circle cx="43" cy="7" r="5.75" fill="url(#greenGel)" stroke="#0e5e23" stroke-width="0.75"/>
+    <ellipse cx="43" cy="4.5" rx="3.5" ry="1.75" fill="url(#specular)"/>
+  </g>
+</svg>
+

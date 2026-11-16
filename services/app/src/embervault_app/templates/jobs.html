@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('jobs_page_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('jobs_page_title') }}{% endblock %}
+
+{% block content %}
+<div class="header-actions" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  {% if has_permission('job.write') %}
+  <div>
+    <a href="/jobs/new" class="btn btn-primary" id="btn-new-job" style="display: inline-flex; align-items: center; gap: 8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      {{ _('btn_new_job') }}
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% if jobs %}
+<div class="content-card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="data-table" id="jobs-table">
+        <thead>
+          <tr>
+            <th>{{ _('col_job_name') }}</th>
+            <th class="col-hide-sm">{{ _('col_job_src') }}</th>
+            <th class="col-hide-sm">{{ _('col_job_dest') }}</th>
+            <th class="col-hide-md">{{ _('col_operation') }}</th>
+            <th class="col-hide-lg">{{ _('col_parallelization') }}</th>
+            <th class="col-hide-xl">{{ _('col_proxy') }}</th>
+            <th class="col-hide-md">{{ _('col_schedule') }}</th>
+            <th style="text-align: right;">{{ _('col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+          <tr id="job-row-{{ j.id }}">
+            <td>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  {% if not j.enabled %}
+                  <span class="badge badge-offline" style="padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('status_disabled') }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                  </span>
+                  {% else %}
+                  <span class="badge badge-online" style="padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('status_enabled') }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </span>
+                  {% endif %}
+                  {% if not j.notifications_enabled %}
+                  <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('notifications_disabled') }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
+                      <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
+                      <path d="M18 8a6 6 0 0 0-9.33-5"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </span>
+                  {% else %}
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('notifications_enabled') }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                  </span>
+                  {% endif %}
+                  <strong style="color: var(--color-text-primary); font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ j.name }}</strong>
+                </div>
+                <div class="job-mobile-badge">
+                  {% if j.operation == 'sync' %}
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem;">
+                    {{ _('operation_sync') }}
+                  </span>
+                  {% else %}
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.75rem;">
+                    {{ _('operation_copy') }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="job-mobile-meta">
+                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <span style="color: var(--color-text-secondary); font-weight: 500;">{{ j.source_remote.name if j.source_remote else 'Remote' }}</span>
+                  <span>➔</span>
+                  <span style="color: var(--color-text-secondary); font-weight: 500;">{{ j.destination_remote.name if j.destination_remote else 'Remote' }}</span>
+                </div>
+                {% if j.schedule_cron %}
+                <div style="font-size: 0.75rem; color: var(--color-text-muted);">
+                  <code style="font-size: 0.75rem;">{{ j.schedule_cron }}</code>
+                  <span style="margin-left: 4px; padding: 1px 5px; border-radius: 4px; background: rgba(100, 116, 139, 0.14); color: var(--color-text-secondary); font-size: 0.7rem;">{{ j.timezone or 'UTC' }}</span>
+                  {% if j.next_run_at %}
+                  <span style="margin-left: 6px;">• {{ _('schedule_next') }}: <span class="user-datetime" data-utc="{{ j.next_run_at|utc_iso }}" data-format="short">{{ j.next_run_at|user_dt('%d/%m/%Y %H:%M') }}</span></span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </td>
+            <td class="col-hide-sm" style="max-width: 170px;">
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 500; font-size: 0.88rem; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ j.source_remote.name if j.source_remote else 'Remote' }}">
+                  {{ j.source_remote.name if j.source_remote else 'Remote' }}
+                </span>
+                <code style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ j.source_path or '/' }}">{{ j.source_path or '/' }}</code>
+              </div>
+            </td>
+            <td class="col-hide-sm" style="max-width: 170px;">
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 500; font-size: 0.88rem; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ j.destination_remote.name if j.destination_remote else 'Remote' }}">
+                  {{ j.destination_remote.name if j.destination_remote else 'Remote' }}
+                </span>
+                <code style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ j.destination_path or '/' }}">{{ j.destination_path or '/' }}</code>
+              </div>
+            </td>
+            <td class="col-hide-md">
+              {% if j.operation == 'sync' %}
+              <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                {{ _('operation_sync') }}
+              </span>
+              {% else %}
+              <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);">
+                {{ _('operation_copy') }}
+              </span>
+              {% endif %}
+            </td>
+            <td class="col-hide-lg">
+              {% if j.parallelization == 'by_subfolder' %}
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                {{ _('parallelization_active') }}
+              </span>
+              {% else %}
+              <span class="badge badge-unknown">
+                {{ _('parallelization_disabled') }}
+              </span>
+              {% endif %}
+            </td>
+            <td class="col-hide-xl">
+              {% if j.assigned_proxies %}
+              <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); padding: 4px 7px; display: inline-flex; align-items: center;" title="{% for p in j.assigned_proxies %}{{ p.name }} ({{ p.address }}:{{ p.port }}){% if not loop.last %}, {% endif %}{% endfor %}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              {% else %}
+              <span class="badge" style="background: rgba(100, 116, 139, 0.12); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); padding: 4px 7px; display: inline-flex; align-items: center;" title="{{ _('col_proxy') }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </span>
+              {% endif %}
+            </td>
+            <td class="col-hide-md">
+              {% if j.schedule_cron %}
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-weight: 500; font-size: 0.9rem; font-family: monospace;">{{ j.schedule_cron }}</span>
+                <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; background: rgba(100, 116, 139, 0.14); color: var(--color-text-secondary);">{{ j.timezone or 'UTC' }}</span>
+              </div>
+              {% if j.next_run_at %}
+              <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">
+                {{ _('schedule_next') }}: <span class="user-datetime" data-utc="{{ j.next_run_at|utc_iso }}" data-format="short">{{ j.next_run_at|user_dt('%d/%m/%Y %H:%M') }}</span>
+              </div>
+              {% endif %}
+              {% else %}
+              <span style="color: var(--color-text-muted); font-style: italic; font-size: 0.85rem;">{{ _('schedule_manual') }}</span>
+              {% endif %}
+            </td>
+            <td class="col-actions" style="text-align: right; white-space: nowrap;">
+              <div class="col-actions-inner" style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
+                {% if has_permission('job.run') %}
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary btn-run-job"
+                  data-job-id="{{ j.id }}"
+                  data-job-name="{{ j.name }}"
+                  title="{{ _('btn_run_now') }}"
+                  aria-label="{{ _('btn_run_now') }}"
+                  style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important;"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                </button>
+                {% endif %}
+                {% if has_permission('job.write') %}
+                <a
+                  href="/jobs/{{ j.id }}/edit"
+                  class="btn btn-sm btn-secondary btn-edit-job"
+                  title="{{ _('btn_edit') }}"
+                  aria-label="{{ _('btn_edit') }}"
+                  style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important;"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger btn-delete-job"
+                  data-job-id="{{ j.id }}"
+                  data-job-name="{{ j.name }}"
+                  title="{{ _('btn_delete') }}"
+                  aria-label="{{ _('btn_delete') }}"
+                  style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important;"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="content-card">
+  <div class="card-body">
+    <div class="empty-state" style="padding: 48px 24px; text-align: center;">
+      <div class="empty-state-icon" style="background: rgba(255, 107, 0, 0.1); color: var(--color-brand); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+      </div>
+      <h2 class="empty-state-title" style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">{{ _('empty_jobs_title') }}</h2>
+      <p class="empty-state-desc" style="color: var(--color-text-secondary); max-width: 520px; margin: 0 auto 24px;">
+        {{ _('empty_jobs_desc') }}
+      </p>
+      {% if has_permission('job.write') %}
+      <a href="/jobs/new" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        {{ _('first_job_cta') }}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Run Job Modal -->
+<div id="run-job-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+  <div class="modal-content" style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 12px; width: 100%; max-width: 480px; padding: 24px; box-shadow: var(--shadow-modal);">
+    <h3 style="margin-top: 0; font-size: 1.2rem; color: var(--color-text-primary);">{{ _('run_modal_title') }}</h3>
+    <p style="color: var(--color-text-secondary); font-size: 0.95rem;">
+      {{ _('run_modal_confirm_text') }} <strong id="run-modal-job-name"></strong>?
+    </p>
+    <div id="run-modal-feedback" style="display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px;"></div>
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+      <button type="button" class="btn btn-secondary" id="btn-cancel-run">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-primary" id="btn-confirm-run">{{ _('btn_run_now') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+  <div class="modal-content" style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 12px; width: 100%; max-width: 460px; padding: 24px; box-shadow: var(--shadow-modal);">
+    <h3 style="margin-top: 0; font-size: 1.2rem; color: var(--color-danger);">{{ _('delete_modal_title') }}</h3>
+    <p style="color: var(--color-text-secondary); font-size: 0.95rem;">
+      {{ _('delete_modal_confirm_text') }} <strong id="delete-job-name"></strong>? {{ _('delete_modal_warning') }}
+    </p>
+    <div id="delete-error-msg" style="display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.9rem;"></div>
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+      <button type="button" class="btn btn-secondary" id="btn-cancel-delete">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-danger" id="btn-confirm-delete" style="background: var(--color-danger); color: white;">{{ _('btn_delete_confirm') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  
+  // Run Job Modal
+  const runModal = document.getElementById('run-job-modal');
+  const runJobNameSpan = document.getElementById('run-modal-job-name');
+  const runFeedback = document.getElementById('run-modal-feedback');
+  const btnCancelRun = document.getElementById('btn-cancel-run');
+  const btnConfirmRun = document.getElementById('btn-confirm-run');
+  let selectedJobIdForRun = null;
+
+  document.querySelectorAll('.btn-run-job').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedJobIdForRun = btn.getAttribute('data-job-id');
+      runJobNameSpan.textContent = btn.getAttribute('data-job-name');
+      runFeedback.style.display = 'none';
+      btnConfirmRun.disabled = false;
+      btnConfirmRun.textContent = {{ _('btn_run_now') | tojson }};
+      runModal.style.display = 'flex';
+    });
+  });
+
+  btnCancelRun.addEventListener('click', () => {
+    runModal.style.display = 'none';
+  });
+
+  btnConfirmRun.addEventListener('click', async () => {
+    if (!selectedJobIdForRun) return;
+    btnConfirmRun.disabled = true;
+    btnConfirmRun.textContent = {{ _('job_starting_ellipsis') | tojson }};
+    try {
+      const resp = await fetch(`/api/ui/jobs/${selectedJobIdForRun}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+      const data = await resp.json();
+      if (resp.ok && data.status === 'dispatched' || data.status === 'ok') {
+        runFeedback.style.display = 'block';
+        runFeedback.style.background = 'rgba(16, 185, 129, 0.1)';
+        runFeedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        runFeedback.style.color = '#10b981';
+        runFeedback.textContent = data.message || {{ _('job_started_redirecting') | tojson }};
+        setTimeout(() => {
+          window.location.href = data.run_id ? `/runs/${data.run_id}` : '/runs';
+        }, 1200);
+      } else {
+        runFeedback.style.display = 'block';
+        runFeedback.style.background = 'rgba(239, 68, 68, 0.1)';
+        runFeedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        runFeedback.style.color = '#ef4444';
+        runFeedback.textContent = data.message || {{ _('err_starting_job') | tojson }};
+        btnConfirmRun.disabled = false;
+        btnConfirmRun.textContent = {{ _('btn_retry') | tojson }};
+      }
+    } catch (err) {
+      runFeedback.style.display = 'block';
+      runFeedback.style.background = 'rgba(239, 68, 68, 0.1)';
+      runFeedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      runFeedback.style.color = '#ef4444';
+      runFeedback.textContent = {{ _('err_network_starting_job') | tojson }} + err.message;
+      btnConfirmRun.disabled = false;
+      btnConfirmRun.textContent = {{ _('btn_retry') | tojson }};
+    }
+  });
+
+  // Delete Job Modal
+  const deleteModal = document.getElementById('delete-modal');
+  const deleteJobNameSpan = document.getElementById('delete-job-name');
+  const deleteErrorMsg = document.getElementById('delete-error-msg');
+  const btnCancelDelete = document.getElementById('btn-cancel-delete');
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+  let selectedJobIdForDelete = null;
+
+  function resetDeleteModalState() {
+    if (btnConfirmDelete) {
+      btnConfirmDelete.disabled = false;
+      btnConfirmDelete.textContent = {{ _('btn_delete_permanently') | tojson }};
+    }
+    if (deleteErrorMsg) {
+      deleteErrorMsg.style.display = 'none';
+      deleteErrorMsg.textContent = '';
+    }
+  }
+
+  document.querySelectorAll('.btn-delete-job').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedJobIdForDelete = btn.getAttribute('data-job-id');
+      deleteJobNameSpan.textContent = btn.getAttribute('data-job-name');
+      resetDeleteModalState();
+      deleteModal.style.display = 'flex';
+    });
+  });
+
+  btnCancelDelete.addEventListener('click', () => {
+    deleteModal.style.display = 'none';
+    resetDeleteModalState();
+  });
+
+  deleteModal.addEventListener('click', (e) => {
+    if (e.target === deleteModal) {
+      deleteModal.style.display = 'none';
+      resetDeleteModalState();
+    }
+  });
+
+  btnConfirmDelete.addEventListener('click', async () => {
+    if (!selectedJobIdForDelete) return;
+    btnConfirmDelete.disabled = true;
+    btnConfirmDelete.textContent = {{ _('status_deleting_ellipsis') | tojson }};
+    try {
+      const resp = await fetch(`/api/ui/jobs/${selectedJobIdForDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        document.getElementById(`job-row-${selectedJobIdForDelete}`)?.remove();
+        deleteModal.style.display = 'none';
+        resetDeleteModalState();
+        // Reload if table empty
+        if (document.querySelectorAll('#jobs-table tbody tr').length === 0) {
+          window.location.reload();
+        }
+      } else {
+        deleteErrorMsg.style.display = 'block';
+        deleteErrorMsg.textContent = data.message || {{ _('err_deleting_job') | tojson }};
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.textContent = {{ _('btn_delete_permanently') | tojson }};
+      }
+    } catch (err) {
+      deleteErrorMsg.style.display = 'block';
+      deleteErrorMsg.textContent = {{ _('err_connection_prefix') | tojson }} + err.message;
+      btnConfirmDelete.disabled = false;
+      btnConfirmDelete.textContent = {{ _('btn_delete_permanently') | tojson }};
+    }
+  });
+});
+</script>
+{% endblock %}

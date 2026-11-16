@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Sky Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1666c5"/>
+      <stop offset="25%" stop-color="#247de4"/>
+      <stop offset="50%" stop-color="#4ea2f3"/>
+      <stop offset="75%" stop-color="#80c2f8"/>
+      <stop offset="95%" stop-color="#b6e0fd"/>
+      <stop offset="100%" stop-color="#d6edfe"/>
+    </linearGradient>
+
+    <!-- Cloud Glow Filters & Gradients -->
+    <linearGradient id="cloudGradMain" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="70%" stop-color="#f0f7ff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#cbe3fb" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <linearGradient id="cloudGradSoft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="80%" stop-color="#d8ebfd" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#b8ddfb" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Back Hill Gradient -->
+    <linearGradient id="backHillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#69b846"/>
+      <stop offset="35%" stop-color="#549f34"/>
+      <stop offset="70%" stop-color="#3f8224"/>
+      <stop offset="100%" stop-color="#316e1a"/>
+    </linearGradient>
+
+    <!-- Iconic Bliss Main Hill Gradient (Sunlight on crest, deep green slope) -->
+    <linearGradient id="mainHillGrad" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#a4e84b"/>
+      <stop offset="15%" stop-color="#8fd739"/>
+      <stop offset="35%" stop-color="#72c129"/>
+      <stop offset="60%" stop-color="#55a51c"/>
+      <stop offset="85%" stop-color="#3d8213"/>
+      <stop offset="100%" stop-color="#2a650c"/>
+    </linearGradient>
+
+    <!-- Hill Sunlit Crest Highlight -->
+    <linearGradient id="crestHighlight" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#c6f86a" stop-opacity="0.9"/>
+      <stop offset="30%" stop-color="#a8ec4a" stop-opacity="0.6"/>
+      <stop offset="70%" stop-color="#72c129" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#438e16" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Foreground Valley / Hill Gradient -->
+    <linearGradient id="foreHillGrad" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#61b324"/>
+      <stop offset="25%" stop-color="#499717"/>
+      <stop offset="50%" stop-color="#377d0f"/>
+      <stop offset="75%" stop-color="#276409"/>
+      <stop offset="100%" stop-color="#1b4b05"/>
+    </linearGradient>
+
+    <!-- Near Front Hill Gradient (Warm grass) -->
+    <linearGradient id="frontRightHill" x1="20%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#80cf2e"/>
+      <stop offset="30%" stop-color="#62ab1f"/>
+      <stop offset="70%" stop-color="#458612"/>
+      <stop offset="100%" stop-color="#2b5f0a"/>
+    </linearGradient>
+
+    <!-- Soft Cloud Filter -->
+    <filter id="softCloud" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="wispyCloud" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+  </defs>
+
+  <!-- SKY BACKGROUND -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)"/>
+
+  <!-- WISPY BACKGROUND CLOUDS (Upper sky) -->
+  <g filter="url(#wispyCloud)" opacity="0.65">
+    <ellipse cx="450" cy="180" rx="320" ry="45" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="620" cy="165" rx="260" ry="38" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="1450" cy="220" rx="380" ry="50" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="1600" cy="190" rx="280" ry="40" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="1050" cy="130" rx="220" ry="32" fill="url(#cloudGradSoft)"/>
+  </g>
+
+  <!-- ICONIC BLISS CUMULUS CLOUDS (Mid Sky) -->
+  <!-- Left Cloud Group -->
+  <g filter="url(#softCloud)" opacity="0.92">
+    <!-- Main body -->
+    <ellipse cx="320" cy="340" rx="140" ry="75" fill="url(#cloudGradMain)"/>
+    <ellipse cx="230" cy="355" rx="100" ry="60" fill="url(#cloudGradMain)"/>
+    <ellipse cx="390" cy="330" rx="110" ry="65" fill="url(#cloudGradMain)"/>
+    <circle cx="340" cy="290" r="65" fill="url(#cloudGradMain)"/>
+    <circle cx="280" cy="310" r="55" fill="url(#cloudGradMain)"/>
+    <circle cx="410" cy="315" r="50" fill="url(#cloudGradMain)"/>
+    <ellipse cx="480" cy="360" rx="90" ry="45" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="170" cy="370" rx="75" ry="35" fill="url(#cloudGradSoft)"/>
+  </g>
+
+  <!-- Center-Right Majestic Cloud Group (Floating over the hill crest) -->
+  <g filter="url(#softCloud)" opacity="0.95">
+    <!-- Cumulus puffs -->
+    <ellipse cx="1180" cy="320" rx="220" ry="100" fill="url(#cloudGradMain)"/>
+    <ellipse cx="1340" cy="310" rx="180" ry="85" fill="url(#cloudGradMain)"/>
+    <ellipse cx="1040" cy="340" rx="160" ry="75" fill="url(#cloudGradMain)"/>
+    
+    <circle cx="1120" cy="250" r="95" fill="url(#cloudGradMain)"/>
+    <circle cx="1230" cy="230" r="110" fill="url(#cloudGradMain)"/>
+    <circle cx="1330" cy="245" r="90" fill="url(#cloudGradMain)"/>
+    <circle cx="1410" cy="275" r="75" fill="url(#cloudGradMain)"/>
+    <circle cx="1030" cy="280" r="70" fill="url(#cloudGradMain)"/>
+    
+    <!-- Flat bottom of cumulus -->
+    <ellipse cx="1220" cy="380" rx="340" ry="50" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="940" cy="375" rx="120" ry="40" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="1480" cy="360" rx="150" ry="45" fill="url(#cloudGradSoft)"/>
+  </g>
+
+  <!-- Far Horizon Cloud Whisps -->
+  <g filter="url(#softCloud)" opacity="0.75">
+    <ellipse cx="720" cy="450" rx="280" ry="38" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="880" cy="465" rx="200" ry="30" fill="url(#cloudGradSoft)"/>
+    <ellipse cx="1680" cy="420" rx="240" ry="45" fill="url(#cloudGradSoft)"/>
+  </g>
+
+  <!-- ROLLING HILLS (Iconic Windows XP undulating landscape) -->
+  
+  <!-- 1. Distant Back Hill (soft olive green on far left & right) -->
+  <path d="M -100 560 
+           Q 250 510, 600 540 
+           T 1200 570 
+           Q 1550 540, 2020 590 
+           L 2020 1100 L -100 1100 Z" 
+        fill="url(#backHillGrad)"/>
+
+  <!-- 2. Main Iconic Bliss Hill (The glorious sweeping ridge) -->
+  <!-- Sweeps from y=590 on left, dips gracefully to y=640, then rises majestically to sunlit crest at x=1020 y=450, and slopes down toward right -->
+  <path d="M -80 620 
+           C 180 570, 380 630, 580 635 
+           C 760 640, 890 530, 1060 460 
+           C 1210 400, 1400 460, 1580 550 
+           C 1740 630, 1880 640, 2020 620 
+           L 2020 1100 L -80 1100 Z" 
+        fill="url(#mainHillGrad)"/>
+
+  <!-- Sunlit Crest Highlight on Main Hill -->
+  <path d="M 580 635 
+           C 760 640, 890 530, 1060 460 
+           C 1210 400, 1400 460, 1580 550 
+           Q 1380 480, 1180 470
+           Q 960 510, 780 620 Z" 
+        fill="url(#crestHighlight)"/>
+
+  <!-- 3. Gentle Valley Shadow & Mid-ground Swell -->
+  <path d="M -50 710 
+           C 180 680, 360 740, 580 730 
+           C 820 720, 1050 640, 1280 670 
+           C 1520 700, 1820 680, 2020 720 
+           L 2020 1100 L -50 1100 Z" 
+        fill="url(#foreHillGrad)" opacity="0.85"/>
+
+  <!-- 4. Front Rolling Green Hill (Right Foreground swell) -->
+  <path d="M 680 1100 
+           C 850 820, 1080 690, 1380 670 
+           C 1620 650, 1860 710, 2020 740 
+           L 2020 1100 Z" 
+        fill="url(#frontRightHill)"/>
+
+  <!-- 5. Front Left Hill (Bottom-left lush meadow swell) -->
+  <path d="M -50 800 
+           C 150 760, 320 810, 520 840 
+           C 720 870, 880 940, 1050 1100 
+           L -50 1100 Z" 
+        fill="url(#frontRightHill)" opacity="0.75"/>
+
+  <!-- Soft Grass Sheen Waves (Simulating the velvety sun-dappled Napa vineyard turf) -->
+  <path d="M 1020 480 Q 1240 430, 1460 520 Q 1240 460, 1020 480 Z" fill="#d0ff78" opacity="0.25"/>
+  <path d="M 920 540 Q 1100 490, 1320 560 Q 1100 520, 920 540 Z" fill="#d0ff78" opacity="0.18"/>
+  <path d="M 420 620 Q 560 610, 720 635 Q 560 625, 420 620 Z" fill="#d0ff78" opacity="0.2"/>
+</svg>
+

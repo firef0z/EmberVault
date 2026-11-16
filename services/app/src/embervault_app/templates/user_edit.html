@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}{{ _('user_edit_title') }} — {{ user.username }}{% else %}{{ _('user_create_title') }}{% endif %} | {{ app_name }}{% endblock %}
+{% block page_title %}{% if is_edit %}{{ _('user_edit_title') }}{% else %}{{ _('user_create_title') }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="content-card" style="max-width: 680px; margin: 0 auto;">
+  <div class="card-header">
+    <h2 class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>{% if is_edit %}{{ _('user_edit_account_title') }} ({{ user.username }}){% else %}{{ _('user_create_account_title') }}{% endif %}</span>
+    </h2>
+  </div>
+
+  <form id="form-user" style="display: flex; flex-direction: column; gap: 20px; padding: 24px;">
+    <!-- Username -->
+    <div class="form-group">
+      <label for="input-username" class="form-label">{{ _('username_field_label') }} <span style="color: var(--status-offline);">*</span></label>
+      <input type="text" id="input-username" class="form-input" value="{{ user.username if is_edit else '' }}" {% if is_edit %}disabled{% endif %} required autocomplete="off" placeholder="{{ _('user_username_placeholder') }}">
+      {% if is_edit %}
+        <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('user_username_immutable_hint') }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Display Name -->
+    <div class="form-group">
+      <label for="input-display-name" class="form-label">{{ _('fullname_field_label') }}</label>
+      <input type="text" id="input-display-name" class="form-input" value="{{ user.display_name if is_edit and user.display_name else '' }}" placeholder="{{ _('user_display_name_placeholder') }}">
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <label for="input-email" class="form-label">{{ _('email_field_label') }}</label>
+      <input type="email" id="input-email" class="form-input" value="{{ user.email if is_edit and user.email else '' }}" placeholder="{{ _('user_email_placeholder') }}">
+    </div>
+
+    <!-- Role -->
+    <div class="form-group">
+      <label for="select-role" class="form-label">{{ _('assigned_role_label') }} <span style="color: var(--status-offline);">*</span></label>
+      <select id="select-role" class="form-input" {% if is_edit and not can_manage_roles %}disabled{% endif %} required>
+        {% for r in roles %}
+          <option value="{{ r.id }}" {% if is_edit and user.role_id == r.id %}selected{% elif not is_edit and r.name == 'operator' %}selected{% endif %}>
+            {{ r.name|upper }} — {{ _(r.description) }}
+          </option>
+        {% endfor %}
+      </select>
+      {% if is_edit and not can_manage_roles %}
+        <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('user_role_admin_only_hint') }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Theme Selection -->
+    <div class="form-group">
+      <label for="select-theme" class="form-label">{{ _('ui_theme_label') }}</label>
+      <select id="select-theme" class="form-input">
+        {% set user_theme = user.theme if is_edit and user.theme else 'embervault' %}
+        <option value="embervault" {% if user_theme == 'embervault' %}selected{% endif %}>EmberVault Theme (Default)</option>
+        <option value="theeame" {% if user_theme == 'theeame' %}selected{% endif %}>{{ _('theme_theeame_label') }}</option>
+        <option value="acrovault" {% if user_theme == 'acrovault' %}selected{% endif %}>{{ _('theme_acrovault_label') }}</option>
+        <option value="emberxp" {% if user_theme == 'emberxp' %}selected{% endif %}>{{ _('theme_emberxp_label') }}</option>
+        <option value="iembervault" {% if user_theme == 'iembervault' %}selected{% endif %}>{{ _('theme_iembervault_label') }}</option>
+      </select>
+      <span style="font-size: 0.75rem; color: var(--text-secondary);">{{ _('user_theme_hint') }}</span>
+    </div>
+
+    <!-- Password -->
+    <div class="form-group">
+      <label for="input-password" class="form-label">
+        {% if is_edit %}{{ _('password_reset_field_label') }}{% else %}{{ _('password_initial_field_label') }} <span style="color: var(--status-offline);">*</span>{% endif %}
+      </label>
+      <input type="password" id="input-password" class="form-input" {% if not is_edit %}required{% endif %} placeholder="{{ _('user_password_placeholder') }}" autocomplete="new-password">
+      <span style="font-size: 0.75rem; color: var(--text-secondary);">{{ _('user_password_complexity_hint') }}</span>
+    </div>
+
+    <!-- Must change password -->
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+      <input type="checkbox" id="check-must-change" {% if is_edit and user.must_change_password %}checked{% elif not is_edit %}checked{% endif %} {% if is_edit and not can_manage_roles %}disabled{% endif %} style="width: 16px; height: 16px;">
+      <label for="check-must-change" style="font-size: 0.9rem; cursor: pointer;">{{ _('require_pwd_change_label') }}</label>
+    </div>
+
+    <!-- Is Active -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <input type="checkbox" id="check-is-active" {% if is_edit and user.is_active %}checked{% elif not is_edit %}checked{% endif %} {% if is_edit and not can_manage_roles %}disabled{% endif %} style="width: 16px; height: 16px;">
+      <label for="check-is-active" style="font-size: 0.9rem; cursor: pointer;">{{ _('account_active_label') }}</label>
+    </div>
+
+    {% if is_edit %}
+    <!-- 2FA Status & Shortcut -->
+    <div style="padding: 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong style="font-size: 0.9rem; display: block;">{{ _('totp_title') }}:</strong>
+        {% set mfa_active = user.mfa_factors | selectattr("confirmed_at") | list | length > 0 %}
+        {% if mfa_active %}
+          <span class="badge badge-online" style="margin-top: 4px;">{{ _('status_2fa_active') }}</span>
+        {% else %}
+          <span class="badge badge-unknown" style="margin-top: 4px;">{{ _('status_2fa_optional') }}</span>
+        {% endif %}
+      </div>
+      {% if user.id == current_user.id %}
+        <a href="/2fa/setup" class="btn btn-secondary btn-sm">{{ _('manage_2fa_btn') }}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+      <a href="/users" class="btn btn-secondary">{{ _('btn_cancel') }}</a>
+      <button type="submit" class="btn btn-primary" id="btn-save-user">
+        {% if is_edit %}{{ _('btn_save_changes') }}{% else %}{{ _('user_create_title') }}{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('form-user');
+  const saveBtn = document.getElementById('btn-save-user');
+  const isEdit = {{ 'true' if is_edit else 'false' }};
+  const userId = "{{ user.id if is_edit else '' }}";
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    saveBtn.disabled = true;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const themeVal = document.getElementById('select-theme')?.value || 'embervault';
+    const payload = {
+      username: document.getElementById('input-username').value.trim(),
+      display_name: document.getElementById('input-display-name').value.trim() || null,
+      email: document.getElementById('input-email').value.trim() || null,
+      role_id: document.getElementById('select-role').value,
+      must_change_password: document.getElementById('check-must-change').checked,
+      is_active: document.getElementById('check-is-active').checked,
+      theme: themeVal,
+    };
+
+    const pwd = document.getElementById('input-password').value;
+    if (pwd) {
+      payload.password = pwd;
+    }
+
+    try {
+      const url = isEdit ? `/api/ui/users/${userId}` : '/api/ui/users';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const resp = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const res = await resp.json();
+      if (resp.ok) {
+        // If user edited their own profile, sync theme locally
+        const currentUserId = "{{ current_user.id if current_user else '' }}";
+        if (userId === currentUserId || !isEdit) {
+          localStorage.setItem('embervault-user-theme', themeVal);
+          document.documentElement.setAttribute('data-color-theme', themeVal);
+        }
+        window.location.href = '/users';
+      } else {
+        showToast({{ _('err_prefix') | tojson }} + (res.message || {{ _('err_operation_failed') | tojson }}), 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = isEdit ? {{ _('btn_save_changes') | tojson }} : {{ _('user_create_title') | tojson }};
+      }
+    } catch (err) {
+      showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? {{ _('btn_save_changes') | tojson }} : {{ _('user_create_title') | tojson }};
+    }
+  });
+});
+</script>
+{% endblock %}

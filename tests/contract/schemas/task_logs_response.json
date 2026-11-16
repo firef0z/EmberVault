@@ -1,0 +1,76 @@
+{
+  "$defs": {
+    "TaskLogLine": {
+      "additionalProperties": false,
+      "description": "A single masked log line from a task attempt.",
+      "properties": {
+        "seq": {
+          "description": "Monotonic sequence number",
+          "minimum": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "description": "Timestamp of log event (UTC)",
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "level": {
+          "default": "INFO",
+          "description": "Log level: INFO, WARN, ERROR, DEBUG",
+          "title": "Level",
+          "type": "string"
+        },
+        "message": {
+          "description": "Masked log message",
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "ts",
+        "message"
+      ],
+      "title": "TaskLogLine",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Response returned by GET /v1/tasks/{attempt_id}/logs.",
+  "properties": {
+    "attempt_id": {
+      "description": "Attempt UUID",
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "lines": {
+      "description": "Array of log lines",
+      "items": {
+        "$ref": "#/$defs/TaskLogLine"
+      },
+      "title": "Lines",
+      "type": "array"
+    },
+    "next_seq": {
+      "default": 0,
+      "description": "Sequence offset for next poll query",
+      "minimum": 0,
+      "title": "Next Seq",
+      "type": "integer"
+    },
+    "has_more": {
+      "default": false,
+      "description": "Whether additional log lines are pending",
+      "title": "Has More",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "attempt_id"
+  ],
+  "title": "TaskLogsResponse",
+  "type": "object"
+}

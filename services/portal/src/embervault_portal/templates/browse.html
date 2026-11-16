@@ -1,0 +1,609 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ _('portal_page_title') }} - {{ remote_name }} | {{ portal_app_name }}{% endblock %}
+
+{% block header_actions %}
+<div style="display: flex; align-items: center; gap: 14px;">
+  {% if expires_at %}
+  <span style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.15); color: #93c5fd; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.25);" id="expiration-badge" title="{{ _('portal_expires_tooltip') }}">
+    {{ _('portal_expires_label') }} <strong id="expiration-text"></strong>
+  </span>
+  {% endif %}
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span style="font-size: 0.85rem; color: var(--text-secondary);">{{ _('portal_user_label') }} <strong style="color: var(--text-primary);">{{ username }}</strong></span>
+    <form method="POST" action="/share/{{ token }}/logout" style="display: inline;">
+      <button type="submit" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">{{ _('portal_logout_btn') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+  <!-- Toolbar & Breadcrumb -->
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.4);">
+    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 280px;">
+      <button type="button" class="btn btn-secondary" id="btn-parent-dir" style="padding: 6px 10px;" title="{{ _('portal_parent_dir') }}" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      <!-- Breadcrumbs -->
+      <nav id="breadcrumbs" style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; flex-wrap: wrap; color: var(--text-secondary);"></nav>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span id="selection-summary" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+        {{ _('portal_no_selection') }}
+      </span>
+      <button type="button" id="btn-download" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span id="btn-download-text">{{ _('portal_download_btn') }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Toolbar -->
+  <div style="padding: 10px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 16px; background: rgba(15, 23, 42, 0.25);">
+    <div style="position: relative; flex: 1; max-width: 480px; display: flex; align-items: center;">
+      <span style="position: absolute; left: 12px; color: var(--text-muted); display: flex; align-items: center; pointer-events: none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </span>
+      <input
+        type="text"
+        id="portal-search-input"
+        style="width: 100%; padding: 8px 34px 8px 36px; font-size: 0.88rem; background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; outline: none; transition: border-color 0.2s;"
+        placeholder="{{ _('portal_search_placeholder') }}"
+        autocomplete="off"
+      />
+      <button
+        type="button"
+        id="btn-portal-clear-search"
+        style="position: absolute; right: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; padding: 4px; border-radius: 4px; font-size: 1.1rem; line-height: 1;"
+        title="{{ _('portal_clear_search') }}"
+        aria-label="{{ _('portal_clear_search') }}"
+      >
+        &times;
+      </button>
+    </div>
+    <div id="portal-items-count" style="font-size: 0.82rem; color: var(--text-muted); white-space: nowrap;"></div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="browse-loading" style="padding: 48px; text-align: center; color: var(--text-muted);">
+    <div style="display: inline-block; width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;"></div>
+    <div>{{ _('portal_loading') }}</div>
+  </div>
+
+  <!-- Error State -->
+  <div id="browse-error" style="display: none; padding: 24px; text-align: center; color: #f87171;">
+    <p id="browse-error-text"></p>
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-retry" style="margin-top: 12px;">{{ _('portal_retry') }}</button>
+  </div>
+
+  <!-- Empty State -->
+  <div id="browse-empty" style="display: none; padding: 48px; text-align: center; color: var(--text-muted);">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <div>{{ _('portal_empty') }}</div>
+  </div>
+
+  <!-- Items Table -->
+  <div id="table-container" style="display: none; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.2); color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">
+          <th style="width: 44px; padding: 12px 16px; text-align: center;">
+            <input type="checkbox" id="check-all" style="cursor: pointer; width: 16px; height: 16px;" />
+          </th>
+          <th style="padding: 12px 16px;">{{ _('portal_col_name') }}</th>
+          <th style="padding: 12px 16px; width: 140px;">{{ _('portal_col_size') }}</th>
+          <th style="padding: 12px 16px; width: 180px;">{{ _('portal_col_mod_time') }}</th>
+        </tr>
+      </thead>
+      <tbody id="items-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+#portal-search-input:focus {
+  border-color: var(--color-brand) !important;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+tr.item-row {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.15s;
+}
+tr.item-row:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+tr.item-row.selected {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+.clickable-dir {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.clickable-dir:hover {
+  color: var(--color-brand);
+}
+.file-name {
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.breadcrumb-item {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.breadcrumb-item:hover {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+.breadcrumb-item.active {
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: default;
+  text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TOKEN = {{ token | tojson }};
+const RAW_EXPIRES_AT = {{ expires_at | tojson if expires_at else "null" }};
+const I18N = {{ I18N_JSON | safe }};
+
+let currentSubpath = "";
+let currentItems = [];
+const selectedItemsMap = new Map();
+
+function matchesWildcard(name, query) {
+  if (!query) return true;
+  const q = query.trim();
+  if (!q) return true;
+
+  if (q.includes("*")) {
+    const escaped = q.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = "^" + escaped.replace(/\*+/g, ".*") + "$";
+    try {
+      const rx = new RegExp(pattern, "i");
+      return rx.test(name);
+    } catch (e) {
+      return name.toLowerCase().includes(q.toLowerCase());
+    }
+  }
+  return name.toLowerCase().includes(q.toLowerCase());
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0 || bytes === "0") return "0 B";
+  if (bytes == null || isNaN(Number(bytes)) || Number(bytes) < 0) return "-";
+  const num = Number(bytes);
+  if (num === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(num) / Math.log(k));
+  return parseFloat((num / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return "-";
+  try {
+    const cleanStr = String(isoStr).replace(/(\.\d{3})\d+/, '$1');
+    const d = new Date(cleanStr);
+    if (isNaN(d.getTime())) return isoStr;
+    return d.toLocaleString([], { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    return isoStr;
+  }
+}
+
+// Display expiration badge
+if (RAW_EXPIRES_AT) {
+  const expEl = document.getElementById("expiration-text");
+  if (expEl) expEl.textContent = formatDate(RAW_EXPIRES_AT);
+}
+
+function updateBreadcrumbs(subpath) {
+  const container = document.getElementById("breadcrumbs");
+  container.innerHTML = "";
+
+  const rootItem = document.createElement("span");
+  rootItem.className = !subpath ? "breadcrumb-item active" : "breadcrumb-item";
+  rootItem.textContent = "Home";
+  rootItem.addEventListener("click", () => {
+    if (currentSubpath) loadDirectory("");
+  });
+  container.appendChild(rootItem);
+
+  if (!subpath) return;
+
+  const parts = subpath.split("/").filter(Boolean);
+  let accumPath = "";
+  parts.forEach((part, idx) => {
+    accumPath += (accumPath ? "/" : "") + part;
+    const thisPath = accumPath;
+
+    const sep = document.createElement("span");
+    sep.textContent = "/";
+    sep.style.color = "var(--text-muted)";
+    container.appendChild(sep);
+
+    const crumb = document.createElement("span");
+    crumb.className = (idx === parts.length - 1) ? "breadcrumb-item active" : "breadcrumb-item";
+    crumb.textContent = part;
+    if (idx !== parts.length - 1) {
+      crumb.addEventListener("click", () => loadDirectory(thisPath));
+    }
+    container.appendChild(crumb);
+  });
+}
+
+function updateSelectionUI() {
+  const count = selectedItemsMap.size;
+  const summary = document.getElementById("selection-summary");
+  const btnDownload = document.getElementById("btn-download");
+  const checkAll = document.getElementById("check-all");
+
+  if (count === 0) {
+    summary.textContent = I18N.portal_no_selection || "Nessun elemento selezionato";
+    btnDownload.disabled = true;
+  } else if (count === 1) {
+    const item = Array.from(selectedItemsMap.values())[0];
+    const prefix = I18N.portal_one_selected || "1 elemento selezionato";
+    summary.textContent = `${prefix} (${item.name})`;
+    btnDownload.disabled = false;
+  } else {
+    const pattern = I18N.portal_many_selected || "{count} elementi selezionati";
+    summary.textContent = pattern.replace("{count}", count);
+    btnDownload.disabled = false;
+  }
+
+  const visibleCheckboxes = document.querySelectorAll("#items-tbody .item-check");
+  if (visibleCheckboxes.length > 0) {
+    let allSelected = true;
+    let someSelected = false;
+    visibleCheckboxes.forEach(cb => {
+      if (cb.checked) {
+        someSelected = true;
+      } else {
+        allSelected = false;
+      }
+    });
+    checkAll.checked = allSelected;
+    checkAll.indeterminate = (!allSelected && someSelected);
+  } else {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+async function loadDirectory(subpath) {
+  currentSubpath = subpath;
+  selectedItemsMap.clear();
+  updateSelectionUI();
+  updateBreadcrumbs(subpath);
+
+  const searchInput = document.getElementById("portal-search-input");
+  if (searchInput) searchInput.value = "";
+  const clearBtn = document.getElementById("btn-portal-clear-search");
+  if (clearBtn) clearBtn.style.display = "none";
+
+  const btnParent = document.getElementById("btn-parent-dir");
+  btnParent.disabled = !subpath;
+
+  const loading = document.getElementById("browse-loading");
+  const errorDiv = document.getElementById("browse-error");
+  const emptyDiv = document.getElementById("browse-empty");
+  const tableContainer = document.getElementById("table-container");
+  const tbody = document.getElementById("items-tbody");
+  const countEl = document.getElementById("portal-items-count");
+
+  loading.style.display = "block";
+  errorDiv.style.display = "none";
+  emptyDiv.style.display = "none";
+  tableContainer.style.display = "none";
+  tbody.innerHTML = "";
+  if (countEl) countEl.textContent = "";
+
+  try {
+    const url = `/share/${TOKEN}/browse?subpath=${encodeURIComponent(subpath)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    loading.style.display = "none";
+
+    if (!res.ok || data.status === "error") {
+      throw new Error(data.message || "Errore durante il recupero dei file.");
+    }
+
+    const dirs = (data.directories || []).map(d => {
+      if (typeof d === "string") return { name: d, type: "directory", mod_time: null };
+      return {
+        ...d,
+        name: d.name || d.Name || "",
+        mod_time: d.mod_time || d.ModTime || null,
+        type: "directory"
+      };
+    });
+    const files = (data.files || []).map(f => {
+      if (typeof f === "string") return { name: f, type: "file", size: null, mod_time: null };
+      return {
+        ...f,
+        name: f.name || f.Name || "",
+        size: (f.size !== undefined && f.size !== null) ? f.size : ((f.Size !== undefined && f.Size !== null) ? f.Size : null),
+        mod_time: f.mod_time || f.ModTime || null,
+        type: "file"
+      };
+    });
+    currentItems = [...dirs, ...files];
+
+    if (currentItems.length === 0) {
+      emptyDiv.style.display = "block";
+      if (countEl) countEl.textContent = "0 elementi";
+      return;
+    }
+
+    tableContainer.style.display = "block";
+    renderItems();
+  } catch (err) {
+    loading.style.display = "none";
+    errorDiv.style.display = "block";
+    document.getElementById("browse-error-text").textContent = err.message;
+  }
+}
+
+function renderItems() {
+  const searchInput = document.getElementById("portal-search-input");
+  const clearBtn = document.getElementById("btn-portal-clear-search");
+  const query = searchInput ? searchInput.value : "";
+  const isSearching = Boolean(query && query.trim());
+
+  if (clearBtn) {
+    clearBtn.style.display = isSearching ? "block" : "none";
+  }
+
+  const filtered = currentItems.filter(item => matchesWildcard(item.name, query));
+  const dirs = filtered.filter(it => it.type === "directory");
+  const files = filtered.filter(it => it.type === "file");
+
+  const countEl = document.getElementById("portal-items-count");
+  if (countEl) {
+    if (isSearching) {
+      countEl.textContent = `${dirs.length} ${I18N.portal_col_name ? "" : ""}${dirs.length === 1 ? "cartella" : "cartelle"}, ${files.length} file (${currentItems.length} tot)`;
+    } else {
+      countEl.textContent = `${dirs.length} ${dirs.length === 1 ? "cartella" : "cartelle"}, ${files.length} file`;
+    }
+  }
+
+  const tbody = document.getElementById("items-tbody");
+  tbody.innerHTML = "";
+
+  if (filtered.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5; display: inline-block;">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <div>${I18N.portal_no_search_results || "Nessun elemento corrispondente alla ricerca"}</div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    updateSelectionUI();
+    return;
+  }
+
+  filtered.forEach(item => {
+    const isSelected = selectedItemsMap.has(item.name);
+    const tr = document.createElement("tr");
+    tr.className = isSelected ? "item-row selected" : "item-row";
+    tr.id = `row-${item.name}`;
+
+    const isDir = item.type === "directory";
+    const iconSvg = isDir
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+
+    const nameCellHtml = isDir
+      ? `<span class="clickable-dir" data-dir-name="${escapeHtml(item.name)}">${iconSvg} <span>${escapeHtml(item.name)}</span></span>`
+      : `<span class="file-name">${iconSvg} <span>${escapeHtml(item.name)}</span></span>`;
+
+    const sizeStr = isDir ? "-" : formatBytes(item.size);
+    const modStr = formatDate(item.mod_time);
+
+    tr.innerHTML = `
+      <td style="padding: 12px 16px; text-align: center;">
+        <input type="checkbox" class="item-check" data-item-name="${escapeHtml(item.name)}" style="cursor: pointer; width: 16px; height: 16px;" ${isSelected ? "checked" : ""} />
+      </td>
+      <td style="padding: 12px 16px;">${nameCellHtml}</td>
+      <td style="padding: 12px 16px; color: var(--text-secondary); font-family: monospace; font-size: 0.85rem;">${sizeStr}</td>
+      <td style="padding: 12px 16px; color: var(--text-muted); font-size: 0.85rem;">${modStr}</td>
+    `;
+
+    // Directory click to open
+    if (isDir) {
+      const dirSpan = tr.querySelector(".clickable-dir");
+      dirSpan.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const nextSubpath = currentSubpath ? `${currentSubpath}/${item.name}` : item.name;
+        loadDirectory(nextSubpath);
+      });
+    }
+
+    // Checkbox change
+    const chk = tr.querySelector(".item-check");
+    chk.addEventListener("change", (e) => {
+      e.stopPropagation();
+      if (chk.checked) {
+        selectedItemsMap.set(item.name, item);
+        tr.classList.add("selected");
+      } else {
+        selectedItemsMap.delete(item.name);
+        tr.classList.remove("selected");
+      }
+      updateSelectionUI();
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  updateSelectionUI();
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Select All Checkbox
+document.getElementById("check-all").addEventListener("change", (e) => {
+  const isChecked = e.target.checked;
+  const visibleCheckboxes = document.querySelectorAll("#items-tbody .item-check");
+  visibleCheckboxes.forEach(chk => {
+    chk.checked = isChecked;
+    const name = chk.getAttribute("data-item-name");
+    const row = document.getElementById(`row-${name}`);
+    const item = currentItems.find(it => it.name === name);
+    if (isChecked) {
+      if (item) selectedItemsMap.set(name, item);
+      if (row) row.classList.add("selected");
+    } else {
+      selectedItemsMap.delete(name);
+      if (row) row.classList.remove("selected");
+    }
+  });
+  updateSelectionUI();
+});
+
+// Search input listeners
+const searchInput = document.getElementById("portal-search-input");
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    renderItems();
+  });
+}
+const clearSearchBtn = document.getElementById("btn-portal-clear-search");
+if (clearSearchBtn) {
+  clearSearchBtn.addEventListener("click", () => {
+    if (searchInput) {
+      searchInput.value = "";
+      searchInput.focus();
+    }
+    renderItems();
+  });
+}
+
+// Parent Directory Button
+document.getElementById("btn-parent-dir").addEventListener("click", () => {
+  if (!currentSubpath) return;
+  const parts = currentSubpath.split("/").filter(Boolean);
+  parts.pop();
+  loadDirectory(parts.join("/"));
+});
+
+// Retry Button
+document.getElementById("btn-retry").addEventListener("click", () => {
+  loadDirectory(currentSubpath);
+});
+
+// Download Action
+document.getElementById("btn-download").addEventListener("click", async () => {
+  if (selectedItemsMap.size === 0) return;
+
+  const btn = document.getElementById("btn-download");
+  const btnText = document.getElementById("btn-download-text");
+  const origText = btnText.textContent;
+
+  btn.disabled = true;
+  btnText.textContent = I18N.portal_preparing_download || "Preparazione download...";
+
+  const itemsPayload = Array.from(selectedItemsMap.values()).map(it => ({
+    name: it.name,
+    type: it.type,
+  }));
+
+  try {
+    const res = await fetch(`/share/${TOKEN}/download`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subpath: currentSubpath,
+        items: itemsPayload,
+      }),
+    });
+
+    if (!res.ok) {
+      let errMsg = I18N.portal_download_err || "Errore durante il download.";
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.message) errMsg = errJson.message;
+      } catch (e) {}
+      throw new Error(errMsg);
+    }
+
+    // Determine filename from Content-Disposition header
+    let filename = itemsPayload.length === 1 && itemsPayload[0].type === "file"
+      ? itemsPayload[0].name
+      : (itemsPayload.length === 1 ? `${itemsPayload[0].name}.zip` : "download.zip");
+
+    const cd = res.headers.get("Content-Disposition");
+    if (cd && cd.includes("filename=")) {
+      const match = cd.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) filename = match[1];
+    }
+
+    // Direct blob download
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+
+    btn.disabled = false;
+    btnText.textContent = origText;
+  } catch (err) {
+    const errPrefix = I18N.portal_download_err || "Errore download";
+    alert(`${errPrefix}: ${err.message}`);
+    btn.disabled = false;
+    btnText.textContent = origText;
+  }
+});
+
+// Initial Load
+document.addEventListener("DOMContentLoaded", () => {
+  loadDirectory("");
+});
+</script>
+{% endblock %}
+

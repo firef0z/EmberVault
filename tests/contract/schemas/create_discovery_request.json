@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Payload for POST /internal/v1/discoveries.",
+  "properties": {
+    "source_remote_id": {
+      "description": "ID of source remote to inspect",
+      "format": "uuid",
+      "title": "Source Remote Id",
+      "type": "string"
+    },
+    "source_path": {
+      "description": "Path/folder to discover inside the remote",
+      "title": "Source Path",
+      "type": "string"
+    },
+    "assigned_proxy_ids": {
+      "anyOf": [
+        {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional list of proxy IDs permitted to perform the discovery",
+      "title": "Assigned Proxy Ids"
+    }
+  },
+  "required": [
+    "source_remote_id",
+    "source_path"
+  ],
+  "title": "CreateDiscoveryRequest",
+  "type": "object"
+}

@@ -1,0 +1,1576 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('nav_remotes') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('remotes_page_title') }}{% endblock %}
+
+{% block content %}
+<div class="header-actions" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 24px;">
+  {% if has_permission('remote.write') %}
+  <div>
+    <a href="/remotes/new" class="btn btn-primary" id="btn-new-remote" style="display: inline-flex; align-items: center; gap: 8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      {{ _('new_remote') }}
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% macro render_backend_icon(backend_type, size=20) %}
+  {% if backend_type == 'drive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 3.5h6l6 10.5h-6z"></path>
+      <path d="M3 14l3-5.5 6 10.5H6z"></path>
+      <path d="M9 14h12l-3 5.5H6z"></path>
+    </svg>
+  {% elif backend_type == 'smb' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path>
+      <circle cx="8" cy="14" r="1.5"></circle>
+      <circle cx="16" cy="14" r="1.5"></circle>
+      <path d="M9.5 14h5"></path>
+    </svg>
+  {% elif backend_type == 's3' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+      <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path>
+      <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"></path>
+    </svg>
+  {% elif backend_type == 'b2' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.4 2.1c-.3.4-.6.9-.8 1.4-.8 1.8-.4 3.4.6 4.9.9 1.4 1 2.8.4 4.2-.5 1.2-1.5 2-2.8 2.2-1.7.3-3.1-.5-3.9-1.9-.4-.7-.6-1.5-.6-2.4 0-.4-.1-.7-.4-.8-.3-.1-.6.1-.8.4-1 1.6-1.3 3.3-1 5.2.5 3.3 2.8 5.8 6.1 6.5 4.1.8 8.1-1.4 9.4-5.3 1.1-3.3.1-6.4-2.5-8.7-1.4-1.2-2.3-2.7-2.7-4.5-.2-.4-.5-.9-1-1.2z"/>
+    </svg>
+  {% elif backend_type == 'sftp' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="4 17 10 11 4 5"></polyline>
+      <line x1="12" y1="19" x2="20" y2="19"></line>
+    </svg>
+  {% elif backend_type == 'local' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+      <circle cx="12" cy="9" r="4"></circle>
+      <circle cx="12" cy="9" r="1.5"></circle>
+      <path d="M12 9l3 4"></path>
+      <line x1="8" y1="18" x2="8.01" y2="18"></line>
+      <line x1="16" y1="18" x2="16.01" y2="18"></line>
+    </svg>
+  {% elif backend_type == 'webdav' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+  {% elif backend_type == 'azureblob' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m3 19 8.5-15h4.5l-6 15H3z"></path>
+      <path d="m14 10 3.5 6H9l2.5-4h4.5l1 2"></path>
+    </svg>
+  {% elif backend_type == 'onedrive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+      <path d="M6 19a4.5 4.5 0 0 1-1.5-8.7A5 5 0 0 1 13 8"></path>
+    </svg>
+  {% elif backend_type == 'dropbox' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 4L2 7.5l5 3.5 5-3.5L7 4z"></path>
+      <path d="M17 4l-5 3.5 5 3.5 5-3.5L17 4z"></path>
+      <path d="M2 14.5l5 3.5 5-3.5-5-3.5-5 3.5z"></path>
+      <path d="M22 14.5l-5-3.5-5 3.5 5 3.5 5-3.5z"></path>
+      <path d="M7 19.5l5 3.5 5-3.5"></path>
+    </svg>
+  {% elif backend_type == 'box' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+      <path d="m3.3 7 8.7 5 8.7-5"></path>
+      <path d="M12 22V12"></path>
+    </svg>
+  {% elif backend_type == 'ftp' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m17 2 4 4-4 4"></path>
+      <path d="M3 6h18"></path>
+      <path d="m7 22-4-4 4-4"></path>
+      <path d="M21 18H3"></path>
+    </svg>
+  {% elif backend_type == 'google cloud storage' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"></path>
+      <circle cx="12" cy="13" r="2.5"></circle>
+    </svg>
+  {% elif backend_type == 'pcloud' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+      <path d="M10 9h3a2 2 0 0 1 0 4h-3v5"></path>
+    </svg>
+  {% elif backend_type == 'protondrive' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      <path d="M12 8v8"></path>
+      <path d="M9 11l3-3 3 3"></path>
+    </svg>
+  {% elif backend_type == 'mega' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M7 16V8l5 4 5-4v8"></path>
+    </svg>
+  {% elif backend_type == 'swift' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+    </svg>
+  {% elif backend_type in ['opendrive', 'koofr', 'qingstor', 'yandex', 'zoho'] %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 16.2A4.5 4.5 0 0 0 21.5 8a6 6 0 0 0-11.2-2A7 7 0 0 0 2 13a5 5 0 0 0 5 5h13a4.5 4.5 0 0 0 0-1.8Z"></path>
+    </svg>
+  {% elif backend_type == 'http' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+  {% elif backend_type == 'alias' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8"></path>
+      <path d="M9 19.89H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5"></path>
+    </svg>
+  {% elif backend_type == 'crypt' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      <circle cx="12" cy="16" r="1"></circle>
+    </svg>
+  {% elif backend_type == 'compress' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v6"></path>
+      <path d="M12 21v-6"></path>
+      <path d="m8 6 4-3 4 3"></path>
+      <path d="m8 18 4 3 4-3"></path>
+      <rect x="4" y="9" width="16" height="6" rx="2"></rect>
+    </svg>
+  {% elif backend_type == 'chunker' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="2 2"></line>
+      <rect x="2" y="5" width="8" height="14" rx="2"></rect>
+      <rect x="14" y="5" width="8" height="14" rx="2"></rect>
+    </svg>
+  {% elif backend_type == 'union' %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="18" cy="18" r="3"></circle>
+      <circle cx="6" cy="6" r="3"></circle>
+      <path d="M6 21V9a9 9 0 0 0 9 9"></path>
+    </svg>
+  {% else %}
+    <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+    </svg>
+  {% endif %}
+{% endmacro %}
+
+{% if remotes %}
+<div class="content-card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="data-table table-remotes" id="remotes-table">
+        <thead>
+          <tr>
+            <th>{{ _('col_remote_name') }}</th>
+            <th class="col-hide-mobile">{{ _('col_provider_type') }}</th>
+            <th class="col-actions">{{ _('col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in remotes %}
+          <tr id="remote-row-{{ r.entity.id }}">
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="provider-icon-badge" style="background: rgba(255, 107, 0, 0.12); color: var(--color-brand); padding: 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  {{ render_backend_icon(r.entity.backend_type, 20) }}
+                </span>
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    {% if not r.entity.is_enabled %}
+                    <span class="badge badge-offline" style="padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('status_disabled') }}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                      </svg>
+                    </span>
+                    {% else %}
+                    <span class="badge badge-online" style="padding: 3px 6px; display: inline-flex; align-items: center; flex-shrink: 0;" title="{{ _('status_enabled') }}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </span>
+                    {% endif %}
+                    <strong style="color: var(--color-text-primary); font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.entity.name }}</strong>
+                  </div>
+                  <div class="remote-type-mobile" style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                    {{ _(r.spec.label) if r.spec else r.entity.backend_type }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="col-hide-mobile">
+              <span style="font-weight: 500;">{{ _(r.spec.label) if r.spec else r.entity.backend_type }}</span>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted);">
+                {{ _(r.spec.category) if r.spec else _('Storage') }}
+              </div>
+            </td>
+
+            <td class="col-actions">
+              <div class="col-actions-inner">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm btn-test-remote"
+                  data-remote-id="{{ r.entity.id }}"
+                  data-remote-name="{{ r.entity.name }}"
+                  title="{{ _('btn_verify_tooltip') }}"
+                >
+                  <svg class="btn-test-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span class="btn-test-text">{{ _('btn_verify') }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm btn-browse-remote"
+                  data-remote-id="{{ r.entity.id }}"
+                  data-remote-name="{{ r.entity.name }}"
+                  title="{{ _('btn_browse_remote') }}"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span class="btn-browse-text">{{ _('btn_browse_remote') }}</span>
+                </button>
+
+                {% if has_permission('remote.write') %}
+                <a href="/remotes/{{ r.entity.id }}/edit" class="btn btn-secondary btn-sm" title="{{ _('btn_edit_remote') }}" aria-label="{{ _('btn_edit_remote') }}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </a>
+
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm btn-delete-remote"
+                  data-remote-id="{{ r.entity.id }}"
+                  data-remote-name="{{ r.entity.name }}"
+                  title="{{ _('btn_delete_remote') }}"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="content-card">
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+        </svg>
+      </div>
+      <h2 class="empty-state-title">{{ _('empty_remotes_title') }}</h2>
+      <p class="empty-state-desc">
+        {{ _('empty_remotes_desc') }}
+      </p>
+      {% if has_permission('remote.write') %}
+      <div style="margin-top: 16px;">
+        <a href="/remotes/new" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          {{ _('configure_first_remote') }}
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Modal Test Connection Result -->
+<div id="test-result-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;" id="test-modal-title">{{ _('test_connection_result_modal_title') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="test-result-modal" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+    <div class="modal-body" id="test-modal-body" style="padding: 20px 24px;">
+      <div id="test-output"></div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-secondary" data-close-modal="test-result-modal">{{ _('btn_close') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminazione Remote -->
+<div class="modal-backdrop" id="modal-delete-remote">
+  <div class="modal-card" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--color-danger, #ef4444);">{{ _('delete_remote_modal_title') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-delete-remote" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px;">
+      <p style="margin-top: 0; color: var(--text-primary); font-size: 0.95rem;">
+        {{ _('delete_remote_confirm_text') }} <strong id="delete-remote-name"></strong>?
+      </p>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0;">
+        {{ _('delete_remote_warning_text') }}
+      </p>
+      <div id="delete-remote-error" style="display: none; padding: 12px; border-radius: 8px; margin-top: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.9rem;"></div>
+      <input type="hidden" id="delete-remote-id" />
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-delete-remote" id="btn-cancel-delete-remote">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-danger" id="btn-confirm-delete-remote" style="background: var(--color-danger, #ef4444); color: white;">{{ _('btn_delete_confirm') }}</button>
+    </div>
+  </div>
+</div>
+<!-- Modal Sfoglia Remote -->
+<div id="modal-browse-remote" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 860px; width: 100%;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+        <span style="color: var(--color-brand); display: flex; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </span>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('modal_browse_title') }}</h3>
+        <span id="browse-remote-badge" class="badge" style="background: rgba(255, 107, 0, 0.12); color: var(--color-brand); font-weight: 600; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;"></span>
+      </div>
+      <button type="button" class="btn-icon" data-close-modal="modal-browse-remote" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <!-- Path Bar and Navigation Controls -->
+      <div>
+        <label style="font-size: 0.78rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 6px; display: block;">
+          {{ _('browse_current_path_label') }}
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div
+            id="browse-current-path-label"
+            style="flex: 1; padding: 9px 12px; background: var(--color-bg-base); border: 1px solid var(--color-border); border-radius: 8px; font-family: monospace; font-size: 0.88rem; color: var(--color-text-primary); word-break: break-all; min-height: 40px; display: flex; align-items: center;"
+            title="{{ _('browse_current_path_title') }}"
+          >
+            /
+          </div>
+          <button
+            type="button"
+            id="btn-copy-browse-path"
+            class="btn btn-secondary btn-sm"
+            style="display: inline-flex; align-items: center; gap: 6px; height: 40px; flex-shrink: 0;"
+            title="{{ _('browse_copy_path_title') }}"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btn-copy-browse-text">{{ _('btn_copy') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hint text -->
+      <div style="font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.4;">
+        {{ _('browse_download_modal_hint') }}
+      </div>
+
+      <!-- Navigation & Selection Toolbar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 2px;">
+        <button
+          type="button"
+          id="btn-browse-parent"
+          class="btn btn-secondary btn-sm"
+          style="display: inline-flex; align-items: center; gap: 6px;"
+          title="{{ _('browse_parent_level_title') }}"
+          disabled
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span style="font-weight: 500; font-size: 0.82rem;">{{ _('browse_parent_level_text') }}</span>
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; cursor: pointer; user-select: none; color: var(--color-text-primary); font-weight: 500;">
+            <input type="checkbox" id="browse-select-all" style="cursor: pointer; width: 16px; height: 16px;" />
+            <span>{{ _('browse_select_all') }}</span>
+          </label>
+          <span id="browse-items-count" style="font-size: 0.82rem; color: var(--color-text-muted);"></span>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div style="position: relative; display: flex; align-items: center;">
+        <span style="position: absolute; left: 12px; color: var(--color-text-muted); display: flex; align-items: center; pointer-events: none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input
+          type="text"
+          id="browse-search-input"
+          class="form-input"
+          style="width: 100%; padding: 8px 34px 8px 36px; font-size: 0.88rem; border-radius: 8px;"
+          placeholder="{{ _('browse_search_placeholder') }}"
+          autocomplete="off"
+        />
+        <button
+          type="button"
+          id="btn-browse-clear-search"
+          style="position: absolute; right: 10px; background: none; border: none; color: var(--color-text-muted); cursor: pointer; display: none; padding: 4px; border-radius: 4px; font-size: 1.1rem; line-height: 1;"
+          title="{{ _('btn_clear') }}"
+          aria-label="{{ _('btn_clear') }}"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Error box -->
+      <div id="browse-error" style="display: none; padding: 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.88rem;"></div>
+
+      <!-- Items List Container -->
+      <div
+        id="browse-list-container"
+        style="max-height: 400px; min-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-surface);"
+      >
+        <div id="browse-loading" style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+          <span class="btn-spinner" style="margin-bottom: 8px; display: inline-block;"></span>
+          <div>{{ _('browse_loading_text') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer browse-modal-footer" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; flex-wrap: wrap; gap: 12px;">
+      <div id="browse-selection-summary" style="font-size: 0.85rem; color: var(--color-text-secondary); font-weight: 500;">
+        {{ _('browse_no_items_selected') }}
+      </div>
+      <div class="browse-modal-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-browse-remote">{{ _('btn_close') }}</button>
+        {% if (has_permission('share.create') or has_permission('share.write')) and public_portal_enabled %}
+        <button
+          type="button"
+          id="btn-open-create-share"
+          class="btn btn-secondary"
+          style="display: inline-flex; align-items: center; gap: 6px;"
+          title="{{ _('btn_create_public_share') }}"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          <span>{{ _('btn_create_public_share') }}</span>
+        </button>
+        {% endif %}
+        <button
+          type="button"
+          id="btn-browse-download"
+          class="btn btn-primary"
+          style="display: inline-flex; align-items: center; gap: 8px;"
+          disabled
+          title="{{ _('btn_download_tooltip') }}"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span id="btn-browse-download-text">{{ _('btn_download') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crea Link Pubblico -->
+<div id="modal-create-share" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 520px; width: 100%;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--color-brand); display: flex;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+        </span>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('modal_create_share_title') }}</h3>
+      </div>
+      <button type="button" class="btn-icon" data-close-modal="modal-create-share" aria-label="{{ _('btn_close') }}">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 20px 24px;">
+      <!-- Share Form Step -->
+      <div id="share-form-step">
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 4px;">{{ _('share_col_remote') }} & {{ _('share_col_path') }}</label>
+          <div style="display: flex; gap: 8px; align-items: center; background: var(--color-bg-base); border: 1px solid var(--color-border); padding: 9px 12px; border-radius: 8px; font-size: 0.88rem; font-family: monospace; color: var(--color-text-primary);">
+            <span id="share-modal-remote-name" style="font-weight: 600; color: var(--color-text-primary);"></span>:
+            <span id="share-modal-path" style="color: var(--color-brand); font-weight: 600;"></span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label for="share-expires-at" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">{{ _('share_expiration_date_label') }}</label>
+          <input type="datetime-local" id="share-expires-at" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: 6px;" />
+          <small style="color: var(--color-text-muted); display: block; margin-top: 4px;">{{ _('share_default_expiration_hint') }}</small>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label for="share-note" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">{{ _('share_note_label') }}</label>
+          <textarea id="share-note" class="form-input" rows="3" style="width: 100%; padding: 8px 12px; border-radius: 6px; resize: vertical;" placeholder="{{ _('share_note_placeholder') }}"></textarea>
+          <small style="color: var(--color-text-muted); display: block; margin-top: 4px;">{{ _('share_note_hint') }}</small>
+        </div>
+
+        <div id="share-create-error" style="display: none; padding: 10px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.85rem; margin-bottom: 12px;"></div>
+      </div>
+
+      <!-- Share Success Step (after generation) -->
+      <div id="share-success-step" style="display: none;">
+        <div style="padding: 12px; border-radius: 6px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #16a34a; font-weight: 600; margin-bottom: 12px;">
+          {{ _('share_success_title') }}
+        </div>
+        <div style="padding: 10px; border-radius: 6px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); color: #b45309; font-size: 0.85rem; margin-bottom: 16px;">
+          <strong>{{ _('share_success_warning') }}</strong>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <textarea id="share-res-block" readonly class="form-input" rows="4" style="width: 100%; font-family: monospace; font-size: 0.88rem; line-height: 1.5; padding: 10px 12px; background: var(--color-bg-base); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: 6px; resize: none;"></textarea>
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" data-copy-input="share-res-block" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>{{ _('btn_copy') }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-create-share">{{ _('share_modal_close') }}</button>
+      <button type="button" id="btn-submit-create-share" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+        <span id="btn-submit-create-share-text">{{ _('btn_create_public_share') }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+const I18N = {
+  verifying: "{{ _('btn_verifying') }}",
+  testResultTitle: "{{ _('remote_test_result_title') }}",
+  connSuccess: "{{ _('remote_test_success_title') }}",
+  remoteReachable: "{{ _('remote_operational_reachable') }}",
+  testSuccessFolders: "{{ _('remote_test_success_folders') }}",
+  testSuccessSingleFolder: "{{ _('remote_test_success_single_folder') }}",
+  testSuccessNoFolders: "{{ _('remote_test_success_no_folders') }}",
+  invalidConfigPrefix: "{{ _('invalid_config_prefix') }}",
+  errorFieldRequired: "{{ _('error_field_required') }}",
+  errorFieldMustBeInteger: "{{ _('error_field_must_be_integer') }}",
+  latency: "{{ _('latency_label') }}",
+  itemsFound: "{{ _('items_found_label') }}",
+  verificationFailed: "{{ _('remote_test_failed_title') }}",
+  connFailedMsg: "{{ _('browse_connection_failed') }}",
+  networkErrorTitle: "{{ _('network_error_title') }}",
+  testRequestError: "{{ _('test_request_error') }}",
+  close: "{{ _('btn_close') }}",
+  browseRemote: "{{ _('btn_browse_remote') }}",
+  download: "{{ _('btn_download') }}",
+  downloadTooltip: "{{ _('btn_download_tooltip') }}",
+  noItemsSelected: "{{ _('browse_no_items_selected') }}",
+  itemsSelected: "{{ _('browse_items_selected') }}",
+  selectAll: "{{ _('browse_select_all') }}",
+  emptyFolder: "{{ _('browse_empty_folder') }}",
+  noSearchResults: "{{ _('browse_no_search_results') }}",
+  searchPlaceholder: "{{ _('browse_search_placeholder') }}",
+  clear: "{{ _('btn_clear') }}",
+  folders: "{{ _('browse_folders_count') }}",
+  files: "{{ _('browse_files_count') }}",
+  fileBadge: "{{ _('browse_file_badge') }}",
+  openFolder: "{{ _('browse_open_folder') }}",
+  loadingItems: "{{ _('browse_loading_text') }}",
+  errorLoading: "{{ _('browse_error_loading') }}",
+  copy: "{{ _('btn_copy') }}",
+  copied: "{{ _('btn_copied') }}",
+  copyFailed: "{{ _('browse_copy_failed') }}",
+  networkErrorPrefix: "{{ _('remote_network_error_prefix') }}",
+  colName: "{{ _('browse_col_name') }}",
+  colSize: "{{ _('browse_col_size') }}",
+  colModTime: "{{ _('browse_col_mod_time') }}",
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const testModal = document.getElementById("test-result-modal");
+  const testModalTitle = document.getElementById("test-modal-title");
+  const testOutput = document.getElementById("test-output");
+
+  // Test remote button click
+  document.querySelectorAll(".btn-test-remote").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const remoteId = btn.getAttribute("data-remote-id");
+      const remoteName = btn.getAttribute("data-remote-name");
+      const originalHtml = btn.innerHTML;
+
+      // In-button spinner state
+      btn.disabled = true;
+      btn.innerHTML = `
+        <span class="btn-spinner" aria-hidden="true"></span>
+        <span>${I18N.verifying}</span>
+      `;
+
+      try {
+        const res = await fetch("/api/ui/remotes/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({ remote_id: remoteId }),
+        });
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = { status: "error", message: `HTTP ${res.status}: ${res.statusText}` };
+        }
+        
+        testModalTitle.textContent = `${I18N.testResultTitle}: ${remoteName}`;
+        testOutput.style.display = "block";
+
+        if (res.ok && data.status === "ok") {
+          let displayMsg = data.message || I18N.remoteReachable;
+          if (data.items_found !== undefined && data.items_found !== null) {
+            if (data.items_found === 0) displayMsg = I18N.testSuccessNoFolders;
+            else if (data.items_found === 1) displayMsg = I18N.testSuccessSingleFolder;
+            else displayMsg = I18N.testSuccessFolders.replace("{count}", data.items_found);
+          }
+          testOutput.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; border-radius: 8px; padding: 18px; color: #10b981;">
+              <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; font-size: 1.05rem;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                ${I18N.connSuccess}
+              </h4>
+              <p style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">${displayMsg}</p>
+              ${data.latency_ms ? `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);">${I18N.latency}: <strong>${data.latency_ms} ms</strong></div>` : ''}
+              ${data.items_found !== undefined && data.items_found !== null ? `<div style="margin-top: 4px; font-size: 0.85rem; color: var(--text-secondary);">${I18N.itemsFound}: <strong>${data.items_found}</strong></div>` : ''}
+            </div>
+          `;
+        } else {
+          testOutput.innerHTML = `
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 8px; padding: 18px; color: #ef4444;">
+              <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; font-size: 1.05rem;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                ${I18N.verificationFailed}
+              </h4>
+              <p style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">${data.message || data.error || I18N.connFailedMsg}</p>
+            </div>
+          `;
+        }
+        if (typeof window.openModal === "function") {
+          window.openModal("test-result-modal");
+        } else {
+          testModal.classList.add("active");
+        }
+      } catch (err) {
+        testModalTitle.textContent = `${I18N.testResultTitle}: ${remoteName}`;
+        testOutput.style.display = "block";
+        testOutput.innerHTML = `
+          <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 8px; padding: 18px; color: #ef4444;">
+            <h4 style="margin: 0 0 8px 0;">${I18N.networkErrorTitle}</h4>
+            <p style="margin: 0; color: var(--text-primary);">${I18N.testRequestError}: ${err.message || err}</p>
+          </div>
+        `;
+        if (typeof window.openModal === "function") {
+          window.openModal("test-result-modal");
+        } else {
+          testModal.classList.add("active");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    });
+  });
+
+  // Delete remote modal logic
+  
+  // --- Remote Browser & Download Logic ---
+  const modalBrowse = document.getElementById("modal-browse-remote");
+  const browseRemoteBadge = document.getElementById("browse-remote-badge");
+  const browsePathLabel = document.getElementById("browse-current-path-label");
+  const btnCopyBrowsePath = document.getElementById("btn-copy-browse-path");
+  const btnCopyBrowseText = document.getElementById("btn-copy-browse-text");
+  const btnBrowseParent = document.getElementById("btn-browse-parent");
+  const browseListContainer = document.getElementById("browse-list-container");
+  const browseError = document.getElementById("browse-error");
+  const browseItemsCount = document.getElementById("browse-items-count");
+  const browseSelectAll = document.getElementById("browse-select-all");
+  const browseSelectionSummary = document.getElementById("browse-selection-summary");
+  const btnBrowseDownload = document.getElementById("btn-browse-download");
+  const browseSearchInput = document.getElementById("browse-search-input");
+  const btnBrowseClearSearch = document.getElementById("btn-browse-clear-search");
+
+  let currentBrowseRemoteId = "";
+  let currentBrowseRemoteName = "";
+  let browseCurrentPath = "";
+  // Map of selected items: key is item name, value is { name, type: "file" | "directory" }
+  let selectedItemsMap = new Map();
+  let currentFolderItems = [];
+
+  function matchesWildcard(name, query) {
+    if (!query) return true;
+    const q = query.trim();
+    if (!q) return true;
+
+    if (q.includes("*")) {
+      const escaped = q.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = "^" + escaped.replace(/\*+/g, ".*") + "$";
+      try {
+        const rx = new RegExp(pattern, "i");
+        return rx.test(name);
+      } catch (e) {
+        return name.toLowerCase().includes(q.toLowerCase());
+      }
+    }
+    return name.toLowerCase().includes(q.toLowerCase());
+  }
+
+  function getParentPath(path) {
+    if (!path || path === "/" || !path.includes("/")) return "";
+    const parts = path.split("/").filter(Boolean);
+    parts.pop();
+    return parts.join("/");
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0 || bytes === "0") return "0 B";
+    if (bytes == null || isNaN(Number(bytes)) || Number(bytes) < 0) return "-";
+    const num = Number(bytes);
+    if (num === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(num) / Math.log(k));
+    return parseFloat((num / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return "-";
+    try {
+      const cleanStr = String(isoStr).replace(/(\.\d{3})\d+/, '$1');
+      const d = new Date(cleanStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleString([], { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+      return isoStr;
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function updateBrowsePathLabel(path) {
+    if (browsePathLabel) {
+      browsePathLabel.textContent = path ? `/${path}` : "/";
+    }
+  }
+
+  function updateSelectionUI() {
+    const count = selectedItemsMap.size;
+    if (browseSelectionSummary) {
+      if (count === 0) {
+        browseSelectionSummary.textContent = I18N.noItemsSelected;
+      } else {
+        browseSelectionSummary.textContent = I18N.itemsSelected.replace("{count}", count);
+      }
+    }
+    if (btnBrowseDownload) {
+      btnBrowseDownload.disabled = (count === 0);
+    }
+    // Update select-all checkbox state based on visible items
+    const visibleCheckboxes = document.querySelectorAll("#browse-list-container .browse-row-checkbox");
+    const tableCheckAll = document.getElementById("browse-table-check-all");
+    if (visibleCheckboxes.length > 0) {
+      let allSelected = true;
+      let someSelected = false;
+      visibleCheckboxes.forEach(cb => {
+        if (cb.checked) {
+          someSelected = true;
+        } else {
+          allSelected = false;
+        }
+      });
+      if (browseSelectAll) {
+        browseSelectAll.checked = allSelected;
+        browseSelectAll.indeterminate = (!allSelected && someSelected);
+      }
+      if (tableCheckAll) {
+        tableCheckAll.checked = allSelected;
+        tableCheckAll.indeterminate = (!allSelected && someSelected);
+      }
+    } else {
+      if (browseSelectAll) {
+        browseSelectAll.checked = false;
+        browseSelectAll.indeterminate = false;
+      }
+      if (tableCheckAll) {
+        tableCheckAll.checked = false;
+        tableCheckAll.indeterminate = false;
+      }
+    }
+  }
+
+  function renderBrowseItems() {
+    if (!browseListContainer) return;
+
+    const query = browseSearchInput ? browseSearchInput.value : "";
+    const isSearching = Boolean(query && query.trim());
+
+    if (btnBrowseClearSearch) {
+      btnBrowseClearSearch.style.display = isSearching ? "flex" : "none";
+    }
+
+    if (currentFolderItems.length === 0) {
+      browseListContainer.innerHTML = `
+        <div style="padding: 40px; text-align: center; color: var(--color-text-muted); font-size: 0.9rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5; display: inline-block;">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <div>${I18N.emptyFolder}</div>
+        </div>
+      `;
+      if (browseItemsCount) browseItemsCount.textContent = `0 ${I18N.folders}, 0 ${I18N.files}`;
+      updateSelectionUI();
+      return;
+    }
+
+    const filtered = currentFolderItems.filter(item => matchesWildcard(item.name, query));
+    const dirs = filtered.filter(it => it.type === "directory");
+    const files = filtered.filter(it => it.type === "file");
+
+    if (browseItemsCount) {
+      if (isSearching) {
+        browseItemsCount.textContent = `${dirs.length} ${I18N.folders}, ${files.length} ${I18N.files} (${currentFolderItems.length} tot)`;
+      } else {
+        browseItemsCount.textContent = `${dirs.length} ${I18N.folders}, ${files.length} ${I18N.files}`;
+      }
+    }
+
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.textAlign = "left";
+    table.style.fontSize = "0.88rem";
+
+    const thead = document.createElement("thead");
+    thead.style.position = "sticky";
+    thead.style.top = "0";
+    thead.style.background = "var(--color-bg-surface)";
+    thead.style.zIndex = "5";
+    thead.style.borderBottom = "1px solid var(--color-border)";
+    thead.innerHTML = `
+      <tr style="border-bottom: 1px solid var(--color-border); background: rgba(15, 23, 42, 0.04); color: var(--color-text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;">
+        <th style="width: 44px; padding: 10px 14px; text-align: center;">
+          <input type="checkbox" id="browse-table-check-all" style="cursor: pointer; width: 16px; height: 16px;" />
+        </th>
+        <th style="padding: 10px 14px;">${I18N.colName}</th>
+        <th style="padding: 10px 14px; width: 130px; text-align: right;">${I18N.colSize}</th>
+        <th style="padding: 10px 14px; width: 180px;">${I18N.colModTime}</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    if (filtered.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td colspan="4" style="padding: 40px; text-align: center; color: var(--color-text-muted); font-size: 0.9rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5; display: inline-block;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <div>${I18N.noSearchResults || "Nessun elemento corrispondente alla ricerca"}</div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      table.appendChild(tbody);
+      browseListContainer.innerHTML = "";
+      browseListContainer.appendChild(table);
+      updateSelectionUI();
+      return;
+    }
+
+    // 1. Render directories
+    dirs.forEach(dirItem => {
+      const dirName = dirItem.name;
+      const isSelected = selectedItemsMap.has(dirName);
+      const tr = document.createElement("tr");
+      tr.className = isSelected ? "browse-item-folder selected" : "browse-item-folder";
+      tr.style.borderBottom = "1px solid var(--color-border)";
+      tr.style.cursor = "pointer";
+      tr.style.transition = "background-color 0.15s ease";
+      if (isSelected) tr.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+
+      const sizeStr = "-";
+      const modStr = formatDate(dirItem.mod_time);
+
+      tr.innerHTML = `
+        <td style="padding: 9px 14px; text-align: center; vertical-align: middle; width: 44px;">
+          <input type="checkbox" class="browse-row-checkbox" data-name="${escapeHtml(dirName)}" data-type="directory" style="width: 16px; height: 16px; cursor: pointer; display: block; margin: 0 auto;" ${isSelected ? "checked" : ""} />
+        </td>
+        <td style="padding: 9px 14px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <div class="clickable-dir" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; max-width: 100%;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="folder-name-text" style="font-weight: 500; font-size: 0.9rem; color: var(--color-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${escapeHtml(dirName)}">${escapeHtml(dirName)}</span>
+          </div>
+        </td>
+        <td style="padding: 9px 14px; vertical-align: middle; width: 130px; text-align: right; color: var(--color-text-muted); font-family: monospace; font-size: 0.84rem; white-space: nowrap;">${sizeStr}</td>
+        <td style="padding: 9px 14px; vertical-align: middle; width: 180px; color: var(--color-text-muted); font-size: 0.84rem; white-space: nowrap;">${modStr}</td>
+      `;
+
+      const checkbox = tr.querySelector(".browse-row-checkbox");
+      checkbox.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (checkbox.checked) {
+          selectedItemsMap.set(dirName, { name: dirName, type: "directory" });
+          tr.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+          tr.classList.add("selected");
+        } else {
+          selectedItemsMap.delete(dirName);
+          tr.style.backgroundColor = "transparent";
+          tr.classList.remove("selected");
+        }
+        updateSelectionUI();
+      });
+
+      tr.addEventListener("mouseenter", () => {
+        if (!checkbox.checked) tr.style.backgroundColor = "rgba(255, 107, 0, 0.05)";
+      });
+      tr.addEventListener("mouseleave", () => {
+        if (!checkbox.checked) tr.style.backgroundColor = "transparent";
+      });
+
+      const openDir = () => {
+        const nextPath = browseCurrentPath ? `${browseCurrentPath}/${dirName}` : dirName;
+        loadBrowseDirectory(nextPath);
+      };
+
+      tr.addEventListener("click", (e) => {
+        if (e.target.closest(".browse-row-checkbox")) return;
+        openDir();
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    // 2. Render files
+    files.forEach(fileObj => {
+      const fileName = fileObj.name;
+      const isSelected = selectedItemsMap.has(fileName);
+      const tr = document.createElement("tr");
+      tr.className = isSelected ? "browse-item-file selected" : "browse-item-file";
+      tr.style.borderBottom = "1px solid var(--color-border)";
+      tr.style.cursor = "pointer";
+      tr.style.transition = "background-color 0.15s ease";
+      if (isSelected) tr.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+
+      const sizeStr = formatBytes(fileObj.size);
+      const modStr = formatDate(fileObj.mod_time);
+
+      tr.innerHTML = `
+        <td style="padding: 9px 14px; text-align: center; vertical-align: middle; width: 44px;">
+          <input type="checkbox" class="browse-row-checkbox" data-name="${escapeHtml(fileName)}" data-type="file" style="width: 16px; height: 16px; cursor: pointer; display: block; margin: 0 auto;" ${isSelected ? "checked" : ""} />
+        </td>
+        <td style="padding: 9px 14px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <div class="file-name" style="display: inline-flex; align-items: center; gap: 8px; max-width: 100%;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--color-text-muted);">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            <span style="font-size: 0.9rem; color: var(--color-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</span>
+          </div>
+        </td>
+        <td style="padding: 9px 14px; vertical-align: middle; width: 130px; text-align: right; color: var(--color-text-secondary); font-family: monospace; font-size: 0.84rem; white-space: nowrap;">${sizeStr}</td>
+        <td style="padding: 9px 14px; vertical-align: middle; width: 180px; color: var(--color-text-muted); font-size: 0.84rem; white-space: nowrap;">${modStr}</td>
+      `;
+
+      const checkbox = tr.querySelector(".browse-row-checkbox");
+      const toggleFile = () => {
+        checkbox.checked = !checkbox.checked;
+        if (checkbox.checked) {
+          selectedItemsMap.set(fileName, { name: fileName, type: "file" });
+          tr.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+          tr.classList.add("selected");
+        } else {
+          selectedItemsMap.delete(fileName);
+          tr.style.backgroundColor = "transparent";
+          tr.classList.remove("selected");
+        }
+        updateSelectionUI();
+      };
+
+      checkbox.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (checkbox.checked) {
+          selectedItemsMap.set(fileName, { name: fileName, type: "file" });
+          tr.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+          tr.classList.add("selected");
+        } else {
+          selectedItemsMap.delete(fileName);
+          tr.style.backgroundColor = "transparent";
+          tr.classList.remove("selected");
+        }
+        updateSelectionUI();
+      });
+
+      tr.addEventListener("click", (e) => {
+        if (e.target.closest(".browse-row-checkbox")) return;
+        toggleFile();
+      });
+
+      tr.addEventListener("mouseenter", () => {
+        if (!checkbox.checked) tr.style.backgroundColor = "rgba(255, 107, 0, 0.05)";
+      });
+      tr.addEventListener("mouseleave", () => {
+        if (!checkbox.checked) tr.style.backgroundColor = "transparent";
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    browseListContainer.innerHTML = "";
+    browseListContainer.appendChild(table);
+
+    // Bind header check-all
+    const tableCheckAll = document.getElementById("browse-table-check-all");
+    if (tableCheckAll) {
+      tableCheckAll.addEventListener("change", (e) => {
+        const checked = e.target.checked;
+        if (browseSelectAll) browseSelectAll.checked = checked;
+        document.querySelectorAll("#browse-list-container .browse-row-checkbox").forEach(cb => {
+          cb.checked = checked;
+          const name = cb.getAttribute("data-name");
+          const type = cb.getAttribute("data-type");
+          const row = cb.closest(".browse-item-folder, .browse-item-file");
+          if (checked) {
+            selectedItemsMap.set(name, { name, type });
+            if (row) {
+              row.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+              row.classList.add("selected");
+            }
+          } else {
+            selectedItemsMap.delete(name);
+            if (row) {
+              row.style.backgroundColor = "transparent";
+              row.classList.remove("selected");
+            }
+          }
+        });
+        updateSelectionUI();
+      });
+    }
+
+    updateSelectionUI();
+  }
+
+  async function loadBrowseDirectory(path) {
+    browseCurrentPath = path ? path.replace(/^\/+|\/+$/g, "") : "";
+    updateBrowsePathLabel(browseCurrentPath);
+
+    if (btnBrowseParent) {
+      btnBrowseParent.disabled = (browseCurrentPath === "");
+      btnBrowseParent.style.opacity = (browseCurrentPath === "") ? "0.5" : "1";
+      btnBrowseParent.style.cursor = (browseCurrentPath === "") ? "not-allowed" : "pointer";
+    }
+
+    if (browseError) browseError.style.display = "none";
+    if (browseItemsCount) browseItemsCount.textContent = "";
+    selectedItemsMap.clear();
+    currentFolderItems = [];
+    if (browseSearchInput) browseSearchInput.value = "";
+    if (btnBrowseClearSearch) btnBrowseClearSearch.style.display = "none";
+    updateSelectionUI();
+
+    if (browseListContainer) {
+      browseListContainer.innerHTML = `
+        <div style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+          <span class="btn-spinner" style="margin-bottom: 8px; display: inline-block;"></span>
+          <div>${I18N.loadingItems}</div>
+        </div>
+      `;
+    }
+
+    try {
+      const res = await fetch("/api/ui/remotes/browse", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+          remote_id: currentBrowseRemoteId,
+          path: browseCurrentPath,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.status === "error") {
+        if (browseError) {
+          browseError.textContent = data.message || I18N.errorLoading;
+          browseError.style.display = "block";
+        }
+        if (browseListContainer) {
+          browseListContainer.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: #ef4444;">
+              ${data.message || I18N.errorLoading}
+            </div>
+          `;
+        }
+        return;
+      }
+
+      const rawDirs = (data.directory_details && data.directory_details.length > 0)
+        ? data.directory_details
+        : (data.directories || []);
+
+      const dirs = rawDirs.map(d => {
+        if (typeof d === "string") return { name: d, type: "directory", mod_time: null };
+        return {
+          ...d,
+          name: d.name || d.Name || "folder",
+          mod_time: d.mod_time || d.ModTime || null,
+          type: "directory"
+        };
+      });
+
+      const files = (data.files || []).map(f => {
+        if (typeof f === "string") return { name: f, type: "file", size: null, mod_time: null };
+        return {
+          ...f,
+          name: f.name || f.Name || "file",
+          size: (f.size !== undefined && f.size !== null) ? f.size : ((f.Size !== undefined && f.Size !== null) ? f.Size : null),
+          mod_time: f.mod_time || f.ModTime || null,
+          type: "file"
+        };
+      });
+
+      currentFolderItems = [...dirs, ...files];
+
+      renderBrowseItems();
+    } catch (err) {
+      if (browseError) {
+        browseError.textContent = `${I18N.networkErrorPrefix} ${err.message || err}`;
+        browseError.style.display = "block";
+      }
+      if (browseListContainer) {
+        browseListContainer.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: #ef4444;">
+            ${err.message || err}
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Search input listeners
+  if (browseSearchInput) {
+    browseSearchInput.addEventListener("input", () => {
+      renderBrowseItems();
+    });
+  }
+  if (btnBrowseClearSearch) {
+    btnBrowseClearSearch.addEventListener("click", () => {
+      if (browseSearchInput) {
+        browseSearchInput.value = "";
+        browseSearchInput.focus();
+      }
+      renderBrowseItems();
+    });
+  }
+
+  // Open Browse Modal from remote table
+  document.querySelectorAll(".btn-browse-remote").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentBrowseRemoteId = btn.getAttribute("data-remote-id");
+      currentBrowseRemoteName = btn.getAttribute("data-remote-name") || "Remote";
+      if (browseRemoteBadge) {
+        browseRemoteBadge.textContent = currentBrowseRemoteName;
+      }
+      if (browseSearchInput) browseSearchInput.value = "";
+      if (btnBrowseClearSearch) btnBrowseClearSearch.style.display = "none";
+      window.openModal("modal-browse-remote");
+      loadBrowseDirectory("");
+    });
+  });
+
+  // Parent level button
+  if (btnBrowseParent) {
+    btnBrowseParent.addEventListener("click", () => {
+      if (!browseCurrentPath) return;
+      const parentPath = getParentPath(browseCurrentPath);
+      loadBrowseDirectory(parentPath);
+    });
+  }
+
+  // Copy path
+  if (btnCopyBrowsePath) {
+    btnCopyBrowsePath.addEventListener("click", async () => {
+      const fullPathToCopy = browseCurrentPath ? `/${browseCurrentPath}` : "/";
+      try {
+        await navigator.clipboard.writeText(fullPathToCopy);
+        if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copied;
+        setTimeout(() => {
+          if (btnCopyBrowseText) btnCopyBrowseText.textContent = I18N.copy;
+        }, 1800);
+      } catch {
+        showToast(I18N.copyFailed, "error");
+      }
+    });
+  }
+
+  // Select all toggle
+  if (browseSelectAll) {
+    browseSelectAll.addEventListener("change", () => {
+      const checked = browseSelectAll.checked;
+      const tableCheckAll = document.getElementById("browse-table-check-all");
+      if (tableCheckAll) tableCheckAll.checked = checked;
+      document.querySelectorAll("#browse-list-container .browse-row-checkbox").forEach(cb => {
+        cb.checked = checked;
+        const name = cb.getAttribute("data-name");
+        const type = cb.getAttribute("data-type");
+        const row = cb.closest(".browse-item-folder, .browse-item-file");
+        if (checked) {
+          selectedItemsMap.set(name, { name, type });
+          if (row) {
+            row.style.backgroundColor = "rgba(255, 107, 0, 0.08)";
+            row.classList.add("selected");
+          }
+        } else {
+          selectedItemsMap.delete(name);
+          if (row) {
+            row.style.backgroundColor = "transparent";
+            row.classList.remove("selected");
+          }
+        }
+      });
+      updateSelectionUI();
+    });
+  }
+
+  // Trigger download via hidden form post
+  if (btnBrowseDownload) {
+    btnBrowseDownload.addEventListener("click", () => {
+      if (selectedItemsMap.size === 0 || !currentBrowseRemoteId) return;
+
+      const itemsArray = Array.from(selectedItemsMap.values());
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/api/ui/remotes/download";
+      form.style.display = "none";
+
+      const csrfInput = document.createElement("input");
+      csrfInput.type = "hidden";
+      csrfInput.name = "csrf_token";
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+
+      const remoteInput = document.createElement("input");
+      remoteInput.type = "hidden";
+      remoteInput.name = "remote_id";
+      remoteInput.value = currentBrowseRemoteId;
+      form.appendChild(remoteInput);
+
+      const pathInput = document.createElement("input");
+      pathInput.type = "hidden";
+      pathInput.name = "base_path";
+      pathInput.value = browseCurrentPath;
+      form.appendChild(pathInput);
+
+      const itemsInput = document.createElement("input");
+      itemsInput.type = "hidden";
+      itemsInput.name = "items";
+      itemsInput.value = JSON.stringify(itemsArray);
+      form.appendChild(itemsInput);
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+
+      showToast("Download avviato...", "info");
+    });
+  }
+
+  const deleteModal = document.getElementById("modal-delete-remote");
+  const deleteNameSpan = document.getElementById("delete-remote-name");
+  const deleteErrorDiv = document.getElementById("delete-remote-error");
+  const deleteIdInput = document.getElementById("delete-remote-id");
+  const btnConfirmDelete = document.getElementById("btn-confirm-delete-remote");
+  const btnCancelDelete = document.getElementById("btn-cancel-delete-remote");
+
+  const originalDeleteText = btnConfirmDelete ? btnConfirmDelete.textContent.trim() : "";
+  function resetRemoteDeleteModal() {
+    if (btnConfirmDelete) {
+      btnConfirmDelete.disabled = false;
+      btnConfirmDelete.textContent = originalDeleteText;
+    }
+    if (deleteErrorDiv) {
+      deleteErrorDiv.style.display = "none";
+      deleteErrorDiv.textContent = "";
+    }
+  }
+
+  document.querySelectorAll(".btn-delete-remote").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const remoteId = btn.getAttribute("data-remote-id");
+      const remoteName = btn.getAttribute("data-remote-name");
+
+      if (deleteIdInput) deleteIdInput.value = remoteId;
+      if (deleteNameSpan) deleteNameSpan.textContent = remoteName;
+      resetRemoteDeleteModal();
+      window.openModal("modal-delete-remote");
+    });
+  });
+
+  if (btnCancelDelete) {
+    btnCancelDelete.addEventListener("click", () => {
+      window.closeModal("modal-delete-remote");
+      resetRemoteDeleteModal();
+    });
+  }
+
+  if (deleteModal) {
+    deleteModal.addEventListener("click", (e) => {
+      if (e.target === deleteModal) {
+        window.closeModal("modal-delete-remote");
+        resetRemoteDeleteModal();
+      }
+    });
+  }
+
+  if (btnConfirmDelete) {
+    btnConfirmDelete.addEventListener("click", async () => {
+      const remoteId = deleteIdInput ? deleteIdInput.value : "";
+      const remoteName = deleteNameSpan ? deleteNameSpan.textContent : "Remote";
+      if (!remoteId) return;
+
+      btnConfirmDelete.disabled = true;
+      btnConfirmDelete.textContent = {{ _('status_deleting_ellipsis') | tojson }};
+
+      try {
+        const res = await fetch(`/api/ui/remotes/${remoteId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.closeModal("modal-delete-remote");
+          const row = document.getElementById(`remote-row-${remoteId}`);
+          if (row) row.remove();
+          showToast(({{ _('remote_deleted_toast') | tojson }}).replace('{name}', remoteName), "success");
+          resetRemoteDeleteModal();
+          // If table empty, reload to show empty state
+          if (document.querySelectorAll("#remotes-table tbody tr").length === 0) {
+            setTimeout(() => window.location.reload(), 600);
+          }
+        } else {
+          const errMsg = data.message || data.error || {{ _('err_deleting_generic') | tojson }};
+          if (deleteErrorDiv) {
+            deleteErrorDiv.style.display = "block";
+            deleteErrorDiv.textContent = errMsg;
+          }
+          showToast(errMsg, "error");
+          btnConfirmDelete.disabled = false;
+          btnConfirmDelete.textContent = originalDeleteText;
+        }
+      } catch (err) {
+        const errMsg = {{ _('err_network_prefix') | tojson }} + (err.message || err);
+        if (deleteErrorDiv) {
+          deleteErrorDiv.style.display = "block";
+          deleteErrorDiv.textContent = errMsg;
+        }
+        showToast(errMsg, "error");
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.textContent = originalDeleteText;
+      }
+    });
+  }
+
+  // Create Public Share Logic
+  const btnOpenCreateShare = document.getElementById("btn-open-create-share");
+  const modalCreateShare = document.getElementById("modal-create-share");
+  const btnSubmitCreateShare = document.getElementById("btn-submit-create-share");
+  const btnSubmitCreateShareText = document.getElementById("btn-submit-create-share-text");
+  const shareFormStep = document.getElementById("share-form-step");
+  const shareSuccessStep = document.getElementById("share-success-step");
+  const shareCreateError = document.getElementById("share-create-error");
+
+  document.querySelectorAll("[data-copy-input]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const inputId = btn.getAttribute("data-copy-input");
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      const text = el.value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast({{ _('btn_copied') | tojson }}, "success");
+        }).catch(() => fallbackCopyInput(text));
+      } else {
+        fallbackCopyInput(text);
+      }
+    });
+  });
+
+  function fallbackCopyInput(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+      showToast({{ _('btn_copied') | tojson }}, "success");
+    } catch (_) {}
+    document.body.removeChild(ta);
+  }
+
+  if (btnOpenCreateShare) {
+    btnOpenCreateShare.addEventListener("click", () => {
+      if (!currentBrowseRemoteId) return;
+
+      const remoteNameEl = document.getElementById("share-modal-remote-name");
+      if (remoteNameEl) remoteNameEl.textContent = currentBrowseRemoteName || "Remote";
+
+      const pathEl = document.getElementById("share-modal-path");
+      if (pathEl) pathEl.textContent = browseCurrentPath ? `/${browseCurrentPath}` : "/";
+
+      // Set default expiration to 72 hours from now
+      const defaultExp = new Date(Date.now() + 72 * 3600 * 1000);
+      const localIso = new Date(defaultExp.getTime() - defaultExp.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      const expiresAtInput = document.getElementById("share-expires-at");
+      if (expiresAtInput) expiresAtInput.value = localIso;
+
+      const noteInput = document.getElementById("share-note");
+      if (noteInput) noteInput.value = "";
+
+      if (shareCreateError) shareCreateError.style.display = "none";
+      if (shareFormStep) shareFormStep.style.display = "block";
+      if (shareSuccessStep) shareSuccessStep.style.display = "none";
+      if (btnSubmitCreateShare) {
+        btnSubmitCreateShare.style.display = "inline-flex";
+        btnSubmitCreateShare.disabled = false;
+        if (btnSubmitCreateShareText) {
+          btnSubmitCreateShareText.textContent = {{ _('btn_create_public_share') | tojson }};
+        }
+      }
+
+      window.openModal("modal-create-share");
+    });
+  }
+
+  if (btnSubmitCreateShare) {
+    btnSubmitCreateShare.addEventListener("click", async () => {
+      if (!currentBrowseRemoteId) return;
+      const rawExpiresAt = document.getElementById("share-expires-at").value;
+      const note = document.getElementById("share-note").value.trim();
+
+      if (!rawExpiresAt) {
+        if (shareCreateError) {
+          shareCreateError.textContent = "Data di scadenza obbligatoria.";
+          shareCreateError.style.display = "block";
+        }
+        return;
+      }
+
+      const expiresIso = new Date(rawExpiresAt).toISOString();
+      if (new Date(expiresIso) <= new Date()) {
+        if (shareCreateError) {
+          shareCreateError.textContent = "La data di scadenza deve essere nel futuro.";
+          shareCreateError.style.display = "block";
+        }
+        return;
+      }
+
+      btnSubmitCreateShare.disabled = true;
+      btnSubmitCreateShareText.textContent = {{ _('share_creating') | tojson }};
+      if (shareCreateError) shareCreateError.style.display = "none";
+
+      try {
+        const res = await fetch("/api/ui/public-shares", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+          body: JSON.stringify({
+            remote_id: currentBrowseRemoteId,
+            base_path: browseCurrentPath,
+            expires_at: expiresIso,
+            note: note,
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.status !== "ok") {
+          throw new Error(data.message || "Errore durante la creazione del link.");
+        }
+
+        const s = data.share;
+        const resBlock = document.getElementById("share-res-block");
+        if (resBlock) {
+          resBlock.value = `URL: ${s.url}\nUsername: ${s.username}\nPassword: ${s.password}`;
+        }
+
+        shareFormStep.style.display = "none";
+        shareSuccessStep.style.display = "block";
+        btnSubmitCreateShare.style.display = "none";
+      } catch (err) {
+        if (shareCreateError) {
+          shareCreateError.textContent = err.message || "Errore di rete.";
+          shareCreateError.style.display = "block";
+        }
+        btnSubmitCreateShare.disabled = false;
+        btnSubmitCreateShareText.textContent = {{ _('btn_create_public_share') | tojson }};
+      }
+    });
+  }
+
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 14" width="54" height="14">
+  <defs>
+    <!-- Inactive Gumdrop Gradient -->
+    <radialGradient id="grayGel" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#e2e2e6"/>
+      <stop offset="70%" stop-color="#cacac0"/>
+      <stop offset="100%" stop-color="#9a9a92"/>
+    </radialGradient>
+    <linearGradient id="specularGray" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+
+  <g opacity="0.85">
+    <circle cx="7" cy="7" r="5.75" fill="url(#grayGel)" stroke="#8e8e93" stroke-width="0.75"/>
+    <ellipse cx="7" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularGray)"/>
+  </g>
+  <g opacity="0.85">
+    <circle cx="25" cy="7" r="5.75" fill="url(#grayGel)" stroke="#8e8e93" stroke-width="0.75"/>
+    <ellipse cx="25" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularGray)"/>
+  </g>
+  <g opacity="0.85">
+    <circle cx="43" cy="7" r="5.75" fill="url(#grayGel)" stroke="#8e8e93" stroke-width="0.75"/>
+    <ellipse cx="43" cy="4.5" rx="3.5" ry="1.75" fill="url(#specularGray)"/>
+  </g>
+</svg>
+

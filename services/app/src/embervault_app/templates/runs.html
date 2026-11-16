@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('runs_page_title') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('runs_page_title') }}{% endblock %}
+
+{% block content %}
+<div class="header-actions" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <button type="button" class="btn btn-secondary btn-sm" data-action="reload" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+      </svg>
+      {{ _('btn_refresh') }}
+    </button>
+  </div>
+</div>
+
+<div class="content-card">
+  <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 18px 24px;">
+    <h2 class="card-title" style="display: flex; align-items: center; gap: 8px; font-size: 1.15rem; margin: 0;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span>{{ _('all_runs') }}</span>
+    </h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table" id="table-runs">
+      <thead>
+        <tr>
+          <th>{{ _('col_job_name') }}</th>
+          <th>{{ _('col_run_status') }}</th>
+          <th class="col-hide-md">{{ _('col_trigger') }}</th>
+          <th class="col-hide-sm">{{ _('col_tasks_succeeded') }}</th>
+          <th class="col-hide-lg">{{ _('col_transferred_data') }}</th>
+          <th class="col-hide-xl">{{ _('col_start_duration') }}</th>
+          <th style="text-align: right;">{{ _('col_actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if runs %}
+          {% for r in runs %}
+          <tr id="run-row-{{ r.id }}">
+            <td>
+              <div>
+                <strong style="color: var(--color-text-primary); font-size: 0.95rem;">
+                  {{ r.job.name if r.job else r.job_snapshot.get('name', 'Job') }}
+                </strong>
+                <div style="font-size: 0.78rem; color: var(--color-text-muted); margin-top: 2px;">
+                  Run ID: <code>{{ r.id|string|truncate(16, True, '') }}</code>
+                </div>
+                {% if r.error_message %}
+                <div style="font-size: 0.78rem; color: #fca5a5; margin-top: 4px; max-width: 420px;">
+                  {{ r.error_message }}
+                </div>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              {% if r.status == 'succeeded' %}
+              <span class="badge badge-online">{{ _('run_status_succeeded') }}</span>
+              {% elif r.status == 'running' %}
+              <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);">
+                <span class="badge-dot" style="background: #3b82f6;"></span> {{ _('run_status_running') }}
+              </span>
+              {% elif r.status == 'partially_failed' %}
+                {% if r.tasks_failed > 0 %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45);">{{ _('run_status_partially_failed_errors') }}</span>
+                {% else %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);">{{ _('run_status_partially_failed_warnings') }}</span>
+                {% endif %}
+              {% elif r.status == 'failed' %}
+              <span class="badge" style="background: rgba(127, 29, 29, 0.45); color: #fca5a5; border: 1px solid rgba(220, 38, 38, 0.65);">{{ _('run_status_failed') }}</span>
+              {% elif r.status == 'cancelled' %}
+              <span class="badge badge-unknown">{{ _('run_status_cancelled') }}</span>
+              {% else %}
+              <span class="badge badge-unknown">{{ r.status }}</span>
+              {% endif %}
+            </td>
+            <td class="col-hide-md">
+              <span style="font-size: 0.85rem; font-weight: 500; text-transform: uppercase;">{{ r.trigger }}</span>
+            </td>
+            <td class="col-hide-sm">
+              <div style="font-weight: 600; font-size: 0.9rem;">
+                {{ r.tasks_succeeded }} / {{ r.planned_task_count }}
+              </div>
+              {% if r.tasks_failed > 0 %}
+              <div style="font-size: 0.75rem; color: #ef4444; margin-top: 2px;">
+                {{ r.tasks_failed }} {{ _('tasks_failed_plural') if r.tasks_failed != 1 else _('tasks_failed_singular') }}
+              </div>
+              {% endif %}
+            </td>
+            <td class="col-hide-lg">
+              <div style="font-size: 0.88rem; color: var(--color-text-primary);">
+                {% if r.bytes_transferred > 1073741824 %}
+                  {{ (r.bytes_transferred / 1073741824)|round(2) }} GiB
+                {% elif r.bytes_transferred > 1048576 %}
+                  {{ (r.bytes_transferred / 1048576)|round(2) }} MiB
+                {% elif r.bytes_transferred > 1024 %}
+                  {{ (r.bytes_transferred / 1024)|round(2) }} KiB
+                {% else %}
+                  {{ r.bytes_transferred }} B
+                {% endif %}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">
+                {{ r.files_transferred }} {{ _('files_count') }}
+              </div>
+            </td>
+            <td class="col-hide-xl">
+              <div style="font-size: 0.85rem;">
+                <span class="user-datetime" data-utc="{{ r.started_at|utc_iso }}" data-format="short">
+                  {{ r.started_at|user_dt('%d/%m/%Y %H:%M') if r.started_at else _('waiting_check') }}
+                </span>
+              </div>
+              {% if r.finished_at and r.started_at %}
+              <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">
+                {{ _('duration_label') }}: {{ ((r.finished_at - r.started_at).total_seconds())|round|int }}s
+              </div>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="/runs/{{ r.id }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                <span>{{ _('view_details') }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--color-text-secondary); padding: 48px;">
+              <div class="empty-state">
+                <div class="empty-state-icon" style="background: rgba(255, 107, 0, 0.1); color: var(--color-brand); width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div class="empty-state-title" style="font-size: 1.15rem; font-weight: 600;">{{ _('empty_runs_title') }}</div>
+                <div class="empty-state-desc" style="color: var(--color-text-secondary); margin-top: 6px;">
+                  {{ _('empty_runs_desc') }}
+                </div>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

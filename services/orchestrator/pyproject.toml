@@ -1,0 +1,19 @@
+[project]
+name = "embervault-orchestrator"
+version = "1.0.0"
+description = "EmberVault scheduler, planner, and task orchestrator"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "embervault-common",
+    "embervault-db",
+    "flask>=3.0.0",
+    "gunicorn>=23.0.0",
+    "apscheduler>=3.10.4",
+    "requests>=2.32.0",
+    "urllib3>=2.2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

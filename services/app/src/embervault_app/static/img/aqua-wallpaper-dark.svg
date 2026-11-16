@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#030916"/>
+      <stop offset="45%" stop-color="#06142c"/>
+      <stop offset="100%" stop-color="#040c1c"/>
+    </linearGradient>
+
+    <radialGradient id="sunGlow" cx="68%" cy="32%" r="55%">
+      <stop offset="0%" stop-color="#286bc9" stop-opacity="0.34"/>
+      <stop offset="45%" stop-color="#133a78" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#030916" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="waveGrad1" x1="0%" y1="20%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#0b2856"/>
+      <stop offset="45%" stop-color="#174d9e"/>
+      <stop offset="100%" stop-color="#081e42"/>
+    </linearGradient>
+
+    <linearGradient id="waveGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#061836"/>
+      <stop offset="50%" stop-color="#103870"/>
+      <stop offset="100%" stop-color="#051329"/>
+    </linearGradient>
+
+    <linearGradient id="deepArc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a2550"/>
+      <stop offset="100%" stop-color="#1a53a3"/>
+    </linearGradient>
+
+    <filter id="glow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1200" fill="url(#bgGrad)"/>
+  <rect width="1920" height="1200" fill="url(#sunGlow)"/>
+
+  <path d="M-100,1300 Q400,650 1100,850 T2100,600 L2100,1300 Z" fill="url(#waveGrad1)" filter="url(#glow)" opacity="0.72"/>
+  <path d="M-100,950 C300,950 650,450 1200,480 C1650,500 1850,250 2050,150 L2050,1300 L-100,1300 Z" fill="url(#waveGrad2)"/>
+  <path d="M-100,750 C450,750 800,280 1350,320 C1750,350 1950,180 2050,80 L2050,550 C1900,650 1650,750 1300,700 C750,620 400,1050 -100,1050 Z" fill="url(#waveGrad1)" opacity="0.85"/>
+  <path d="M-50,740 C500,730 820,270 1360,310 C1760,340 1960,170 2050,70" fill="none" stroke="#4a9df2" stroke-width="2.5" stroke-opacity="0.28" filter="url(#glow)"/>
+  <path d="M150,1300 C600,1100 950,580 1500,520 C1850,480 1980,380 2050,300 L2050,700 C1900,850 1600,920 1250,900 C800,880 500,1300 150,1300 Z" fill="url(#deepArc)" opacity="0.52"/>
+  <path d="M200,1300 C650,1090 970,570 1510,510 C1860,470 1990,370 2050,290" fill="none" stroke="#3c90e6" stroke-width="2" stroke-opacity="0.26"/>
+</svg>

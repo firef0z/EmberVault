@@ -1,0 +1,801 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('nav_users') }} | {{ app_name }}{% endblock %}
+{% block page_title %}{{ _('nav_users') }}{% endblock %}
+
+{% block content %}
+<!-- Tab Switcher Navigazione -->
+<div class="tabs-nav" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+  <button type="button" class="tab-btn active" data-tab="tab-users" id="btn-tab-users" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none; background: var(--bg-surface); color: var(--text-primary); transition: all 0.2s;">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>{{ _('tab_user_accounts') }}</span>
+    <span class="badge badge-secondary" style="font-size: 0.72rem; padding: 2px 7px;">{{ users|length }}</span>
+  </button>
+  <button type="button" class="tab-btn" data-tab="tab-roles" id="btn-tab-roles" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: all 0.2s;">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+    <span>{{ _('roles_matrix') }}</span>
+    <span class="badge badge-secondary" style="font-size: 0.72rem; padding: 2px 7px;">{{ matrix_data.roles|length }}</span>
+  </button>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 1: GESTIONE UTENTI                     -->
+<!-- ========================================== -->
+<div class="tab-pane active" id="tab-users">
+  <div class="content-card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <h2 class="card-title" style="margin: 0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>{{ _('user_accounts_roles_title') }}</span>
+      </h2>
+      {% if can_manage %}
+      <a href="/users/new" class="btn btn-primary" id="btn-create-user">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>{{ _('new_user') }}</span>
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table" id="table-users">
+        <thead>
+          <tr>
+            <th>{{ _('col_user') }}</th>
+            <th class="col-hide-sm">{{ _('col_display_name') }}</th>
+            <th class="col-hide-md">{{ _('col_email') }}</th>
+            <th>{{ _('col_role') }}</th>
+            <th class="col-hide-xl">{{ _('col_auth_source') }}</th>
+            <th class="col-hide-lg">{{ _('col_2fa') }}</th>
+            <th>{{ _('col_user_status') }}</th>
+            <th class="col-hide-lg">{{ _('col_last_login') }}</th>
+            {% if can_manage or current_user.role.name|lower in ('operator', 'operatore') %}
+            <th style="text-align: right;">{{ _('col_actions') }}</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% if users %}
+            {% for u in users %}
+            <tr id="user-row-{{ u.id }}">
+              <td>
+                <strong>{{ u.username }}</strong>
+                {% if u.must_change_password %}
+                  <span class="badge badge-cooldown" style="font-size: 0.68rem; margin-left: 4px;" title="{{ _('users_pwd_reset_required_title') }}">Pwd Reset</span>
+                {% endif %}
+              </td>
+              <td class="col-hide-sm">{{ u.display_name or '—' }}</td>
+              <td class="col-hide-md">{{ u.email or '—' }}</td>
+              <td>
+                {% if u.role.name|lower in ('admin', 'administrator') %}
+                  <span class="badge badge-online" style="font-weight: 600;">{{ _(u.role.name) }}</span>
+                {% elif u.role.name|lower == 'operator' %}
+                  <span class="badge badge-cooldown">{{ _(u.role.name) }}</span>
+                {% elif u.role.name|lower == 'viewer' %}
+                  <span class="badge badge-unknown">{{ _(u.role.name) }}</span>
+                {% else %}
+                  <span class="badge badge-secondary" style="border: 1px solid var(--accent); color: var(--accent);">{{ _(u.role.name) }}</span>
+                {% endif %}
+              </td>
+              <td class="col-hide-xl"><code>{{ u.auth_source }}</code></td>
+              <td class="col-hide-lg">
+                {% set mfa_active = u.mfa_factors | selectattr("confirmed_at") | list | length > 0 %}
+                {% if mfa_active %}
+                  <span class="badge badge-online" style="font-size: 0.75rem;">{{ _('status_2fa_active') }}</span>
+                {% elif u.role.enforce_2fa or ('auth.enforce_2fa' in u.role.permissions|map(attribute='code')|list) %}
+                  <span class="badge badge-offline" style="font-size: 0.75rem;" title="2FA">{{ _('status_2fa_enforced') }}</span>
+                {% else %}
+                  <span class="badge badge-unknown" style="font-size: 0.75rem;">{{ _('status_2fa_optional') }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.is_active %}
+                  <span class="badge badge-online">{{ _('status_active') }}</span>
+                {% else %}
+                  <span class="badge badge-offline">{{ _('status_disabled') }}</span>
+                {% endif %}
+              </td>
+              <td class="col-hide-lg" style="font-size: 0.85rem; color: var(--text-secondary);">
+                {% if u.last_login_at %}
+                  <span class="user-datetime" data-utc="{{ u.last_login_at|utc_iso }}" data-format="short">
+                    {{ u.last_login_at|user_dt('%d/%m/%Y %H:%M') }}
+                  </span>
+                {% else %}
+                  {{ _('status_never') }}
+                {% endif %}
+              </td>
+              {% if can_manage or (current_user.role.name|lower == 'operator' and u.id == current_user.id) %}
+              <td style="text-align: right;">
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <a href="/users/{{ u.id }}/edit" class="btn btn-secondary btn-sm btn-edit-user" title="{{ _('btn_edit') }}" aria-label="{{ _('btn_edit') }}" id="btn-edit-user-{{ u.username }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </a>
+                  {% if can_manage and u.id != current_user.id %}
+                  <button type="button" class="btn btn-danger btn-sm btn-delete-user" data-id="{{ u.id }}" data-username="{{ u.username }}" id="btn-del-user-{{ u.username }}" title="{{ _('btn_delete') }}" aria-label="{{ _('btn_delete') }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                  {% endif %}
+                </div>
+              </td>
+              {% elif can_manage or current_user.role.name|lower == 'operator' %}
+              <td></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 48px;">
+                {{ _('no_users_registered') }}
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 2: MATRICE RUOLI & PERMESSI           -->
+<!-- ========================================== -->
+<div class="tab-pane" id="tab-roles" style="display: none;">
+  <!-- Card Unificata Toolbar & Matrice Ruoli x Permessi -->
+  <div class="content-card" style="padding: 0; overflow: hidden;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--border-color);">
+      <div>
+        <h2 class="card-title" style="margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+          <span>{{ _('roles_matrix_title') }}</span>
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0; line-height: 1.4;">
+          {{ _('roles_matrix_subtitle') }}
+        </p>
+      </div>
+      <div class="matrix-actions-toolbar" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="matrix-search-box" style="position: relative; display: flex; align-items: center; flex: 1 1 200px; min-width: 140px; max-width: 260px;">
+          <input
+            type="text"
+            id="matrix-search"
+            class="form-control"
+            placeholder="{{ _('filter_permissions_placeholder') }}"
+            style="padding-left: 36px !important; padding-right: 12px !important; font-size: 0.85rem; height: 38px; width: 100%;"
+          />
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; pointer-events: none; color: var(--text-secondary);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        {% if can_manage %}
+        <button type="button" class="btn btn-primary" id="btn-open-create-role-modal" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>{{ _('new_role') }}</span>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto;">
+      <table class="data-table" id="table-permissions-matrix" style="border-collapse: separate; border-spacing: 0;">
+        <thead style="position: sticky; top: 0; z-index: 10; background: var(--bg-secondary);">
+          <tr>
+            <th style="min-width: 320px; width: 35%; background: var(--bg-secondary); border-bottom: 2px solid var(--border-color); vertical-align: bottom; padding: 14px 16px;">
+              <span style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">{{ _('col_perm_scope') }}</span>
+            </th>
+            {% for r in matrix_data.roles %}
+            <th style="text-align: center; min-width: 140px; background: var(--bg-secondary); border-bottom: 2px solid var(--border-color); padding: 12px 10px; border-left: 1px solid var(--border-color);">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <strong style="font-size: 0.95rem; color: var(--text-primary);">{{ _(r.name) }}</strong>
+                  {% if not r.is_system and can_manage %}
+                  <div style="display: flex; gap: 4px;">
+                    <button
+                      type="button"
+                      class="btn-icon btn-edit-role"
+                      data-role-id="{{ r.id }}"
+                      data-role-name="{{ r.name }}"
+                      data-role-desc="{{ r.description }}"
+                      title="{{ _('edit_role_title') }}"
+                      style="padding: 2px; width: 22px; height: 22px; border: none; background: transparent; cursor: pointer; color: var(--text-secondary);"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon btn-delete-role"
+                      data-role-id="{{ r.id }}"
+                      data-role-name="{{ r.name }}"
+                      data-users-count="{{ r.users_count }}"
+                      title="{{ _('delete_role_title') }}"
+                      style="padding: 2px; width: 22px; height: 22px; border: none; background: transparent; cursor: pointer; color: var(--status-offline);"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                  {% endif %}
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                  {% if r.is_system %}
+                    <span class="badge badge-unknown" style="font-size: 0.65rem; padding: 1px 6px;">{{ _('role_builtin') }}</span>
+                  {% else %}
+                    <span class="badge badge-online" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981;">{{ _('role_custom') }}</span>
+                  {% endif %}
+                  <span style="font-size: 0.72rem; color: var(--text-secondary);">
+                    {{ r.users_count }} {% if r.users_count == 1 %}{{ _('user_count_single_label') }}{% else %}{{ _('users_count_label') }}{% endif %}
+                  </span>
+                </div>
+              </div>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in matrix_data.categories %}
+          <!-- Riga Categoria Header -->
+          <tr class="category-header-row" data-category="{{ _(cat.name)|lower }}" style="background: rgba(255, 255, 255, 0.03);">
+            <td colspan="{{ 1 + matrix_data.roles|length }}" style="padding: 10px 16px; font-weight: 700; font-size: 0.88rem; color: var(--accent); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  {% if cat.name == 'Job' %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><path d="M2 12h20"/></svg>
+                  {% elif 'Remote' in cat.name or 'Storage' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                  {% elif 'Proxy' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/></svg>
+                  {% elif 'Portale' in cat.name or 'Link' in cat.name or 'Public' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  {% elif 'Notifiche' in cat.name or 'Notification' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  {% elif 'Identit' in cat.name or 'Identity' in cat.name or 'Directory' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg>
+                  {% elif 'Intelligenza' in cat.name or 'Artificiale' in cat.name or 'AI' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="m20 3-1 2.5L16.5 6.5l2.5 1L20 10l1-2.5 2.5-1-2.5-1Z"/></svg>
+                  {% elif 'Personalizzazione' in cat.name or 'Branding' in cat.name or 'Customization' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                  {% elif 'Utenti' in cat.name or 'User' in cat.name or 'Ruoli' in cat.name or 'Role' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  {% elif 'Autenticazione' in cat.name or 'Authentication' in cat.name or 'Auth' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  {% elif 'Backup' in cat.name or 'Restore' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" x2="3"/></svg>
+                  {% elif 'Impostazioni' in cat.name or 'Settings' in cat.name or 'Sistema' in cat.name or 'System' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1 2.83-2.83l.06-.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  {% elif 'Audit' in cat.name or 'Monitoraggio' in cat.name or 'Log' in cat.name or 'Monitoring' in cat.name %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                  {% else %}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                  {% endif %}
+                  <span>{{ _(cat.name) }}</span>
+                </div>
+                <span class="badge badge-secondary" style="font-size: 0.7rem;">{{ cat.permissions|length }} {{ _('permissions_count_suffix') }}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Righe Permessi della Categoria -->
+          {% for p in cat.permissions %}
+          <tr class="permission-row" data-code="{{ p.code }}" data-name="{{ _(p.name)|lower }}" data-cat="{{ _(cat.name)|lower }}">
+            <td style="padding: 10px 16px; border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="color: var(--text-primary); font-size: 0.88rem;">{{ _(p.name) }}</strong>
+                  <code style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.04); padding: 1px 5px; border-radius: 4px;">{{ p.code }}</code>
+                  {% if p.code == 'auth.enforce_2fa' %}
+                    <span class="badge badge-offline" style="font-size: 0.68rem; margin-left: 4px;">{{ _('status_2fa_enforced') }}</span>
+                  {% endif %}
+                </div>
+                {% if p.description %}
+                <span style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.3;">{{ _(p.description) }}</span>
+                {% endif %}
+              </div>
+            </td>
+
+            {% for r in matrix_data.roles %}
+            <td style="text-align: center; vertical-align: middle; padding: 10px; border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+              {% set has_perm = p.code in matrix_data.matrix[r.id] %}
+              <label class="custom-switch" style="position: relative; display: inline-flex; align-items: center; cursor: pointer; margin: 0;">
+                <input
+                  type="checkbox"
+                  class="matrix-perm-checkbox"
+                  data-role-id="{{ r.id }}"
+                  data-role-name="{{ r.name }}"
+                  data-perm-code="{{ p.code }}"
+                  id="chk-{{ r.id }}-{{ p.code | replace('.', '-') }}"
+                  {% if has_perm %}checked{% endif %}
+                  {% if not can_manage %}disabled{% endif %}
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent);"
+                />
+              </label>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+
+          {% if cat.name == 'Remote Storage' %}
+          <tr class="permission-row" data-name="visibilità dei remotes" data-cat="{{ _(cat.name)|lower }}">
+            <td style="padding: 10px 16px; border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="color: var(--text-primary); font-size: 0.88rem;">{{ _('perm_remotes_visibility_title') }}</strong>
+                  <span class="badge badge-secondary" style="font-size: 0.68rem; padding: 1px 6px;">{{ _('perm_per_remote_badge') }}</span>
+                </div>
+                <span style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.3;">{{ _('perm_remotes_visibility_desc') }}</span>
+              </div>
+            </td>
+            <td colspan="{{ matrix_data.roles|length }}" style="text-align: center; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.85rem; font-style: italic; background: rgba(0, 0, 0, 0.04);">
+              {{ _('perm_configured_on_individual_remotes') }}
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: CREA NUOVO RUOLO                    -->
+<!-- ========================================== -->
+<div class="modal-backdrop" id="modal-create-role">
+  <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>{{ _('modal_create_role_title') }}</span>
+      </h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-create-role">&times;</button>
+    </div>
+    <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 20px;">
+      <div>
+        <label for="create-role-name" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">{{ _('role_name_label') }} *</label>
+        <input type="text" id="create-role-name" class="form-control" placeholder="{{ _('role_name_placeholder') }}" required />
+      </div>
+      <div>
+        <label for="create-role-desc" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">{{ _('role_desc_label') }}</label>
+        <textarea id="create-role-desc" class="form-control" rows="2"></textarea>
+      </div>
+      <div>
+        <label for="create-role-copy-from" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">{{ _('role_copy_from_label') }}</label>
+        <select id="create-role-copy-from" class="form-control">
+          <option value="">{{ _('role_copy_empty_option') }}</option>
+          {% for r in matrix_data.roles %}
+          <option value="{{ r.id }}">{{ _(r.name) }} ({{ r.permissions|length }} {{ _('permissions_count_suffix') }})</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-create-role">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-primary" id="btn-submit-create-role">{{ _('new_role') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: MODIFICA RUOLO                      -->
+<!-- ========================================== -->
+<div class="modal-backdrop" id="modal-edit-role">
+  <div class="modal-card" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('edit_role_title') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-edit-role">&times;</button>
+    </div>
+    <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 20px;">
+      <input type="hidden" id="edit-role-id" />
+      <div>
+        <label for="edit-role-name" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">{{ _('role_name_label') }} *</label>
+        <input type="text" id="edit-role-name" class="form-control" required />
+      </div>
+      <div>
+        <label for="edit-role-desc" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">{{ _('role_desc_label') }}</label>
+        <textarea id="edit-role-desc" class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-edit-role">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-primary" id="btn-submit-edit-role">{{ _('btn_save_changes') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: CONFERMA ELIMINAZIONE RUOLO         -->
+<!-- ========================================== -->
+<div class="modal-backdrop" id="modal-delete-role">
+  <div class="modal-card" style="max-width: 450px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('modal_confirm_delete_role') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-delete-role">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <p style="margin: 0 0 12px 0;">{{ _('modal_delete_role_confirm_html') | safe }}</p>
+      <div id="del-role-warning-box" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-offline); padding: 12px; border-radius: 6px; color: var(--status-offline); font-size: 0.85rem;">
+        {{ _('modal_delete_role_assigned_warning_html') | safe }}
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-delete-role">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-danger" id="btn-confirm-delete-role">{{ _('btn_delete') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: CONFERMA ELIMINAZIONE UTENTE        -->
+<!-- ========================================== -->
+<div class="modal-backdrop" id="modal-delete-user">
+  <div class="modal-card" style="max-width: 440px;">
+    <div class="modal-header">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ _('modal_confirm_delete_user') }}</h3>
+      <button type="button" class="btn-icon" data-close-modal="modal-delete-user" id="btn-close-del-modal">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <p style="margin: 0 0 8px 0;">{{ _('modal_delete_user_confirm_html') | safe }}</p>
+      <p style="color: var(--status-offline); font-size: 0.85rem; margin: 0;">{{ _('modal_delete_user_sessions_warning') }}</p>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-delete-user" id="btn-cancel-del-modal">{{ _('btn_cancel') }}</button>
+      <button type="button" class="btn btn-danger" id="btn-confirm-delete-user">{{ _('btn_delete') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  // 1. GESTIONE TAB (Account Utente vs Ruoli & Matrice)
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+
+  function switchTab(tabId) {
+    tabButtons.forEach(btn => {
+      if (btn.dataset.tab === tabId) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--bg-surface)';
+        btn.style.color = 'var(--text-primary)';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary)';
+      }
+    });
+
+    tabPanes.forEach(pane => {
+      if (pane.id === tabId) {
+        pane.style.display = 'block';
+      } else {
+        pane.style.display = 'none';
+      }
+    });
+
+    window.location.hash = '#' + tabId;
+  }
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Supporto hash nell'URL per aprire direttamente il tab
+  if (window.location.hash === '#tab-roles') {
+    switchTab('tab-roles');
+  }
+
+  // 2. GESTIONE MODALI DI BASE (Chiusura generica)
+  document.querySelectorAll('[data-close-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modalId = btn.dataset.closeModal;
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.remove('active');
+    });
+  });
+
+  // 3. ELIMINAZIONE UTENTE
+  let targetUserId = null;
+  const modalDelUser = document.getElementById('modal-delete-user');
+  const modalDelUsername = document.getElementById('del-user-name');
+  const confirmDelUserBtn = document.getElementById('btn-confirm-delete-user');
+
+  document.querySelectorAll('.btn-delete-user').forEach(btn => {
+    btn.addEventListener('click', () => {
+      targetUserId = btn.dataset.id;
+      modalDelUsername.textContent = btn.dataset.username;
+      if (confirmDelUserBtn) {
+        confirmDelUserBtn.disabled = false;
+        confirmDelUserBtn.textContent = {{ _('btn_delete_user') | tojson }};
+      }
+      modalDelUser.classList.add('active');
+    });
+  });
+
+  if (confirmDelUserBtn) {
+    confirmDelUserBtn.addEventListener('click', async () => {
+      if (!targetUserId) return;
+      confirmDelUserBtn.disabled = true;
+      confirmDelUserBtn.textContent = {{ _('status_deleting_ellipsis') | tojson }};
+
+      try {
+        const resp = await fetch(`/api/ui/users/${targetUserId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          }
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'deleted') {
+          modalDelUser.classList.remove('active');
+          showToast({{ _('user_deleted_toast') | tojson }}, 'success');
+          setTimeout(() => window.location.reload(), 400);
+        } else {
+          showToast({{ _('err_prefix') | tojson }} + (res.message || {{ _('err_unknown') | tojson }}), 'error');
+          confirmDelUserBtn.disabled = false;
+          confirmDelUserBtn.textContent = {{ _('btn_delete_user') | tojson }};
+        }
+      } catch (err) {
+        showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+        confirmDelUserBtn.disabled = false;
+        confirmDelUserBtn.textContent = {{ _('btn_delete_user') | tojson }};
+      }
+    });
+  }
+
+  // 4. CREAZIONE NUOVO RUOLO
+  const modalCreateRole = document.getElementById('modal-create-role');
+  const btnOpenCreateRole = document.getElementById('btn-open-create-role-modal');
+  const btnSubmitCreateRole = document.getElementById('btn-submit-create-role');
+
+  if (btnOpenCreateRole && modalCreateRole) {
+    btnOpenCreateRole.addEventListener('click', () => {
+      document.getElementById('create-role-name').value = '';
+      document.getElementById('create-role-desc').value = '';
+      document.getElementById('create-role-copy-from').value = '';
+      modalCreateRole.classList.add('active');
+    });
+  }
+
+  if (btnSubmitCreateRole) {
+    btnSubmitCreateRole.addEventListener('click', async () => {
+      const name = document.getElementById('create-role-name').value.trim();
+      const desc = document.getElementById('create-role-desc').value.trim();
+      const copyFrom = document.getElementById('create-role-copy-from').value;
+
+      if (!name) {
+        showToast({{ _('err_enter_role_name') | tojson }}, 'warning');
+        return;
+      }
+
+      btnSubmitCreateRole.disabled = true;
+      btnSubmitCreateRole.textContent = {{ _('status_creating_ellipsis') | tojson }};
+
+      try {
+        const resp = await fetch('/api/ui/roles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({
+            name: name,
+            description: desc,
+            copy_from_role_id: copyFrom || null,
+          })
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'created') {
+          modalCreateRole.classList.remove('active');
+          showToast(({{ _('role_created_toast') | tojson }}).replace('{name}', res.role.name), 'success');
+          window.location.hash = '#tab-roles';
+          setTimeout(() => window.location.reload(), 450);
+        } else {
+          showToast({{ _('err_prefix') | tojson }} + (res.message || {{ _('err_cannot_create_role') | tojson }}), 'error');
+          btnSubmitCreateRole.disabled = false;
+          btnSubmitCreateRole.textContent = {{ _('new_role') | tojson }};
+        }
+      } catch (err) {
+        showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+        btnSubmitCreateRole.disabled = false;
+        btnSubmitCreateRole.textContent = {{ _('new_role') | tojson }};
+      }
+    });
+  }
+
+  // 5. MODIFICA RUOLO
+  const modalEditRole = document.getElementById('modal-edit-role');
+  const btnSubmitEditRole = document.getElementById('btn-submit-edit-role');
+
+  document.querySelectorAll('.btn-edit-role').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('edit-role-id').value = btn.dataset.roleId;
+      document.getElementById('edit-role-name').value = btn.dataset.roleName;
+      document.getElementById('edit-role-desc').value = btn.dataset.roleDesc || '';
+      modalEditRole.classList.add('active');
+    });
+  });
+
+  if (btnSubmitEditRole) {
+    btnSubmitEditRole.addEventListener('click', async () => {
+      const roleId = document.getElementById('edit-role-id').value;
+      const name = document.getElementById('edit-role-name').value.trim();
+      const desc = document.getElementById('edit-role-desc').value.trim();
+
+      if (!name) {
+        showToast({{ _('err_role_name_empty') | tojson }}, 'warning');
+        return;
+      }
+
+      btnSubmitEditRole.disabled = true;
+      btnSubmitEditRole.textContent = {{ _('status_saving_ellipsis') | tojson }};
+
+      try {
+        const resp = await fetch(`/api/ui/roles/${roleId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({ name: name, description: desc })
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'updated') {
+          modalEditRole.classList.remove('active');
+          showToast({{ _('role_updated_toast') | tojson }}, 'success');
+          window.location.hash = '#tab-roles';
+          setTimeout(() => window.location.reload(), 450);
+        } else {
+          showToast({{ _('err_prefix') | tojson }} + (res.message || {{ _('err_cannot_update_role') | tojson }}), 'error');
+          btnSubmitEditRole.disabled = false;
+          btnSubmitEditRole.textContent = {{ _('btn_save_changes') | tojson }};
+        }
+      } catch (err) {
+        showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+        btnSubmitEditRole.disabled = false;
+        btnSubmitEditRole.textContent = {{ _('btn_save_changes') | tojson }};
+      }
+    });
+  }
+
+  // 6. ELIMINAZIONE RUOLO
+  let targetRoleId = null;
+  const modalDeleteRole = document.getElementById('modal-delete-role');
+  const delRoleName = document.getElementById('del-role-name');
+  const delRoleWarning = document.getElementById('del-role-warning-box');
+  const delRoleUserCount = document.getElementById('del-role-user-count');
+  const btnConfirmDelRole = document.getElementById('btn-confirm-delete-role');
+
+  document.querySelectorAll('.btn-delete-role').forEach(btn => {
+    btn.addEventListener('click', () => {
+      targetRoleId = btn.dataset.roleId;
+      const usersCount = parseInt(btn.dataset.usersCount || '0', 10);
+      delRoleName.textContent = btn.dataset.roleName;
+
+      if (usersCount > 0) {
+        delRoleWarning.style.display = 'block';
+        delRoleUserCount.textContent = usersCount;
+        btnConfirmDelRole.disabled = true;
+      } else {
+        delRoleWarning.style.display = 'none';
+        btnConfirmDelRole.disabled = false;
+      }
+      modalDeleteRole.classList.add('active');
+    });
+  });
+
+  if (btnConfirmDelRole) {
+    btnConfirmDelRole.addEventListener('click', async () => {
+      if (!targetRoleId) return;
+      btnConfirmDelRole.disabled = true;
+      btnConfirmDelRole.textContent = {{ _('status_deleting_ellipsis') | tojson }};
+
+      try {
+        const resp = await fetch(`/api/ui/roles/${targetRoleId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          }
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'deleted') {
+          modalDeleteRole.classList.remove('active');
+          showToast({{ _('role_deleted_toast') | tojson }}, 'success');
+          window.location.hash = '#tab-roles';
+          setTimeout(() => window.location.reload(), 450);
+        } else {
+          showToast({{ _('err_prefix') | tojson }} + (res.message || {{ _('err_cannot_delete_role') | tojson }}), 'error');
+          btnConfirmDelRole.disabled = false;
+          btnConfirmDelRole.textContent = {{ _('btn_delete_role') | tojson }};
+        }
+      } catch (err) {
+        showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+        btnConfirmDelRole.disabled = false;
+        btnConfirmDelRole.textContent = {{ _('btn_delete_role') | tojson }};
+      }
+    });
+  }
+
+  // 7. TOGGLE PERMESSI NELLA MATRICE
+  document.querySelectorAll('.matrix-perm-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', async (e) => {
+      const roleId = checkbox.dataset.roleId;
+      const roleName = checkbox.dataset.roleName;
+      const permCode = checkbox.dataset.permCode;
+      const willEnable = checkbox.checked;
+
+      // Disabilita temporaneamente durante la richiesta
+      checkbox.disabled = true;
+
+      try {
+        const resp = await fetch(`/api/ui/roles/${roleId}/permissions/${permCode}/toggle`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({ enabled: willEnable })
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'updated') {
+          showToast(res.message || ({{ _('perm_updated_for_role_toast') | tojson }}).replace('{code}', permCode).replace('{role}', roleName), 'success');
+        } else {
+          // Revert checkbox state
+          checkbox.checked = !willEnable;
+          showToast({{ _('err_saving_permission_prefix') | tojson }} + (res.message || {{ _('error_default_title') | tojson }}), 'error');
+        }
+      } catch (err) {
+        checkbox.checked = !willEnable;
+        showToast({{ _('err_connection_prefix') | tojson }} + err, 'error');
+      } finally {
+        checkbox.disabled = false;
+      }
+    });
+  });
+
+  // 8. FILTRO RICERCA PERMESSI NELLA MATRICE
+  const matrixSearch = document.getElementById('matrix-search');
+  if (matrixSearch) {
+    matrixSearch.addEventListener('input', () => {
+      const term = matrixSearch.value.trim().toLowerCase();
+      const rows = document.querySelectorAll('.permission-row');
+      const catRows = document.querySelectorAll('.category-header-row');
+
+      if (!term) {
+        rows.forEach(r => r.style.display = '');
+        catRows.forEach(r => r.style.display = '');
+        return;
+      }
+
+      // Check which permission rows match
+      const matchingCats = new Set();
+      rows.forEach(r => {
+        const code = r.dataset.code || '';
+        const name = r.dataset.name || '';
+        const cat = r.dataset.cat || '';
+        const match = code.includes(term) || name.includes(term) || cat.includes(term);
+
+        if (match) {
+          r.style.display = '';
+          matchingCats.add(r.dataset.cat);
+        } else {
+          r.style.display = 'none';
+        }
+      });
+
+      // Show/hide category header rows
+      catRows.forEach(cr => {
+        const catName = (cr.dataset.category || '').toLowerCase();
+        if (matchingCats.has(catName) || catName.includes(term)) {
+          cr.style.display = '';
+        } else {
+          cr.style.display = 'none';
+        }
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

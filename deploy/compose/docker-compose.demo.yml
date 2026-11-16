@@ -1,0 +1,62 @@
+# Docker Compose overlay for EmberVault Demo Mode
+# Allows running an independent, fully-isolated Demo stack alongside or instead of normal deployment.
+# Usage: docker compose -p embervault-demo -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.demo.yml up -d
+name: embervault-demo
+
+services:
+  postgres:
+    container_name: embervault-demo-postgres
+    volumes:
+      - pgdata_demo:/var/lib/postgresql/data
+
+  migrate:
+    container_name: embervault-demo-migrate
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+      EMBERVAULT_MASTER_KEY: ${EMBERVAULT_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+
+  app:
+    container_name: embervault-demo-app
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+      EMBERVAULT_ENV: dev
+      EMBERVAULT_DEV_NOAUTH: "false"
+      EMBERVAULT_PUBLIC_URL: ${EMBERVAULT_PUBLIC_URL:-http://localhost:8088}
+      EMBERVAULT_PORTAL_URL: ${EMBERVAULT_PORTAL_URL:-http://localhost:8089}
+    volumes:
+      - backups_demo:/backups
+
+  orchestrator:
+    container_name: embervault-demo-orchestrator
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+      EMBERVAULT_PUBLIC_URL: ${EMBERVAULT_PUBLIC_URL:-http://localhost:8088}
+    volumes:
+      - backups_demo:/backups
+
+  hook-runner:
+    container_name: embervault-demo-hook-runner
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+
+  proxy-1:
+    container_name: embervault-demo-proxy-1
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+
+  proxy-2:
+    container_name: embervault-demo-proxy-2
+    environment:
+      EMBERVAULT_DEMO_MODE: "true"
+
+  portal:
+    container_name: embervault-demo-portal
+    environment:
+      EMBERVAULT_ORCHESTRATOR_URL: http://orchestrator:8081
+      PORTAL_SECRET_KEY: ${PORTAL_SECRET_KEY:-portal_demo_secret_key_32_chars_minimum}
+      PORTAL_PORT: 8083
+      EMBERVAULT_DEMO_MODE: "true"
+
+volumes:
+  pgdata_demo:
+  backups_demo:

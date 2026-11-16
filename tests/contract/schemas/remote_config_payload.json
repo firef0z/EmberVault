@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "Sanitized remote connection parameters passed to the proxy.",
+  "properties": {
+    "alias": {
+      "description": "Internal alias for the remote (e.g. 'src', 'dst')",
+      "title": "Alias",
+      "type": "string"
+    },
+    "backend_type": {
+      "description": "RClone backend provider type (e.g. 's3', 'drive', 'local')",
+      "title": "Backend Type",
+      "type": "string"
+    },
+    "config": {
+      "additionalProperties": true,
+      "description": "Configuration dictionary for the remote provider",
+      "title": "Config",
+      "type": "object"
+    },
+    "path": {
+      "description": "Target path or folder inside the remote",
+      "title": "Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "alias",
+    "backend_type",
+    "path"
+  ],
+  "title": "RemoteConfigPayload",
+  "type": "object"
+}

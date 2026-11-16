@@ -1,0 +1,69 @@
+[importlinter]
+root_packages =
+    embervault_common
+    embervault_db
+    embervault_app
+    embervault_orchestrator
+    embervault_proxy
+
+[importlinter:contract:proxy-isolation]
+name = Proxy must not import DB or other services
+type = forbidden
+source_modules =
+    embervault_proxy
+forbidden_modules =
+    embervault_db
+    embervault_app
+    embervault_orchestrator
+ignore_imports =
+    embervault_common.observability.metrics -> embervault_db.models.execution
+    embervault_common.observability.metrics -> embervault_db.models.proxy
+    embervault_common.observability.metrics -> embervault_db.models.remotes
+    embervault_common.observability.metrics -> embervault_db.repositories.execution_repository
+
+[importlinter:contract:common-isolation]
+name = Common must not import DB or services
+type = forbidden
+source_modules =
+    embervault_common
+forbidden_modules =
+    embervault_db
+    embervault_app
+    embervault_orchestrator
+    embervault_proxy
+ignore_imports =
+    embervault_common.observability.metrics -> embervault_db.models.execution
+    embervault_common.observability.metrics -> embervault_db.models.proxy
+    embervault_common.observability.metrics -> embervault_db.models.remotes
+    embervault_common.observability.metrics -> embervault_db.repositories.execution_repository
+
+[importlinter:contract:db-isolation]
+name = DB must not import services
+type = forbidden
+source_modules =
+    embervault_db
+forbidden_modules =
+    embervault_app
+    embervault_orchestrator
+    embervault_proxy
+
+[importlinter:contract:service-independence]
+name = Services must be independent
+type = independence
+modules =
+    embervault_app
+    embervault_orchestrator
+    embervault_proxy
+
+[importlinter:contract:system-layers]
+name = Strict unidirectional system layers
+type = layers
+layers =
+    embervault_app | embervault_orchestrator
+    embervault_db
+    embervault_common
+ignore_imports =
+    embervault_common.observability.metrics -> embervault_db.models.execution
+    embervault_common.observability.metrics -> embervault_db.models.proxy
+    embervault_common.observability.metrics -> embervault_db.models.remotes
+    embervault_common.observability.metrics -> embervault_db.repositories.execution_repository
